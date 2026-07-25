@@ -14,6 +14,81 @@ per-release section headings. This file is the human-curated companion.
 
 ### Added
 
+- _Nothing yet._
+
+### Changed
+
+- _Nothing yet._
+
+### Fixed
+
+- _Nothing yet._
+
+## [0.1.1] — 2026-07-26
+
+### Fixed
+
+- **Image content block now serializable by MCP v2 SDK** (Fix 1): the 6
+  image-returning tools (`generate_image`, `image_to_image`, `inpaint`,
+  `upscale_image`, `director_tool`, `annotate_image`) raised
+  `PydanticSerializationError: Unable to serialize unknown type: Image`
+  because `_save_and_return` returned the SDK's `Image` helper class
+  directly. The helpers now call `Image(...).to_image_content()` to
+  produce a pydantic `ImageContent` block. Previously Anlas was spent and
+  the image saved to disk, but the agent received an error and could not
+  see the image.
+- **NovelAI `api.novelai.net` endpoints reachable** (Fix 2): the 4
+  account-side tools (`get_subscription`, `get_user_data`,
+  `upscale_image`, `annotate_image`) failed with
+  `NovelAITransportError: NovelAI request transport failed` because
+  Cloudflare's bot-management WAF fingerprinted the OpenSSL TLS
+  ClientHello (JA3/JA4) and silently reset the connection. A new
+  `nai/http.py` module now wraps `httpx.AsyncClient` with
+  `httpx_curl_cffi.AsyncCurlTransport(impersonate="chrome")` to reproduce
+  Chrome's BoringSSL TLS fingerprint, plus the full Chrome 150 header
+  block (User-Agent, `Sec-Ch-Ua*`, `Sec-Fetch-*`, etc.).
+
+### Added
+
+- **Browser fingerprint dependencies**: `curl_cffi>=0.15.0` and
+  `httpx-curl-cffi>=0.1.5` are now required dependencies in
+  `apps/server/pyproject.toml`. Without them NovelAI's Cloudflare WAF
+  rejects requests at the TLS layer.
+- **`nai/http.py`**: new module exporting `BROWSER_HEADERS` (Chrome 150
+  header block) and `create_http_client()` factory used by `server.py`,
+  `cli.py`, and `nai/client.py`.
+- **`apps/server/dev_server.py`**: non-relative-import entry point so
+  `mcp dev` can load the server (works around `mcp dev` loading
+  `server.py` directly, which breaks `from ._mcp import MCPServer`).
+- **Regression tests**: `TestSerializationRegression` in
+  `tests/test_tools.py` exercises the real `Tool.run(convert_result=True)`
+  path against `generate_image` and `upscale_image`.
+  `TestCreateHttpClient` + `TestBrowserHeaders` in `tests/test_http.py`
+  cover the new HTTP factory and Chrome header block.
+
+### Changed
+
+- `apps/server/pyproject.toml` `filterwarnings` now ignores
+  `curl_cffi.utils.CurlCffiWarning` (Windows Proactor event loop lacks
+  `add_reader`; curl_cffi registers a selector thread to compensate —
+  informational, no functional impact).
+- `apps/docs/source/about/tool-validation.md` updated: all 6
+  image-returning tools now ✅ pass (was ❌); fix history section added
+  documenting root cause and verification for both fixes.
+
+## [0.1.0] — 2026-07-25
+
+### Added
+
+- **11 MCP tools** covering the full NovelAI image API surface:
+  `generate_image`, `image_to_image`, `inpaint`, `upscale_image`,
+  `director_tool`, `annotate_image`, `suggest_tags`, `encode_vibe`,
+  `get_subscription`, `get_user_data`, `estimate_anlas_cost`.
+- **Two transports**: stdio (local agents) + streamable-http (remote /
+  multi-client).
+- **Dual image return**: base64 `Image` content blocks (the agent _sees_ the
+  image) **and** PNG saved to disk (path returned as text).
+- **Async + sync**: async tool handlers + a `typer` CLI for direct invocation.
 - **Monorepo structure**: introduced a uv + pnpm workspace with two members
   — `apps/server/` (the installable MCP server package) and `apps/docs/` (the
   Sphinx documentation site). Tasks are orchestrated by Turbo.
@@ -33,6 +108,7 @@ per-release section headings. This file is the human-curated companion.
   monorepo toolchain.
 - **`apps/server/package.json`** and **`apps/docs/package.json`** as
   turbo-runnable workspace members.
+- **uv-managed**, single Python package, MIT-licensed, Docker-ready.
 
 ### Changed
 
@@ -61,20 +137,6 @@ per-release section headings. This file is the human-curated companion.
   `src/`, `tests/`, and `docker/` — moved under `apps/server/` as part of
   the workspace migration (git history preserved via `git mv`).
 
-## [0.1.0] — 2026-07-25
-
-### Added
-
-- **11 MCP tools** covering the full NovelAI image API surface:
-  `generate_image`, `image_to_image`, `inpaint`, `upscale_image`,
-  `director_tool`, `annotate_image`, `suggest_tags`, `encode_vibe`,
-  `get_subscription`, `get_user_data`, `estimate_anlas_cost`.
-- **Two transports**: stdio (local agents) + streamable-http (remote /
-  multi-client).
-- **Dual image return**: base64 `Image` content blocks (the agent *sees* the
-  image) **and** PNG saved to disk (path returned as text).
-- **Async + sync**: async tool handlers + a `typer` CLI for direct invocation.
-- **uv-managed**, single Python package, MIT-licensed, Docker-ready.
-
-[Unreleased]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases/tag/v0.1.1
 [0.1.0]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases/tag/v0.1.0
