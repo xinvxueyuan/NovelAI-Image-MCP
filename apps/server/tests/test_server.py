@@ -29,7 +29,7 @@ class TestLifespan:
         with (
             patch.object(server, "get_novelai_settings", return_value=settings),
             patch.object(server, "create_novelai_client", return_value=fake_client),
-            patch.object(server.httpx, "AsyncClient", return_value=fake_http),
+            patch.object(server, "create_http_client", return_value=fake_http),
         ):
             async with server.lifespan(MagicMock(name="server")) as ctx:
                 assert ctx.client is fake_client
@@ -63,7 +63,7 @@ class TestLifespan:
         with (
             patch.object(server, "get_novelai_settings", return_value=settings),
             patch.object(server, "create_novelai_client", return_value=fake_client),
-            patch.object(server.httpx, "AsyncClient", return_value=fake_http),
+            patch.object(server, "create_http_client", return_value=fake_http),
             pytest.raises(RuntimeError, match="boom"),
         ):
             async with server.lifespan(MagicMock()):
@@ -83,7 +83,7 @@ class TestLifespan:
         with (
             patch.object(server, "get_novelai_settings", return_value=settings),
             patch.object(server, "create_novelai_client", return_value=fake_client),
-            patch.object(server.httpx, "AsyncClient", return_value=fake_http),
+            patch.object(server, "create_http_client", return_value=fake_http),
         ):
             async with server.lifespan(MagicMock()):
                 pass

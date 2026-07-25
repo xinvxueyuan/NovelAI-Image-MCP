@@ -35,6 +35,7 @@ from .exceptions import (
     NovelAITimeoutError,
     NovelAITransportError,
 )
+from .http import BROWSER_HEADERS, create_http_client
 from .imaging import parse_image
 from .models import CharacterPrompt, GenerationRequest
 from .payload import build_generation_payload
@@ -102,7 +103,12 @@ class NovelAIClient:
         self.vibe_cache_entries = vibe_cache_entries
         self._access_token: str | None = credentials.token
         self._vibe_cache = _SHARED_VIBE_CACHE
-        self._http = http_client or httpx.AsyncClient(timeout=self.timeout)
+        # When no shared http_client is supplied (production paths via
+        # ``server.lifespan`` and the CLI), build one with Chrome TLS +
+        # header fingerprint impersonation so Cloudflare's bot WAF accepts
+        # the connection. Tests inject a plain ``httpx.AsyncClient`` so
+        # ``respx`` can intercept at the transport layer.
+        self._http = http_client or create_http_client(self.timeout)
         self._owns_http = http_client is None
 
     async def aclose(self) -> None:
@@ -119,12 +125,12 @@ class NovelAIClient:
         json_body: Mapping[str, Any] | None = None,
         params: Mapping[str, Any] | None = None,
     ) -> bytes:
-        headers = {
-            "Accept": "*/*",
-            "Content-Type": "application/json",
-            "Origin": "https://novelai.net",
-            "Referer": "https://novelai.net",
-        } | request_tracking_headers()
+        # Start from the full Chrome fingerprint block so requests carry the
+        # browser headers even when the caller injected a plain httpx client
+        # (tests). Per-request values below override the defaults where needed.
+        headers = dict(BROWSER_HEADERS)
+        headers["Content-Type"] = "application/json"
+        headers.update(request_tracking_headers())
         if authenticated:
             headers["Authorization"] = f"Bearer {await self.get_access_token()}"
         try:
@@ -234,11 +240,13 @@ class NovelAIClient:
         prepared = await self._prepare_references(request)
         if not is_v4_model(prepared.model):
             raise ValueError("real-time generation requires a V4/V4.5 model")
-        headers = {
-            "Authorization": f"Bearer {await self.get_access_token()}",
-            "Accept": "application/x-msgpack",
-            "Content-Type": "application/json",
-        } | request_tracking_headers()
+        # Start from the Chrome fingerprint block (same as ``_request``) and
+        # override Accept for the MessagePack streaming endpoint.
+        headers = dict(BROWSER_HEADERS)
+        headers["Accept"] = "application/x-msgpack"
+        headers["Content-Type"] = "application/json"
+        headers["Authorization"] = f"Bearer {await self.get_access_token()}"
+        headers.update(request_tracking_headers())
         url = f"{self.image_base_url}{Endpoint.IMAGE_STREAM}"
         body = build_generation_payload(prepared)
         parser = MessagePackStreamParser()

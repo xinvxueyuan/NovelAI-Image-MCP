@@ -37,6 +37,7 @@ from .exceptions import (
     NovelAIInsufficientCreditsError,
     NovelAIValidationError,
 )
+from .http import BROWSER_HEADERS, CHROME_USER_AGENT, create_http_client
 from .models import (
     CharacterPrompt,
     GenerationRequest,
@@ -85,6 +86,10 @@ __all__ = [
     "NovelAIImageError",
     "NovelAIInsufficientCreditsError",
     "NovelAIValidationError",
+    # http (browser fingerprint + TLS impersonation)
+    "BROWSER_HEADERS",
+    "CHROME_USER_AGENT",
+    "create_http_client",
     # models
     "CharacterPrompt",
     "GenerationRequest",

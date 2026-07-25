@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import base64
+from pathlib import Path
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock
 
@@ -46,9 +48,15 @@ def ctx(fake_ctx: Any) -> Any:
 
 
 def _assert_image_block(result: list[Any]) -> bytes:
-    """Pull the bytes out of the returned Image content block."""
+    """Pull the bytes out of the returned ImageContent content block.
+
+    Tools return ``ImageContent`` (a pydantic ``ContentBlock`` from
+    ``mcp_types``) whose ``data`` is a base64-encoded ASCII string. The
+    helper decodes it back to raw bytes so assertions can compare against
+    the original ``NovelAIImage.data`` bytes.
+    """
     image_block = next(item for item in result if hasattr(item, "data"))
-    return image_block.data
+    return base64.b64decode(image_block.data)
 
 
 def _assert_path_str(result: list[Any]) -> str:
@@ -266,3 +274,90 @@ class TestRegistration:
         }
         assert expected.issubset(recording_mcp.tools.keys())
         assert len(expected) == 11
+
+
+class TestSerializationRegression:
+    """Verify tools serialize correctly through the real SDK path.
+
+    ``RecordingMCPServer`` bypasses ``Tool.run`` → ``convert_result`` →
+    ``model_dump``, which is where the Image-serialization bug lived (the
+    SDK's structured-content path could not ``model_dump`` the plain
+    ``Image`` helper class). These tests close that gap by invoking the
+    real ``Tool.run`` with ``convert_result=True`` against the production
+    ``server.mcp`` instance.
+    """
+
+    @staticmethod
+    def _make_ctx(client: Any, settings: Any) -> Any:
+        """Build a minimal context mirroring conftest's ``fake_ctx`` shape."""
+        return SimpleNamespace(
+            request_context=SimpleNamespace(
+                lifespan_context=SimpleNamespace(client=client, settings=settings),
+            ),
+        )
+
+    async def test_generate_image_serializes_through_real_sdk(
+        self,
+        settings: Any,
+        fake_client: AsyncMock,
+        nai_image: NovelAIImage,
+        tmp_path: Path,
+    ) -> None:
+        """``generate_image`` returns a ``CallToolResult`` with ImageContent."""
+        from mcp_types import CallToolResult, ImageContent, TextContent
+
+        from novelai_image_mcp.server import mcp
+
+        fake_client.generate.return_value = (nai_image,)
+        settings.output_dir = str(tmp_path)
+        ctx = self._make_ctx(fake_client, settings)
+
+        tool = mcp._tool_manager.get_tool("generate_image")
+        assert tool is not None, "generate_image tool must be registered"
+        result = await tool.run(
+            {
+                "prompt": "test",
+                "seed": 42,
+                "width": 512,
+                "height": 512,
+                "steps": 1,
+                "n_samples": 1,
+                "quality": False,
+            },
+            ctx,
+            convert_result=True,
+        )
+
+        assert isinstance(result, CallToolResult)
+        assert any(isinstance(b, ImageContent) for b in result.content)
+        assert any(isinstance(b, TextContent) for b in result.content)
+        # The bug was here: structured_content must be JSON-serializable.
+        assert result.structured_content is not None
+
+    async def test_upscale_image_serializes_through_real_sdk(
+        self,
+        settings: Any,
+        fake_client: AsyncMock,
+        nai_image: NovelAIImage,
+        tmp_path: Path,
+    ) -> None:
+        """``upscale_image`` returns a ``CallToolResult`` with ImageContent."""
+        from mcp_types import CallToolResult, ImageContent
+
+        from novelai_image_mcp.server import mcp
+
+        fake_client.upscale.return_value = nai_image
+        settings.output_dir = str(tmp_path)
+        ctx = self._make_ctx(fake_client, settings)
+
+        tool = mcp._tool_manager.get_tool("upscale_image")
+        assert tool is not None, "upscale_image tool must be registered"
+        result = await tool.run(
+            {"image": _b64(), "factor": 2},
+            ctx,
+            convert_result=True,
+        )
+
+        assert isinstance(result, CallToolResult)
+        assert any(isinstance(b, ImageContent) for b in result.content)
+        assert result.structured_content is not None

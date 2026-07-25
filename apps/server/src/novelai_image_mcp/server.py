@@ -1,10 +1,12 @@
 """MCP server: lifespan owns the shared httpx session + NovelAIClient.
 
 The server is a thin composition root over ``nai.NovelAIClient``. The lifespan
-creates one long-lived ``httpx.AsyncClient`` (connection pooling) and one
-``NovelAIClient``; every tool reads them from ``ctx.request_context.lifespan_context``
-(the MCP v2 ``Context`` API). Transport is selected at runtime from
-``MCP_TRANSPORT`` (stdio by default, streamable-http for remote deployments).
+creates one long-lived ``httpx.AsyncClient`` (connection pooling, with Chrome
+TLS + header fingerprint impersonation via ``create_http_client``) and one
+``NovelAIClient``; every tool reads them from
+``ctx.request_context.lifespan_context`` (the MCP v2 ``Context`` API). Transport
+is selected at runtime from ``MCP_TRANSPORT`` (stdio by default,
+streamable-http for remote deployments).
 """
 
 from __future__ import annotations
@@ -13,10 +15,8 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
-import httpx
-
 from ._mcp import MCPServer
-from .nai import NovelAIClient, create_novelai_client
+from .nai import NovelAIClient, create_http_client, create_novelai_client
 from .settings import (
     NovelAISettings,
     get_mcp_settings,
@@ -42,7 +42,10 @@ async def lifespan(_server: MCPServer) -> AsyncIterator[AppContext]:
             "NovelAI credentials are not configured: set NOVELAI_TOKEN or "
             "NOVELAI_USERNAME + NOVELAI_PASSWORD (see .env.example)."
         )
-    http_client = httpx.AsyncClient(timeout=settings.timeout)
+    # ``create_http_client`` returns an ``httpx.AsyncClient`` backed by
+    # ``curl_cffi`` (Chrome TLS fingerprint) with browser headers set as
+    # defaults — required for Cloudflare's bot WAF to accept the connection.
+    http_client = create_http_client(timeout=settings.timeout)
     client = create_novelai_client(settings, http_client=http_client)
     try:
         yield AppContext(client=client, settings=settings)

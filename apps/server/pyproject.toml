@@ -39,6 +39,14 @@ dependencies = [
     # httpx is pinned below 1.0 because respx (test dep) doesn't yet support
     # httpx 1.x and the 1.0.dev pre-release leaks in via `prerelease = "allow"`.
     "httpx>=0.28.0,<1.0.0",
+    # Browser TLS + header fingerprint impersonation for Cloudflare's bot WAF.
+    # ``curl_cffi`` wraps ``curl-impersonate`` (BoringSSL) to reproduce Chrome's
+    # JA3/JA4 TLS fingerprint; ``httpx-curl-cffi`` provides an ``httpx.BaseTransport``
+    # so the existing httpx API (streaming, is_closed, aclose) is unchanged.
+    # Without these, NovelAI's ``api.novelai.net`` resets the TLS connection
+    # before any HTTP header is read (surfaces as ``NovelAITransportError``).
+    "curl_cffi>=0.15.0",
+    "httpx-curl-cffi>=0.1.5",
     "argon2-cffi>=25.1.0",
     "msgpack>=1.1.0",
     "pydantic>=2.10.0",
@@ -294,7 +302,13 @@ testpaths = ["tests"]
 addopts = "--import-mode=importlib --strict-markers --strict-config --cov=src/novelai_image_mcp --cov-branch --cov-report=term-missing --cov-report=xml:test-results/coverage.xml --cov-fail-under=70"
 timeout = 60
 timeout_method = "thread"
-filterwarnings = ["error"]
+filterwarnings = [
+    "error",
+    # curl_cffi on Windows uses the Proactor event loop, which lacks
+    # ``add_reader``; curl_cffi registers a selector thread to compensate
+    # and emits this informational warning. It does not affect functionality.
+    "ignore::curl_cffi.utils.CurlCffiWarning",
+]
 
 [tool.coverage.run]
 source = ["src/novelai_image_mcp"]

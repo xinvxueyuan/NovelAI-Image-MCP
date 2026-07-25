@@ -28,6 +28,7 @@ from .nai import (
     GenerationRequest,
     Model,
     NovelAIClient,
+    create_http_client,
     create_novelai_client,
 )
 from .output import save_image
@@ -59,7 +60,10 @@ def _build_client(settings: NovelAISettings) -> tuple[NovelAIClient, httpx.Async
             err=True,
         )
         raise typer.Exit(code=2)
-    http_client = httpx.AsyncClient(timeout=settings.timeout)
+    # ``create_http_client`` returns an ``httpx.AsyncClient`` backed by
+    # ``curl_cffi`` (Chrome TLS fingerprint) with browser headers — required
+    # for Cloudflare's bot WAF to accept the connection to NovelAI.
+    http_client = create_http_client(timeout=settings.timeout)
     client = create_novelai_client(settings, http_client=http_client)
     return client, http_client
 

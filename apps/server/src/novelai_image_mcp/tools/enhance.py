@@ -26,10 +26,18 @@ def _save_and_return(
     name: str,
     output_dir: str,
 ) -> list[Any]:
-    """Persist a single image and return Image block + saved path."""
+    """Persist a single image and return ImageContent block + saved path.
+
+    The ``Image`` helper is converted to an ``ImageContent`` (a pydantic
+    ``ContentBlock``) via ``to_image_content()`` so the MCP v2 SDK's
+    structured-content ``model_dump(mode="json")`` path can serialize it.
+    Returning the raw ``Image`` helper triggers
+    ``PydanticSerializationError: Unable to serialize unknown type: Image``
+    because the helper is a plain Python class, not a pydantic model.
+    """
     path = save_image(image.data, name=name, output_dir=output_dir)
     return [
-        Image(data=image.data, format="png"),
+        Image(data=image.data, format="png").to_image_content(),
         f"Saved image: {path}",
     ]
 

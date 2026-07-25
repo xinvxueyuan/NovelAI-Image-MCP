@@ -284,6 +284,30 @@ wheels = [
 ]
 
 [[package]]
+name = "curl-cffi"
+version = "0.16.0b1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "cffi" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1b/3a/06c810acde15d86ad131d4e8b6128e5f3576a894994a3bf0d88ddd493488/curl_cffi-0.16.0b1.tar.gz", hash = "sha256:42c39dfb4ee5ee5fd7ed025d4abac5604d80f5eda2984783c7a02da512313ee9", size = 231878, upload-time = "2026-07-18T10:05:42.605Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/35/dd/861a9a914b34da43ffa9446df57812258385684ccdfb20c0f59539aca11b/curl_cffi-0.16.0b1-cp310-abi3-macosx_10_9_x86_64.whl", hash = "sha256:ba3e14b363ef81ac5f867f24ad501e68b2f1f820a1966f5acfc69f23822f9028", size = 3015406, upload-time = "2026-07-18T10:05:03.143Z" },
+    { url = "https://files.pythonhosted.org/packages/29/54/5e6fa11b4a7f982358781d92c84d13f4b9704c99cd8c338f38562646088b/curl_cffi-0.16.0b1-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:4e903d152ddff5080f1bfbaad5bcfc269afb9d78e731d29a61c45cab5e4caea3", size = 2772705, upload-time = "2026-07-18T10:05:04.917Z" },
+    { url = "https://files.pythonhosted.org/packages/db/c7/4cf87728023802ac98f1632c8bc3bc520f9dea15c5dd69c8c0b13b0df089/curl_cffi-0.16.0b1-cp310-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:774b05848ca1c30bdadfa69c9f3d80a1b842ab7f2021540ad6655d95d13797ad", size = 12810059, upload-time = "2026-07-18T10:05:06.299Z" },
+    { url = "https://files.pythonhosted.org/packages/e6/6c/400cd19283c49a64ce5e30b62c503159801bc1e3ec0d6b7021e7aaa422bf/curl_cffi-0.16.0b1-cp310-abi3-manylinux2014_i686.manylinux_2_17_i686.whl", hash = "sha256:b1deb9868b8540884fb65b15d954c48a7a00489d3a2845bc283e5809f0d99ec2", size = 12631987, upload-time = "2026-07-18T10:05:08.552Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/9d/0c6441088ab5de46496b1c204656f7633eb1d23af991d4323f1f6817afcf/curl_cffi-0.16.0b1-cp310-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:966c19d693afe29fac6632848d6b55b0878bec854c4b91255e200a6d8f048f52", size = 13459080, upload-time = "2026-07-18T10:05:10.775Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/11/732900b55772db532e2b29228c66647b844f507702f369ac5d1570659f01/curl_cffi-0.16.0b1-cp310-abi3-manylinux_2_28_armv7l.manylinux_2_31_armv7l.whl", hash = "sha256:4e0d1fc206172bb1ece20ae7cd3510566a8ce42c08ca6ed2b901655199d4f39f", size = 12818676, upload-time = "2026-07-18T10:05:12.894Z" },
+    { url = "https://files.pythonhosted.org/packages/91/59/749196b98cbad57cd5233736ccfaf7d089cd7094c787e081a35ea60c5a90/curl_cffi-0.16.0b1-cp310-abi3-manylinux_2_34_riscv64.manylinux_2_39_riscv64.whl", hash = "sha256:a92c6a013d8f14ed1ba0b3c0faa7c3194afd45274832e14a4efa72518c35d006", size = 12592577, upload-time = "2026-07-18T10:05:15.163Z" },
+    { url = "https://files.pythonhosted.org/packages/79/dc/fe3abb4ed890acbf41b20cfab4bf0f2ead7b082ebc12234418e3f95a7464/curl_cffi-0.16.0b1-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:8bc426f96b334b47590738433166326493b402581e7f724fa7b6126f001d5562", size = 12563324, upload-time = "2026-07-18T10:05:17.883Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/95/3916282c68801f53377c91ab862dbbcfd67a0a863591ba9b2ef3030f9d5f/curl_cffi-0.16.0b1-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:4d599fe6aaf4fde10d70ba2bbda38d0afeef58df028762b11144f1097bd59b6d", size = 13230653, upload-time = "2026-07-18T10:05:20.292Z" },
+    { url = "https://files.pythonhosted.org/packages/54/51/b17e3125e78470fdfab9e0405e41203c78ad1122c7dcde04c614d0646811/curl_cffi-0.16.0b1-cp310-abi3-win_amd64.whl", hash = "sha256:538545cfca682a8990859ef3aa5fc67b359659ff37dc98e543be112ae992c57b", size = 1971555, upload-time = "2026-07-18T10:05:22.466Z" },
+    { url = "https://files.pythonhosted.org/packages/71/1f/6cc23dbae0f1fd54c8bce60e3ae2be143a704d6071c2dc4aaab7b4e7cda3/curl_cffi-0.16.0b1-cp310-abi3-win_arm64.whl", hash = "sha256:169216429356fba73e02ee8d685dcc8963124a9a4b29c523f20d3a9575941dbf", size = 1706486, upload-time = "2026-07-18T10:05:23.854Z" },
+    { url = "https://files.pythonhosted.org/packages/21/0b/cdf0407c4ac99e593e8394b22ed2e23d6f864f88779c0b7f9616f5188ebd/curl_cffi-0.16.0b1-cp313-abi3-android_24_arm64_v8a.whl", hash = "sha256:eab33a7ba29056c61069df015e6bbbef412fdfc3e5bb9576279e01ee627fba15", size = 8598497, upload-time = "2026-07-18T10:05:25.579Z" },
+]
+
+[[package]]
 name = "docutils"
 version = "0.21.2"
 source = { registry = "https://pypi.org/simple" }
@@ -356,6 +380,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b1/df/48c586a5fe32a0f01324ee087459e112ebb7224f646c0b5023f5e79e9956/httpx-0.28.1.tar.gz", hash = "sha256:75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc", size = 141406, upload-time = "2024-12-06T15:37:23.222Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl", hash = "sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad", size = 73517, upload-time = "2024-12-06T15:37:21.509Z" },
+]
+
+[[package]]
+name = "httpx-curl-cffi"
+version = "0.1.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "curl-cffi" },
+    { name = "httpx" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/64/1f/158975d2541effa30f0d7634542dce50e8280ab283e7efc8d221ebf8a949/httpx_curl_cffi-0.1.5.tar.gz", hash = "sha256:177ee9968e9da142407017816cc3fb08ab281b134f773a9359b6a4650a6c81f3", size = 7937, upload-time = "2025-12-02T08:59:13.656Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6e/13/82039e3df58e0d52a6f82cc73d958400a2777d78c6cd6378c937a707afd0/httpx_curl_cffi-0.1.5-py3-none-any.whl", hash = "sha256:be414a97ac1f627693f4c8a8631f2852bb1c09456e61ff8ad996ad050a11fb53", size = 8933, upload-time = "2025-12-02T08:59:12.447Z" },
 ]
 
 [[package]]
@@ -616,7 +654,9 @@ version = "0.1.0"
 source = { editable = "apps/server" }
 dependencies = [
     { name = "argon2-cffi" },
+    { name = "curl-cffi" },
     { name = "httpx" },
+    { name = "httpx-curl-cffi" },
     { name = "mcp" },
     { name = "msgpack" },
     { name = "pydantic" },
@@ -655,7 +695,9 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "argon2-cffi", specifier = ">=25.1.0" },
+    { name = "curl-cffi", specifier = ">=0.15.0" },
     { name = "httpx", specifier = ">=0.28.0,<1.0.0" },
+    { name = "httpx-curl-cffi", specifier = ">=0.1.5" },
     { name = "mcp", specifier = ">=2.0.0b2" },
     { name = "msgpack", specifier = ">=1.1.0" },
     { name = "pydantic", specifier = ">=2.10.0" },
