@@ -113,7 +113,26 @@ jobs:
           name: python-distributions
           path: dist/
 
+      - name: 🔍 Skip if version already on PyPI
+        # PyPI rejects duplicate uploads for the same filename. The
+        # pypa/gh-action-pypi-publish action has no skip-existing input, so
+        # we add a version check before invoking it. Re-runs of the release
+        # workflow (e.g. after a workflow fix) will then be idempotent.
+        id: skip
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          if curl -fsS -o /dev/null \
+              "https://pypi.org/pypi/novelai-image-mcp/${VERSION}/json"; then
+            echo "Version ${VERSION} already on PyPI — skipping publish."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Version ${VERSION} not on PyPI — publishing."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: 🚀 Publish to PyPI (trusted publisher)
+        if: steps.skip.outputs.skip != 'true'
         # pinned from pypa/gh-action-pypi-publish@v1.13.0
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e
 
@@ -143,13 +162,19 @@ jobs:
       - name: 📝 Extract metadata
         id: meta
         # pinned from docker/metadata-action@v5.8.0
+        # Use ``type=raw`` against ``env.VERSION`` (extracted from the branch
+        # name in the validate job) instead of ``type=semver,pattern={{version}}``
+        # because the latter only resolves when the trigger is an actual git
+        # tag push. A push to ``releases/0.1.0`` is a branch ref, not a tag,
+        # so the semver patterns expand to nothing and the image gets only the
+        # ``sha-`` tag — losing the user-facing ``0.1.0``/``0.1``/``0`` tags.
         uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=raw,value=${{ env.VERSION }}
+            type=raw,value=${{ env.VERSION }},enable={{is_default_branch}}
+            type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=sha-,format=short
           labels: |
             org.opencontainers.image.title=NovelAI Image MCP
