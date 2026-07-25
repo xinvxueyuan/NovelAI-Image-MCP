@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 GitHub's auto-generated release notes (see
-[`.github/release.yml`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/.github/release.yml))
+[`.github/release.yml`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/.github/release.yml))
 fold the per-commit gitmoji + Conventional Commit messages into the
 per-release section headings. This file is the human-curated companion.
 
@@ -76,5 +76,5 @@ per-release section headings. This file is the human-curated companion.
 - **Async + sync**: async tool handlers + a `typer` CLI for direct invocation.
 - **uv-managed**, single Python package, MIT-licensed, Docker-ready.
 
-[Unreleased]: https://github.com/novelai-image-mcp/NovelAI-Image-MCP/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/novelai-image-mcp/NovelAI-Image-MCP/releases/tag/v0.1.0
+[Unreleased]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases/tag/v0.1.0

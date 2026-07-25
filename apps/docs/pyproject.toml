@@ -40,9 +40,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/novelai-image-mcp/NovelAI-Image-MCP"
-Repository = "https://github.com/novelai-image-mcp/NovelAI-Image-MCP"
-Issues = "https://github.com/novelai-image-mcp/NovelAI-Image-MCP/issues"
+Homepage = "https://github.com/xinvxueyuan/NovelAI-Image-MCP"
+Repository = "https://github.com/xinvxueyuan/NovelAI-Image-MCP"
+Issues = "https://github.com/xinvxueyuan/NovelAI-Image-MCP/issues"
 
 [tool.uv]
 # docs is a non-package virtual project: no wheel/sdist is built. Only the

@@ -60,9 +60,9 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement at
-<security@novelai-image-mcp.github.io> (or open a private security advisory
+<security@xinvxueyuan.github.io> (or open a private security advisory
 via GitHub's "Report a vulnerability" flow on the
-[Security tab](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/security)).
+[Security tab](https://github.com/xinvxueyuan/NovelAI-Image-MCP/security)).
 
 All complaints will be reviewed and investigated promptly and fairly.
 

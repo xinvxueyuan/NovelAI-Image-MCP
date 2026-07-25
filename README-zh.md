@@ -1,7 +1,7 @@
 # NovelAI Image MCP
 
-[![CI](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/actions/workflows/ci.yml)
-[![Docs](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/actions/workflows/docs.yml/badge.svg)](https://novelai-image-mcp.github.io/NovelAI-Image-MCP/)
+[![CI](https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/ci.yml)
+[![Docs](https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/docs.yml/badge.svg)](https://xinvxueyuan.github.io/NovelAI-Image-MCP/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![uv](https://img.shields.io/badge/uv-managed-261230.svg)](https://docs.astral.sh/uv/)
@@ -15,7 +15,7 @@
 生图（文生图 / 图生图 / 局部重绘）、放大、Director 工具（线稿、表情、去背景……）、
 ControlNet 标注、标签建议、Vibe 编码以及账户订阅查询。
 
-> 📖 **在线文档**：<https://novelai-image-mcp.github.io/NovelAI-Image-MCP/>
+> 📖 **在线文档**：<https://xinvxueyuan.github.io/NovelAI-Image-MCP/>
 
 ## 特性
 
@@ -63,7 +63,7 @@ NovelAI-Image-MCP/
 
 ```bash
 # 1. 克隆
-git clone https://github.com/novelai-image-mcp/NovelAI-Image-MCP.git
+git clone https://github.com/xinvxueyuan/NovelAI-Image-MCP.git
 cd NovelAI-Image-MCP
 
 # 2. 同步 uv workspace（安装服务端 + 文档 + 开发工具）
@@ -145,7 +145,7 @@ uv run python -m novelai_image_mcp --help
 | `estimate_anlas_cost` | 估算生图 Anlas 消耗（不调用 API） |
 
 工具参数与示例见文档站
-[工具参考](https://novelai-image-mcp.github.io/NovelAI-Image-MCP/tools/index.html)。
+[工具参考](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tools/index.html)。
 
 ## 配置
 
@@ -199,7 +199,7 @@ Dockerfile 位于 [`apps/server/Dockerfile`](apps/server/Dockerfile)，但构建
 Sphinx 文档站点使用 Furo + MyST Markdown 构建，每次推送到 `main` 时自动部署到
 GitHub Pages：
 
-- **在线站点**：<https://novelai-image-mcp.github.io/NovelAI-Image-MCP/>
+- **在线站点**：<https://xinvxueyuan.github.io/NovelAI-Image-MCP/>
 - **源码**：[`apps/docs/source/`](apps/docs/source/)
 - **本地构建**：`pnpm docs:serve`
 

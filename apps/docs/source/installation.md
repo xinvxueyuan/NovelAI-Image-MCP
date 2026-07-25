@@ -12,7 +12,7 @@ root holds both.
 ## 1. Clone the repository
 
 ```bash
-git clone https://github.com/novelai-image-mcp/NovelAI-Image-MCP.git
+git clone https://github.com/xinvxueyuan/NovelAI-Image-MCP.git
 cd NovelAI-Image-MCP
 ```
 
@@ -128,7 +128,7 @@ For a self-contained, reproducible deployment:
 docker compose up --build
 ```
 
-The image builds from [`apps/server/Dockerfile`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/apps/server/Dockerfile)
+The image builds from [`apps/server/Dockerfile`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/server/Dockerfile)
 and exposes the streamable-http transport on port `8000` by default. See
 [Transports → streamable-http](transports/http.md) for advanced configuration.
 

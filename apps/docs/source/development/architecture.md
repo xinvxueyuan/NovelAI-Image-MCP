@@ -121,7 +121,7 @@ tools, and the same `NovelAIClient` — only the framing differs. See
 
 ## Containerization
 
-[`apps/server/Dockerfile`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/apps/server/Dockerfile)
+[`apps/server/Dockerfile`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/server/Dockerfile)
 is a multi-stage build:
 
 1. **Builder stage**: installs uv, exports runtime deps (no dev groups),

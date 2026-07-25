@@ -4,7 +4,7 @@ Thanks for your interest in contributing! This document covers everything you
 need to get a local development environment running and to land a change.
 
 > 📖 The full developer guide (architecture, testing, releasing) lives on the
-> [docs site](https://novelai-image-mcp.github.io/NovelAI-Image-MCP/development/).
+> [docs site](https://xinvxueyuan.github.io/NovelAI-Image-MCP/development/).
 > This README is the short-form "first PR" guide.
 
 ## Repository layout
@@ -61,7 +61,7 @@ NovelAI-Image-MCP/
 
 ```bash
 # 1. Clone
-git clone https://github.com/novelai-image-mcp/NovelAI-Image-MCP.git
+git clone https://github.com/xinvxueyuan/NovelAI-Image-MCP.git
 cd NovelAI-Image-MCP
 
 # 2. Sync the Python workspace (installs server + docs + dev tools)

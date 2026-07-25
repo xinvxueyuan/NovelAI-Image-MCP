@@ -103,7 +103,7 @@ async def test_get_subscription():
 
 GitHub Actions runs the suite on every PR and on push to `main`/`dev`,
 across three operating systems (Ubuntu, Windows, macOS). See
-[`ci.yml`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/.github/workflows/ci.yml).
+[`ci.yml`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/.github/workflows/ci.yml).
 
 The `docker-build` job builds the production image with
 `SMOKE_TEST=true` and runs `apps/server/docker/smoke-test.py` inside it —
@@ -147,4 +147,4 @@ uv run --directory apps/server pytest apps/server/tests/test_tools.py::test_gene
 
 - [Architecture](architecture.md) — what's being tested
 - [Contributing](contributing.md) — where tests fit in the workflow
-- [`pytest` configuration in apps/server/pyproject.toml](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/apps/server/pyproject.toml)
+- [`pytest` configuration in apps/server/pyproject.toml](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/server/pyproject.toml)

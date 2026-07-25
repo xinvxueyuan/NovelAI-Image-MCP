@@ -2,7 +2,7 @@
 
 All runtime configuration is via environment variables (read by
 `pydantic-settings` in [`novelai_image_mcp.settings`](api/settings.md)). The
-canonical reference is [`.env.example`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/.env.example)
+canonical reference is [`.env.example`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/.env.example)
 in the repository root.
 
 ## Loading order
@@ -122,7 +122,7 @@ NOVELAI_TIMEOUT=180
 
 ## Environment in Docker
 
-The [`Dockerfile`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/apps/server/Dockerfile)
+The [`Dockerfile`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/server/Dockerfile)
 reads from `.env` via `docker-compose.yml`'s `env_file:` directive. To
 override a single variable at run time without editing `.env`:
 
@@ -136,5 +136,5 @@ Secret-aware env provider.
 ## See also
 
 - [`novelai_image_mcp.settings` API reference](api/settings.md)
-- [.env.example](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/.env.example)
+- [.env.example](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/.env.example)
 - [Transports](transports/index.md) — stdio vs streamable-http trade-offs

@@ -59,10 +59,10 @@ LABEL org.opencontainers.image.title="NovelAI Image MCP" \
   org.opencontainers.image.description="MCP server exposing NovelAI image generation as tools for AI agents" \
   org.opencontainers.image.version="${VERSION}" \
   org.opencontainers.image.revision="${VCS_REF}" \
-  org.opencontainers.image.source="https://github.com/novelai-image-mcp/NovelAI-Image-MCP" \
-  org.opencontainers.image.url="https://github.com/novelai-image-mcp/NovelAI-Image-MCP" \
+  org.opencontainers.image.source="https://github.com/xinvxueyuan/NovelAI-Image-MCP" \
+  org.opencontainers.image.url="https://github.com/xinvxueyuan/NovelAI-Image-MCP" \
   org.opencontainers.image.licenses="MIT" \
-  org.opencontainers.image.documentation="https://github.com/novelai-image-mcp/NovelAI-Image-MCP#readme" \
+  org.opencontainers.image.documentation="https://github.com/xinvxueyuan/NovelAI-Image-MCP#readme" \
   org.opencontainers.image.created="${CREATED}"
 
 ENV TZ=Asia/Shanghai

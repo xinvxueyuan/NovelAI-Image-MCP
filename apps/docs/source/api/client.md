@@ -113,4 +113,4 @@ wired `NovelAIClient`.
 ## See also
 
 - [Architecture → `NovelAIClient`](../development/architecture.md#novelaiclient-the-nai-subpackage)
-- [Source on GitHub](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/tree/main/apps/server/src/novelai_image_mcp/nai)
+- [Source on GitHub](https://github.com/xinvxueyuan/NovelAI-Image-MCP/tree/main/apps/server/src/novelai_image_mcp/nai)

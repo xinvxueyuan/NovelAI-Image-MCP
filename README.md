@@ -1,7 +1,7 @@
 # NovelAI Image MCP
 
-[![CI](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/actions/workflows/ci.yml)
-[![Docs](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/actions/workflows/docs.yml/badge.svg)](https://novelai-image-mcp.github.io/NovelAI-Image-MCP/)
+[![CI](https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/ci.yml)
+[![Docs](https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/docs.yml/badge.svg)](https://xinvxueyuan.github.io/NovelAI-Image-MCP/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![uv](https://img.shields.io/badge/uv-managed-261230.svg)](https://docs.astral.sh/uv/)
@@ -17,7 +17,7 @@ emotion, background removal, …), annotate with ControlNet, suggest tags, encod
 vibes, and query account subscription — all through the standard MCP tool
 interface.
 
-> 📖 **Documentation**: <https://novelai-image-mcp.github.io/NovelAI-Image-MCP/>
+> 📖 **Documentation**: <https://xinvxueyuan.github.io/NovelAI-Image-MCP/>
 
 ## Features
 
@@ -65,7 +65,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the developer guide and
 
 ```bash
 # 1. Clone
-git clone https://github.com/novelai-image-mcp/NovelAI-Image-MCP.git
+git clone https://github.com/xinvxueyuan/NovelAI-Image-MCP.git
 cd NovelAI-Image-MCP
 
 # 2. Sync the uv workspace (installs server + docs + dev tools)
@@ -148,7 +148,7 @@ uv run python -m novelai_image_mcp --help
 | `get_user_data` | Account user data |
 | `estimate_anlas_cost` | Estimate Anlas cost for a generation (no API call) |
 
-See the [tools reference](https://novelai-image-mcp.github.io/NovelAI-Image-MCP/tools/index.html)
+See the [tools reference](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tools/index.html)
 on the docs site for parameters and examples.
 
 ## Configuration
@@ -203,7 +203,7 @@ graph). See [`docker-compose.yml`](docker-compose.yml).
 The Sphinx documentation site is built with Furo + MyST Markdown and
 auto-deploys to GitHub Pages on every push to `main`:
 
-- **Live site**: <https://novelai-image-mcp.github.io/NovelAI-Image-MCP/>
+- **Live site**: <https://xinvxueyuan.github.io/NovelAI-Image-MCP/>
 - **Source**: [`apps/docs/source/`](apps/docs/source/)
 - **Build locally**: `pnpm docs:serve`
 

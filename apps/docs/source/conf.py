@@ -277,13 +277,13 @@ html_theme_options: dict[str, Any] = {
     },
     "sidebar_hide_name": False,
     "navigation_with_keys": True,
-    "source_repository": "https://github.com/novelai-image-mcp/NovelAI-Image-MCP",
+    "source_repository": "https://github.com/xinvxueyuan/NovelAI-Image-MCP",
     "source_branch": "main",
     "source_directory": "apps/docs/source/",
     "footer_icons": [
         {
             "name": "GitHub",
-            "url": "https://github.com/novelai-image-mcp/NovelAI-Image-MCP",
+            "url": "https://github.com/xinvxueyuan/NovelAI-Image-MCP",
             "html": (
                 '<svg stroke="currentColor" fill="currentColor" stroke-width="0" '
                 'viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 '
@@ -306,7 +306,7 @@ linkcheck_ignore = [
     r"https://novelai\.net/.*",  # behind auth, may 403 HEAD
     r"https://image\.novelai\.net/.*",  # API endpoint, requires auth
     r"https://api\.novelai\.net/.*",
-    r"https://github\.com/novelai-image-mcp/NovelAI-Image-MCP/(pull|issues)/\d+",
+    r"https://github\.com/xinvxueyuan/NovelAI-Image-MCP/(pull|issues)/\d+",
     r"^mailto:",
 ]
 linkcheck_timeout = 10

@@ -2,7 +2,7 @@
 
 Autodoc-generated reference for the public Python API of
 `novelai_image_mcp`. These pages introspect the in-tree source under
-[`apps/server/src/novelai_image_mcp/`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/tree/main/apps/server/src/novelai_image_mcp),
+[`apps/server/src/novelai_image_mcp/`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/tree/main/apps/server/src/novelai_image_mcp),
 so they always reflect the current `main` branch.
 
 ## Modules
@@ -60,4 +60,4 @@ these docs.
 
 - [Architecture](../development/architecture.md) — how the modules fit together
 - [Tools reference](../tools/index.md) — narrative docs for the MCP tools
-- [Source on GitHub](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/tree/main/apps/server/src/novelai_image_mcp)
+- [Source on GitHub](https://github.com/xinvxueyuan/NovelAI-Image-MCP/tree/main/apps/server/src/novelai_image_mcp)

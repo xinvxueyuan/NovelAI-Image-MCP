@@ -5,7 +5,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: 💬 Discussions
-    url: https://github.com/novelai-image-mcp/NovelAI-Image-MCP/discussions
+    url: https://github.com/xinvxueyuan/NovelAI-Image-MCP/discussions
     about: Ask questions and share ideas in Discussions before opening an issue.
   - name: 📖 NovelAI Image API docs
     url: https://image.novelai.net/docs/index.html

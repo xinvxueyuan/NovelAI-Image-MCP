@@ -11,10 +11,10 @@ vibes, and query account subscription — all through the standard MCP tool
 interface.
 
 This package is the **server** workspace member of the
-[NovelAI-Image-MCP](https://github.com/novelai-image-mcp/NovelAI-Image-MCP)
+[NovelAI-Image-MCP](https://github.com/xinvxueyuan/NovelAI-Image-MCP)
 monorepo. The Sphinx documentation site lives at `apps/docs/`. See the
-[repository root README](https://github.com/novelai-image-mcp/NovelAI-Image-MCP#readme)
-for the project overview and the [docs site](https://novelai-image-mcp.github.io/NovelAI-Image-MCP/)
+[repository root README](https://github.com/xinvxueyuan/NovelAI-Image-MCP#readme)
+for the project overview and the [docs site](https://xinvxueyuan.github.io/NovelAI-Image-MCP/)
 for full guides and API reference.
 
 ## Features
@@ -48,4 +48,4 @@ MCP_TRANSPORT=streamable-http novelai-image-mcp serve
 ## License
 
 MIT — see [LICENSE](LICENSE). Per-file SPDX annotations live in
-[REUSE.toml](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/REUSE.toml).
+[REUSE.toml](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/REUSE.toml).

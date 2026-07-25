@@ -2,7 +2,7 @@
 
 This page describes the release process: bumping the version, building
 artifacts, and publishing to PyPI + GHCR + GitHub Releases. Most of the
-process is automated by [`release.yml`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/.github/workflows/release.yml).
+process is automated by [`release.yml`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/.github/workflows/release.yml).
 
 ## Versioning
 
@@ -14,7 +14,7 @@ The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
 - `PATCH`: bug fixes, backward-compatible
 
 The version is the canonical source of truth in
-[`apps/server/pyproject.toml`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/apps/server/pyproject.toml)'s
+[`apps/server/pyproject.toml`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/server/pyproject.toml)'s
 `[project] version` field. The release workflow validates that the input
 version matches this field before publishing.
 
@@ -134,7 +134,7 @@ gh run watch
 
 - Verify the package on PyPI: <https://pypi.org/project/novelai-image-mcp/>
 - Verify the image on GHCR: `docker pull ghcr.io/<owner>/<repo>:0.2.0`
-- Verify the GitHub Release: <https://github.com/novelai-image-mcp/NovelAI-Image-MCP/releases>
+- Verify the GitHub Release: <https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases>
 - Announce in the project's discussion / chat.
 
 ## Rollback
@@ -150,6 +150,6 @@ If a release is broken:
 ## See also
 
 - [CHANGELOG](../about/changelog.md) — what changed in each release
-- [`release.yml`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/.github/workflows/release.yml)
-- [`.github/release.yml`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/.github/release.yml) — release-notes auto-generation config
+- [`release.yml`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/.github/workflows/release.yml)
+- [`.github/release.yml`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/.github/release.yml) — release-notes auto-generation config
 - [PyPI trusted publishing setup](https://docs.pypi.org/trusted-publishers/)

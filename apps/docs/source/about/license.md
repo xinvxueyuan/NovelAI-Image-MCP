@@ -1,14 +1,14 @@
 # License
 
 NovelAI Image MCP is licensed under the **MIT License** — see
-[`LICENSE`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/LICENSE)
+[`LICENSE`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/LICENSE)
 for the full text.
 
 ## Per-file SPDX annotations
 
 In addition to the canonical `LICENSE` file, every source file carries an
 SPDX `copyright` / `license` header declared via
-[`REUSE.toml`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/REUSE.toml).
+[`REUSE.toml`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/REUSE.toml).
 The license per file type is:
 
 | File type | License |
@@ -55,6 +55,6 @@ dependencies.
 
 ## See also
 
-- [Full license text](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/LICENSE)
-- [REUSE.toml](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/REUSE.toml)
+- [Full license text](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/LICENSE)
+- [REUSE.toml](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/REUSE.toml)
 - [FSFE REUSE specification](https://reuse.software/spec/)

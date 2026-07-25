@@ -72,7 +72,7 @@ The simplest production deployment:
 docker compose up --build
 ```
 
-The [`docker-compose.yml`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/docker-compose.yml)
+The [`docker-compose.yml`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/docker-compose.yml)
 at the repo root configures the streamable-http transport with sensible
 defaults:
 
@@ -135,4 +135,4 @@ For Kubernetes, replace the volume with a PersistentVolumeClaim.
 
 - [stdio transport](stdio.md)
 - [Configuration](../configuration.md#mcp-transport)
-- [Docker Compose file](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/docker-compose.yml)
+- [Docker Compose file](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/docker-compose.yml)

@@ -50,9 +50,9 @@ dependencies = [
 novelai-image-mcp = "novelai_image_mcp.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/novelai-image-mcp/NovelAI-Image-MCP"
-Repository = "https://github.com/novelai-image-mcp/NovelAI-Image-MCP"
-Issues = "https://github.com/novelai-image-mcp/NovelAI-Image-MCP/issues"
+Homepage = "https://github.com/xinvxueyuan/NovelAI-Image-MCP"
+Repository = "https://github.com/xinvxueyuan/NovelAI-Image-MCP"
+Issues = "https://github.com/xinvxueyuan/NovelAI-Image-MCP/issues"
 
 [dependency-groups]
 dev = [{ include-group = "lint" }, { include-group = "test" }]

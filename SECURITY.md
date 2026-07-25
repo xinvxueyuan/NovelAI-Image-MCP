@@ -20,8 +20,8 @@ minor release plus the previous minor release with security-only updates.
 Instead, report them privately via one of these channels:
 
 1. **GitHub Private Security Advisory** (preferred):
-   <https://github.com/novelai-image-mcp/NovelAI-Image-MCP/security/advisories/new>
-2. **Email**: <security@novelai-image-mcp.github.io>
+   <https://github.com/xinvxueyuan/NovelAI-Image-MCP/security/advisories/new>
+2. **Email**: <security@xinvxueyuan.github.io>
    (PGP key fingerprint published in the advisory)
 
 Please include:

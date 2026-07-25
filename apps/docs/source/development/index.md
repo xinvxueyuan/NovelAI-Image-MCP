@@ -16,7 +16,7 @@ releasing
 
 ```bash
 # 1. Clone + sync the workspace virtualenv
-git clone https://github.com/novelai-image-mcp/NovelAI-Image-MCP.git
+git clone https://github.com/xinvxueyuan/NovelAI-Image-MCP.git
 cd NovelAI-Image-MCP
 uv sync
 

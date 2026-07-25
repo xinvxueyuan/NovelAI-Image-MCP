@@ -2,20 +2,20 @@
 
 Thanks for your interest in improving NovelAI Image MCP! This page covers
 the practical workflow. For the project's code of conduct, see
-[`CODE_OF_CONDUCT.md`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/CODE_OF_CONDUCT.md).
+[`CODE_OF_CONDUCT.md`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/CODE_OF_CONDUCT.md).
 
 ## Before you start
 
 1. **Open an issue** describing your proposed change. This is especially
    important for new features or API changes — we'll discuss scope and
    design before you spend time on code.
-2. **Check the [issue tracker](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/issues)**
+2. **Check the [issue tracker](https://github.com/xinvxueyuan/NovelAI-Image-MCP/issues)**
    for related work in progress.
 
 ## Development setup
 
 ```bash
-git clone https://github.com/novelai-image-mcp/NovelAI-Image-MCP.git
+git clone https://github.com/xinvxueyuan/NovelAI-Image-MCP.git
 cd NovelAI-Image-MCP
 
 # Sync the workspace virtualenv (server + docs + dev tools)
@@ -192,7 +192,7 @@ Common emojis:
 
 ## Reporting bugs
 
-Open a [bug report issue](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/issues/new?template=bug_report.md).
+Open a [bug report issue](https://github.com/xinvxueyuan/NovelAI-Image-MCP/issues/new?template=bug_report.md).
 Include:
 
 - The exact command you ran.
@@ -204,7 +204,7 @@ Include:
 ## Reporting security issues
 
 **Do not open a public issue for security vulnerabilities.** See
-[`SECURITY.md`](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/blob/main/SECURITY.md)
+[`SECURITY.md`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/SECURITY.md)
 for the private disclosure process.
 
 ## See also

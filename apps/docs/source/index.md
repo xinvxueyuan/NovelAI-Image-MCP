@@ -107,8 +107,8 @@ about/changelog
 
 ## Project links
 
-- **Source**: <https://github.com/novelai-image-mcp/NovelAI-Image-MCP>
-- **Issues**: <https://github.com/novelai-image-mcp/NovelAI-Image-MCP/issues>
+- **Source**: <https://github.com/xinvxueyuan/NovelAI-Image-MCP>
+- **Issues**: <https://github.com/xinvxueyuan/NovelAI-Image-MCP/issues>
 - **License**: [MIT](about/license.md)
 - **Changelog**: [Keep a Changelog](about/changelog.md)
 - **NovelAI API docs**: <https://image.novelai.net/docs/index.html>
