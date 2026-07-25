@@ -106,22 +106,74 @@ This wires the husky pre-commit + commit-msg hooks and gives you `turbo` /
 `markdownlint-cli2` for local development. The MCP server has **zero** Node
 runtime dependencies — this step is only for contributors.
 
-## Connect an agent (stdio)
+## Connect an agent
 
-Claude Desktop `claude_desktop_config.json`:
+The MCP server supports three configuration shapes, all under `mcpServers`:
 
-```jsonc
+### stdio (local agent — Claude Desktop / Cline)
+
+`claude_desktop_config.json`:
+
+```json
 {
   "mcpServers": {
     "novelai-image": {
+      "type": "stdio",
       "command": "uv",
-      "args": ["run", "--directory", "C:/dev/NovelAI-Image-MCP",
-               "python", "-m", "novelai_image_mcp", "serve"],
-      "env": { "NOVELAI_TOKEN": "pst-..." }
+      "args": [
+        "run",
+        "--directory",
+        "/path/to/NovelAI-Image-MCP",
+        "python",
+        "-m",
+        "novelai_image_mcp",
+        "serve"
+      ],
+      "env": {
+        "NOVELAI_TOKEN": "${input:novelai_token}"
+      }
     }
   }
 }
 ```
+
+### uvx (shorthand — runs the published package)
+
+```json
+{
+  "mcpServers": {
+    "novelai-image-uvx": {
+      "type": "uvx",
+      "args": ["novelai-image-mcp", "serve"]
+    }
+  }
+}
+```
+
+Set `NOVELAI_TOKEN` (or `NOVELAI_USERNAME` + `NOVELAI_PASSWORD`) in the host
+environment before launching — `uvx` inherits the parent shell env.
+
+### http (remote / Docker deployment)
+
+After `docker compose up --build` (server listens on `http://HOST:8000/mcp`):
+
+```json
+{
+  "mcpServers": {
+    "novelai-image-http": {
+      "type": "http",
+      "url": "https://mcp.example.com/v1/",
+      "headers": {
+        "Authorization": "Bearer ${input:novelai_token}"
+      }
+    }
+  }
+}
+```
+
+`${input:novelai_token}` is a host-defined secret reference (Claude Desktop,
+Cline, etc. expose this via their own secrets UI). For local Docker you can
+use a literal token instead.
 
 ## CLI (sync, for scripting)
 

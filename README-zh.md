@@ -102,22 +102,73 @@ pnpm install --frozen-lockfile
 该步骤会挂载 husky 的 pre-commit / commit-msg 钩子，并提供 `turbo` /
 `markdownlint-cli2`。MCP 服务端 **不依赖** 任何 Node 运行时——此步骤仅面向贡献者。
 
-## 接入 Agent（stdio）
+## 接入 Agent
 
-Claude Desktop `claude_desktop_config.json`：
+MCP 服务端在 `mcpServers` 下支持三种配置形态：
 
-```jsonc
+### stdio（本地 Agent —— Claude Desktop / Cline）
+
+`claude_desktop_config.json`：
+
+```json
 {
   "mcpServers": {
     "novelai-image": {
+      "type": "stdio",
       "command": "uv",
-      "args": ["run", "--directory", "C:/dev/NovelAI-Image-MCP",
-               "python", "-m", "novelai_image_mcp", "serve"],
-      "env": { "NOVELAI_TOKEN": "pst-..." }
+      "args": [
+        "run",
+        "--directory",
+        "/path/to/NovelAI-Image-MCP",
+        "python",
+        "-m",
+        "novelai_image_mcp",
+        "serve"
+      ],
+      "env": {
+        "NOVELAI_TOKEN": "${input:novelai_token}"
+      }
     }
   }
 }
 ```
+
+### uvx（简写 —— 直接运行已发布的包）
+
+```json
+{
+  "mcpServers": {
+    "novelai-image-uvx": {
+      "type": "uvx",
+      "args": ["novelai-image-mcp", "serve"]
+    }
+  }
+}
+```
+
+请在宿主环境中预先设置 `NOVELAI_TOKEN`（或 `NOVELAI_USERNAME` +
+`NOVELAI_PASSWORD`）—— `uvx` 会继承父 Shell 的环境变量。
+
+### http（远程 / Docker 部署）
+
+执行 `docker compose up --build` 后（服务端监听 `http://HOST:8000/mcp`）：
+
+```json
+{
+  "mcpServers": {
+    "novelai-image-http": {
+      "type": "http",
+      "url": "https://mcp.example.com/v1/",
+      "headers": {
+        "Authorization": "Bearer ${input:novelai_token}"
+      }
+    }
+  }
+}
+```
+
+`${input:novelai_token}` 是宿主定义的密钥引用（Claude Desktop、Cline 等通过
+各自的密钥管理 UI 暴露）。本地 Docker 可直接使用字面量 token。
 
 ## CLI（同步，用于脚本）
 

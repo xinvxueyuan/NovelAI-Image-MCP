@@ -28,6 +28,7 @@ Edit `claude_desktop_config.json`:
 {
   "mcpServers": {
     "novelai-image": {
+      "type": "stdio",
       "command": "uv",
       "args": [
         "run",
@@ -39,12 +40,30 @@ Edit `claude_desktop_config.json`:
         "serve"
       ],
       "env": {
-        "NOVELAI_TOKEN": "pst-..."
+        "NOVELAI_TOKEN": "${input:novelai_token}"
       }
     }
   }
 }
 ```
+
+`${input:novelai_token}` resolves to a host-managed secret. For a one-off
+test, inline a literal token (`"pst-..."`) instead.
+
+#### Shorthand: uvx (installed package)
+
+```json
+{
+  "mcpServers": {
+    "novelai-image-uvx": {
+      "type": "uvx",
+      "args": ["novelai-image-mcp", "serve"]
+    }
+  }
+}
+```
+
+Set `NOVELAI_TOKEN` in the host shell — `uvx` inherits the parent env.
 
 Restart Claude Desktop. You'll see a `novelai-image` MCP server registered
 with 11 tools.
@@ -57,12 +76,13 @@ Add to `cline_mcp_settings.json`:
 {
   "mcpServers": {
     "novelai-image": {
+      "type": "stdio",
       "command": "uv",
       "args": [
         "run", "--directory", "/path/to/NovelAI-Image-MCP",
         "python", "-m", "novelai_image_mcp", "serve"
       ],
-      "env": { "NOVELAI_TOKEN": "pst-..." },
+      "env": { "NOVELAI_TOKEN": "${input:novelai_token}" },
       "disabled": false,
       "autoApprove": []
     }

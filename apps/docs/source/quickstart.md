@@ -62,18 +62,59 @@ Windows: `%APPDATA%\Claude\`):
 {
   "mcpServers": {
     "novelai-image": {
+      "type": "stdio",
       "command": "uv",
       "args": [
         "run",
         "--directory",
-        "C:/dev/NovelAI-Image-MCP",
+        "/path/to/NovelAI-Image-MCP",
         "python",
         "-m",
         "novelai_image_mcp",
         "serve"
       ],
       "env": {
-        "NOVELAI_TOKEN": "pst-..."
+        "NOVELAI_TOKEN": "${input:novelai_token}"
+      }
+    }
+  }
+}
+```
+
+`${input:novelai_token}` is a host-defined secret reference — see your MCP
+host's secrets UI (Claude Desktop, Cline, …). For a one-off test you can
+inline the literal token instead.
+
+### Alternative: uvx (published package)
+
+If you installed from PyPI, the shorthand is:
+
+```json
+{
+  "mcpServers": {
+    "novelai-image-uvx": {
+      "type": "uvx",
+      "args": ["novelai-image-mcp", "serve"]
+    }
+  }
+}
+```
+
+Set `NOVELAI_TOKEN` in the host shell — `uvx` inherits the parent env.
+
+### Alternative: http (remote / Docker)
+
+If you're running the server elsewhere (e.g. `docker compose up` on a remote
+host), point the host at the URL directly:
+
+```json
+{
+  "mcpServers": {
+    "novelai-image-http": {
+      "type": "http",
+      "url": "https://mcp.example.com/v1/",
+      "headers": {
+        "Authorization": "Bearer ${input:novelai_token}"
       }
     }
   }

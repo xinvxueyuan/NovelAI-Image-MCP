@@ -35,6 +35,29 @@ Default: <http://127.0.0.1:8000/mcp>.
 
 ## Agent configuration
 
+### MCP client config (`mcpServers`)
+
+After `docker compose up --build` (or any other `streamable-http` deployment),
+point your MCP host at the URL with the `http` type:
+
+```json
+{
+  "mcpServers": {
+    "novelai-image-http": {
+      "type": "http",
+      "url": "https://mcp.example.com/v1/",
+      "headers": {
+        "Authorization": "Bearer ${input:novelai_token}"
+      }
+    }
+  }
+}
+```
+
+`${input:novelai_token}` resolves to a host-managed secret. Replace
+`https://mcp.example.com/v1/` with the actual endpoint — for a local
+`docker compose up` that's `http://127.0.0.1:8000/mcp`.
+
 ### Custom Python agent
 
 ```python
