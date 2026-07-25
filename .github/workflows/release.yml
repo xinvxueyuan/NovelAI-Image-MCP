@@ -197,16 +197,30 @@ jobs:
         # normalises internally and ``docker pull`` handles the
         # case-insensitive lookup the same way).
         #
-        # 使用 ``--replace`` 标志使 cosign 签名可幂等重跑：当 tag（如
-        # ``0.1.0``）在 GHCR 上被新一次构建覆盖为新的 digest 时，
-        # 直接 ``cosign sign`` 会因 rekor 中已存在旧 UUID 而失败
-        # （``getLogEntryByUuidNotFound`` / hash already exists）。
-        # ``--replace`` 会先删除同 tag 关联的旧签名再写新签名，
-        # 从而保证 workflow 重跑/手动 dispatch 时签名的幂等性。
+        # 注意：cosign 的 ``--replace`` 标志只对 ``cosign attest`` 存在，
+        # 对 ``cosign sign`` 在任何发布版本中均不可用，因此不能在 sign
+        # 步骤中直接重写签名来获得幂等性。实际失败原因是 Rekor 透明度
+        # 日志在签完名后的回查步骤出现瞬时 404
+        # （``getLogEntryByUuidNotFound``，见 sigstore/cosign#2208 与
+        # ublue-os/bluefin#60）—— 推送的 tag 替换旧 digest 时尤其容易
+        # 触发。这里用一段 bash 指数退避重试（最多 5 次）吸收瞬时故障，
+        # 使 workflow 在重跑 / 手动 dispatch 时具备幂等性。
         run: |
           image_ref="$(echo "${REGISTRY}/${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]')@${{ steps.build.outputs.digest }}"
           echo "Signing ${image_ref}"
-          cosign sign --yes --replace "${image_ref}"
+          max_attempts=5
+          attempt=1
+          delay=15
+          until cosign sign --yes "${image_ref}"; do
+            if [ "${attempt}" -ge "${max_attempts}" ]; then
+              echo "cosign sign failed after ${attempt} attempts" >&2
+              exit 1
+            fi
+            echo "cosign sign failed (attempt ${attempt}/${max_attempts}), retrying in ${delay}s..." >&2
+            sleep "${delay}"
+            attempt=$((attempt + 1))
+            delay=$((delay * 2))
+          done
 
   github-release:
     name: 🏷️ Create GitHub Release
