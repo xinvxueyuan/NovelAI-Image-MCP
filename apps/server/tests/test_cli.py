@@ -26,17 +26,22 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(autouse=True)
-def _no_color(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Disable color output so stderr assertions are stable in CI.
+def _disable_rich_terminal(monkeypatch: pytest.MonkeyPatch) -> None:
+    r"""Force typer's Rich console to emit plain text so stderr assertions are stable across platforms.
 
-    Typer's Rich integration forces terminal color when GITHUB_ACTIONS is
-    set (typer.rich_utils.FORCE_TERMINAL). The OptionHighlighter then wraps
-    ``--option`` tokens in error messages with ANSI codes, breaking
-    substring assertions like ``"emotion tool requires --emotion" in
-    result.stderr``. ``NO_COLOR`` is respected by Rich's Console even when
-    force_terminal is True (see rich.console._render_buffer →
-    Segment.remove_color).
+    On CI runners ``GITHUB_ACTIONS=true`` makes typer set
+    ``rich_utils.FORCE_TERMINAL = True`` at import time, so Rich emits ANSI
+    codes even when stdout/stderr are CliRunner capture buffers. Setting
+    ``NO_COLOR=1`` alone is *not* sufficient: Rich's
+    :meth:`Segment.remove_color` strips foreground/background colour but
+    keeps text attributes (bold, dim), so ``--emotion`` is still wrapped in
+    ``\x1b[1m..\x1b[0m`` on Linux/macOS where the colour system is
+    detected as TRUECOLOR. Patching ``FORCE_TERMINAL`` to ``False`` makes
+    the console detect ``color_system = None`` (the CliRunner buffer is not
+    a TTY), after which :meth:`Style.render` returns plain text with no
+    ANSI codes at all.
     """
+    monkeypatch.setattr("typer.rich_utils.FORCE_TERMINAL", False)
     monkeypatch.setenv("NO_COLOR", "1")
 
 
