@@ -1,0 +1,44 @@
+# Release notes auto-generation config — used by GitHub when creating a
+# release (or by `gh release create --generate-notes`). Maps conventional
+# commit types to human-readable sections.
+# https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes
+
+changelog:
+  exclude:
+    labels:
+      - "dependencies"     # auto-dep bumps; folded into a single line
+      - "skip-changelog"
+    authors:
+      - "dependabot[bot]"
+      - "github-actions[bot]"
+
+  categories:
+    - title: ✨ Features
+      labels:
+        - "feature"
+        - "enhancement"
+    - title: 🐛 Bug Fixes
+      labels:
+        - "bug"
+        - "fix"
+    - title: ⚡️ Performance
+      labels:
+        - "performance"
+    - title: 🔧 Infrastructure & Tooling
+      labels:
+        - "infrastructure"
+        - "ci"
+        - "build"
+        - "chore"
+    - title: 📝 Documentation
+      labels:
+        - "documentation"
+    - title: ♻️ Refactoring
+      labels:
+        - "refactor"
+    - title: ✅ Tests
+      labels:
+        - "test"
+    - title: 🔄 Other Changes
+      labels:
+        - "*"

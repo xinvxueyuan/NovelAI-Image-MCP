@@ -1,0 +1,69 @@
+# Dependabot — keeps GitHub Actions, Python deps, and Docker base images current.
+# Each updater runs weekly with a coordinated open-PR-per-ecosystem policy.
+
+version: 2
+
+updates:
+  # ── GitHub Actions ────────────────────────────────────────────────
+  # Pin updates for workflow dependencies. Most actions are pinned by SHA
+  # in the workflows; Dependabot will open PRs to bump the SHAs (and the
+  # inline `# pinned from <repo>@<tag>` comments document the provenance).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "⬆️ build(deps):"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # ── Python (uv) ───────────────────────────────────────────────────
+  # Tracks pyproject.toml runtime + dev dependencies. uv.lock is updated
+  # by the `uv lock` step in the post-update command so the lockfile and
+  # manifest stay in sync.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "⬆️ build(deps):"
+    groups:
+      # Patch + minor updates bundle together; major bumps open individually.
+      python-minor:
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
+
+  # ── Docker base image ─────────────────────────────────────────────
+  # Bumps the `python:3.13-slim` base image digest in the Dockerfile.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 1
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "⬆️ build(deps):"

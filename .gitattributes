@@ -1,0 +1,50 @@
+# Normalize line endings and mark binary assets.
+# Generated files are excluded from language stats so GitHub doesn't
+# mis-attribute them as project code.
+
+* text=auto eol=lf
+
+# ── Binary assets ──
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.tar.gz binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary
+
+# ── Media ──
+*.mp4  binary
+*.mp3  binary
+*.webm binary
+*.ogg  binary
+
+# ── Localization ──
+*.po  text eol=lf
+*.pot text eol=lf
+*.mo  binary
+
+# ── JSON5 config files ── enforce LF for cross-platform consistency
+*.json5 text eol=lf
+
+# ── Lock files ── generated; exclude from language statistics
+uv.lock          linguist-generated=true
+pnpm-lock.yaml   linguist-generated=true
+
+# ── Release archive exclusions ──
+# `git archive` (used by `gh release create` for the source tarball) skips
+# these paths to keep the archive focused on what consumers need.
+/.github/      export-ignore
+/tests/        export-ignore
+/.trae/        export-ignore
+/.husky/       export-ignore
+/docker/       export-ignore
+prek.toml      export-ignore
+Dockerfile     export-ignore
+docker-compose.yml export-ignore

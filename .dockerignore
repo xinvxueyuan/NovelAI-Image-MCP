@@ -1,0 +1,77 @@
+# ── Version control ──
+.git
+.gitignore
+.gitattributes
+
+# ── Python ──
+.venv
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+.Python
+build/
+dist/
+
+# ── Python caches / tooling ──
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+test-results/
+
+# ── Environment files (keep example for reference) ──
+.env
+.env.*
+!.env.example
+
+# ── Tests (not needed in runtime image) ──
+tests/
+
+# ── Runtime data ──
+outputs/
+data/
+tmp/
+
+# ── Infrastructure (not needed in image) ──
+.github/
+.trae/
+.husky/
+.editorconfig
+prek.toml
+Taskfile.yml
+package.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+node_modules/
+.markdownlint-cli2.jsonc
+.prettierrc.json
+.prettierignore
+
+# ── Documentation (not needed in runtime image) ──
+*.md
+!README.md
+
+# ── Docker files (not needed inside image) ──
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# ── IDE / OS ──
+.idea/
+.vscode/
+*.code-workspace
+.DS_Store
+Thumbs.db
+
+# ── Misc ──
+*.log
+*.tmp
+*.bak
+REUSE.toml

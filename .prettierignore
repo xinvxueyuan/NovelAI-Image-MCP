@@ -1,0 +1,37 @@
+# Markdown is owned by markdownlint-cli2 (dual-linter policy).
+**/*.md
+
+# Build / packaging artifacts
+dist/**
+build/**
+coverage/**
+test-results/**
+.coverage
+.coverage.*
+
+# Dependencies
+node_modules/**
+
+# Lockfiles (generated)
+uv.lock
+pnpm-lock.yaml
+
+# Python source (owned by ruff format)
+**/*.py
+
+# Generated / cache directories
+.venv/
+.uv-cache/
+__pycache__/
+.ruff_cache/
+.pytest_cache/
+outputs/
+
+# Agent / tool caches
+.trae/
+.codex/
+.firecrawl/
+
+# License files
+LICENSE
+LICENSE-*

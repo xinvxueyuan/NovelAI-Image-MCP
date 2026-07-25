@@ -1,0 +1,72 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+.installed.cfg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Type checkers / linters
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyright/
+.ruff_cache/
+.uv-python
+
+# uv cache
+.uv-cache/
+
+# ===== Test & coverage =====
+htmlcov/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+coverage.xml
+test-results/
+*.cover
+*.lcov
+
+# ===== Runtime output =====
+# Generated images are written here by default (NOVELAI_OUTPUT_DIR).
+outputs/
+
+# ===== Environment files =====
+.env
+.env.*
+!.env.example
+
+# ===== IDE / Editor =====
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.code-workspace
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ===== Logs =====
+*.log
+
+# ===== Agent / tool caches =====
+.trae/
+.codex/
+.firecrawl/

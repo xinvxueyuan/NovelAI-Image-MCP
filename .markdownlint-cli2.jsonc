@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DavidAnson/markdownlint-cli2/main/schema/markdownlint-cli2-config-schema.json",
+  // Single source of truth: rules + scope + ignores. All callers (husky /
+  // CI) invoke markdownlint-cli2 with no args; this file drives them.
+  // Auto-follows .gitignore so caches, .venv, outputs, and test artifacts
+  // are excluded without listing them here.
+  "gitignore": true,
+  "config": {
+    "default": true,
+    "MD013": false, // disable line-length limit (CJK content, long URLs)
+    "MD024": {
+      "siblings_only": true, // only forbid sibling-duplicate headings
+    },
+    "MD026": {
+      "punctuation": ".,;:!", // forbid trailing .,;:! in headings
+    },
+    "MD033": false, // allow inline HTML (callouts, badges, <details>)
+    "MD036": false, // allow emphasis-as-heading (callouts, tips)
+    "MD041": false, // do not require first line to be a H1
+    "MD060": {
+      "style": "consistent", // consistent trailing punctuation in headings
+    }
+  },
+  "globs": [
+    "*.md", // root .md files (README, README-zh, CHANGELOG, etc.)
+    ".github/**/*.md"
+  ],
+  "ignores": [
+    // Defensive fallback: skip common dependency / cache directories even
+    // when there's no Git metadata (e.g. in source archives).
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/.pytest_cache/**",
+    "**/test-results/**"
+  ]
+}

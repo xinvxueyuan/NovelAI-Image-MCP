@@ -1,0 +1,147 @@
+#!/usr/bin/env sh
+# POSIX-compliant shell; invoked via .husky/_/h with `sh -e` (shebang is informational)
+#
+# Commit Message validation: gitmoji + Conventional Commits
+# Spec: https://gitmoji.dev/ | https://www.conventionalcommits.org/
+#
+# Format: <gitmoji> <type>[!](<scope>)?[!]: <subject>
+#   - gitmoji:  one of the official emoji from https://gitmoji.dev/
+#   - type:     feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert
+#   - !:        breaking-change marker (after type OR after scope)
+#   - scope:   optional, parenthesized (e.g. (auth))
+#   - subject: short imperative-mood description
+#
+# Examples:
+#   ✨ feat: add NovelAI V4.5 inpainting tool
+#   🐛 fix(generate): handle zero-seed randomization
+#   ♻️ refactor(client)!: rename generate() to generate_image()
+#   📝 docs: document the lifespan AppContext contract
+
+COMMIT_MSG_FILE=$1
+
+# --- Auto-append Signed-off-by (equivalent to `git commit -s`) ──────
+# Required for DCO / developer-certificate-of-origin compliance.
+
+SIGNOFF_NAME=$(git config user.name)
+SIGNOFF_EMAIL=$(git config user.email)
+
+if [ -n "$SIGNOFF_NAME" ] && [ -n "$SIGNOFF_EMAIL" ]; then
+    SIGNOFF_LINE="Signed-off-by: ${SIGNOFF_NAME} <${SIGNOFF_EMAIL}>"
+
+    # Read non-comment lines (preserve blank-line structure)
+    BODY_NO_COMMENTS=$(sed '/^#/d' "$COMMIT_MSG_FILE")
+
+    # Edge case 1: message body is empty or only whitespace → don't append
+    # (the format validator below rejects empty messages anyway).
+    if ! printf '%s' "$BODY_NO_COMMENTS" | grep -q '[^[:space:]]'; then
+        :
+    # Edge case 2: identical Signed-off-by already present → skip
+    elif printf '%s' "$BODY_NO_COMMENTS" | sed 's/[[:space:]]*$//' | grep -qxF "$SIGNOFF_LINE"; then
+        :
+    else
+        # Preserve comment lines (those starting with '#') to keep git's
+        # template + cleanup behavior intact.
+        COMMENTS=$(grep '^#' "$COMMIT_MSG_FILE" || true)
+
+        # Strip trailing blank lines from the body.
+        BODY=$(printf '%s' "$BODY_NO_COMMENTS" | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}')
+
+        # Detect whether the message already has a trailer block (a final
+        # paragraph of "Token: value" or "Token #value" lines).
+        LAST_NON_EMPTY=$(printf '%s' "$BODY" | grep -v '^[[:space:]]*$' | tail -1)
+        HAS_TRAILER=false
+        if printf '%s' "$LAST_NON_EMPTY" | grep -qE '^[A-Za-z][A-Za-z0-9_-]+[[:space:]]*(:|#)'; then
+            HAS_TRAILER=true
+        fi
+
+        # Reassemble: [body [trailer-block separator]] signed-off-by [comments]
+        {
+            if [ "$HAS_TRAILER" = true ]; then
+                # Already a trailer block — append with single newline separator.
+                printf '%s\n%s\n' "$BODY" "$SIGNOFF_LINE"
+            else
+                printf '%s\n\n%s\n' "$BODY" "$SIGNOFF_LINE"
+            fi
+            if [ -n "$COMMENTS" ]; then
+                printf '%s\n' "$COMMENTS"
+            fi
+        } > "$COMMIT_MSG_FILE"
+
+        # Collapse any 3+ consecutive blank lines (introduced by trailer merge)
+        # back to ≤2 to keep the message tidy.
+        awk 'BEGIN{blank=0} /^[[:space:]]*$/{blank++;if(blank<=2)print;next} {blank=0;print}' \
+            "$COMMIT_MSG_FILE" > "$COMMIT_MSG_FILE.tmp" && mv "$COMMIT_MSG_FILE.tmp" "$COMMIT_MSG_FILE"
+    fi
+fi
+
+# ── Format validation ───────────────────────────────────────────────
+echo "🔍 Validating commit message format..."
+
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+# Take the first non-comment, non-blank line as the subject under test.
+# This avoids false negatives from git's auto-inserted '#' comment lines.
+CLEAN_MSG=$(printf '%s\n' "$COMMIT_MSG" | grep -v '^#' | grep -v '^[[:space:]]*$' | head -1)
+
+if [ -z "$CLEAN_MSG" ]; then
+    echo "❌ Commit message is empty!"
+    exit 1
+fi
+
+# Split the subject into the leading emoji field and the remainder.
+# (Use parameter expansion rather than awk/sed — faster and dependency-free.)
+EMOJI_FIELD="${CLEAN_MSG%% *}"
+REST="${CLEAN_MSG#* }"
+
+# ── gitmoji validation ──────────────────────────────────────────────
+# Match by POSIX `case` (byte-level, locale-independent). GNU grep 3.x
+# cannot reliably match 4-byte UTF-8 sequences (emoji ≥ U+10000); POSIX
+# case statements can. The list is the official gitmoji.dev catalog.
+EMOJI_OK=false
+case "$EMOJI_FIELD" in
+    🎨|⚡️|🔥|🐛|🚑️|✨|📝|🚀|💄|🎉|\
+    ✅|🔒️|🔐|🔖|🚨|🚧|💚|⬇️|⬆️|📌|\
+    👷|📈|♻️|➕|➖|🔧|🔨|🌐|✏️|💩|\
+    ⏪️|🔀|📦️|👽️|🚚|📄|💥|🍱|♿️|💡|\
+    🍻|💬|🗃️|🔊|🔇|👥|🚸|🏗️|📱|🤡|\
+    🥚|🙈|📸|⚗️|🔍️|🏷️|🌱|🚩|🥅|💫|\
+    🗑️|🛂|🩹|🧐|⚰️|🧪|👔|🩺|🧱|🧑‍💻|\
+    💸|🧵|🦺|✈️|🦖)
+        EMOJI_OK=true
+        ;;
+esac
+
+# ── Conventional Commits suffix validation ──────────────────────────
+# Pure-ASCII regex; grep -E handles this reliably (CJK-problematic only at
+# the emoji prefix, which is already covered by the case statement above).
+#
+# Suffix grammar: <type>[!](<scope>)?[!]: <subject>
+#   type  ∈ {feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert}
+#   !     = breaking-change marker; allowed after type OR after scope
+#   scope = optional, parenthesized
+SUFFIX_RE="^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(!)?(\([^\)]+\))?(!)?: .+"
+
+# Triple check: emoji prefix valid + space separator present + suffix grammar valid.
+# (REST == CLEAN_MSG means no space was found between emoji and type.)
+if [ "$EMOJI_OK" = false ] || [ "$REST" = "$CLEAN_MSG" ] || ! printf '%s\n' "$REST" | grep -qE "$SUFFIX_RE"; then
+    echo "--------------------------------------------------------"
+    echo "❌ Format error: not compliant with gitmoji + Conventional Commits."
+    echo ""
+    echo "💡 Expected: <gitmoji> <type>[!](<scope>)?[!]: <subject>"
+    echo "   ! = breaking-change marker; may appear after type OR after scope"
+    echo ""
+    echo "📌 Common examples:"
+    echo "   ✨ feat: add a new tool"
+    echo "   🐛 fix: handle empty prompt"
+    echo "   📝 docs: update README"
+    echo "   ♻️  refactor(auth): simplify lifespan"
+    echo "   ⚡️  perf: cache vibe tokens"
+    echo "   💥 feat!(api)!: rewrite generate (breaking)"
+    echo ""
+    echo "🔗 Full gitmoji list: https://gitmoji.dev/"
+    echo "🔗 Conventional Commits: https://www.conventionalcommits.org/"
+    echo "--------------------------------------------------------"
+    exit 1
+fi
+
+echo "✅ Commit message format validated."

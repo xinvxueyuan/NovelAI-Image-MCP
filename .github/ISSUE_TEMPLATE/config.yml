@@ -1,0 +1,15 @@
+# Issue template chooser configuration.
+# Disables the blank-issue button to nudge reporters toward structured templates,
+# while still leaving the contact links for quick chats / docs lookups.
+
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/novelai-image-mcp/NovelAI-Image-MCP/discussions
+    about: Ask questions and share ideas in Discussions before opening an issue.
+  - name: 📖 NovelAI Image API docs
+    url: https://image.novelai.net/docs/index.html
+    about: Official NovelAI Image API reference (external site).
+  - name: 📐 MCP specification
+    url: https://modelcontextprotocol.io/specification
+    about: Model Context Protocol specification (external site).

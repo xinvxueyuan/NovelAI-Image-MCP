@@ -1,0 +1,119 @@
+# REUSE.toml — FSFE REUSE 3.0 compliant license declarations
+#
+# This file declares the SPDX license and copyright for groups of files by glob.
+# It complements the human-readable LICENSE file. Current-phase assignment:
+#   - software code                    -> MIT
+#   - documentation (.md / .mdx)       -> MIT
+#   - visual elements                  -> CC0-1.0
+#   - infrastructure & config           -> CC0-1.0
+#
+# Caveat: ``src/novelai_image_mcp/nai/`` is ported from lingchu-bot, which is
+# LGPL-3.0-or-later for its code. The port has been substantially refactored
+# (decoupled from NoneBot, httpx-transport rewired, type-system refreshed)
+# and is re-licensed under MIT for this project. See README.md "License" for
+# the full provenance statement.
+#
+# Run `uv run reuse lint` to verify compliance.
+
+version = 3
+
+# ---------------------------------------------------------------------------
+# Software code — MIT
+# ---------------------------------------------------------------------------
+[[annotations]]
+path = ["**/*.py"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 NovelAI Image MCP contributors"
+SPDX-License-Identifier = "MIT"
+
+# ---------------------------------------------------------------------------
+# Documentation — MIT
+# ---------------------------------------------------------------------------
+[[annotations]]
+path = ["**/*.md", "**/*.mdx"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 NovelAI Image MCP contributors"
+SPDX-License-Identifier = "MIT"
+
+# ---------------------------------------------------------------------------
+# Visual elements — CC0 1.0 Universal Public Domain Dedication
+# ---------------------------------------------------------------------------
+[[annotations]]
+path = [
+  "**/*.png",
+  "**/*.jpg",
+  "**/*.jpeg",
+  "**/*.webp",
+  "**/*.gif",
+  "**/*.ico",
+  "**/*.svg",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 NovelAI Image MCP contributors"
+SPDX-License-Identifier = "CC0-1.0"
+
+# ---------------------------------------------------------------------------
+# Infrastructure, configuration & build files — CC0 1.0
+# ---------------------------------------------------------------------------
+[[annotations]]
+path = [
+  # config & data formats
+  "**/*.yml",
+  "**/*.yaml",
+  "**/*.json",
+  "**/*.jsonc",
+  "**/*.toml",
+  "**/*.lock",
+  "**/*.cfg",
+  "**/*.xml",
+  "**/*.ini",
+  # docker / compose
+  "Dockerfile",
+  "docker-compose.yml",
+  # github ownership routing (extensionless)
+  "**/CODEOWNERS",
+  # husky hooks (extensionless shell scripts)
+  ".husky/*",
+  # dotfiles & env examples (recursive)
+  "**/.gitignore",
+  "**/.gitattributes",
+  "**/.dockerignore",
+  ".env*",
+  # explicit root dotfiles (belt-and-suspenders for `**/` matching)
+  ".gitignore",
+  ".gitattributes",
+  ".dockerignore",
+  ".editorconfig",
+  ".prettierignore"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 NovelAI Image MCP contributors"
+SPDX-License-Identifier = "CC0-1.0"
+
+# ---------------------------------------------------------------------------
+# Build artifacts — CC0 1.0
+# ---------------------------------------------------------------------------
+# Python bytecode caches (``*.pyc``, ``__pycache__/``) and pytest / coverage
+# outputs are derivative artifacts of the source; REUSE still scans them, so
+# we annotate them as CC0 (public domain) to avoid false "missing license"
+# reports. They are also in .gitignore and never committed.
+[[annotations]]
+path = [
+  "**/*.pyc",
+  "**/*.pyo",
+  "**/*.pyd",
+  "**/*.so",
+  "**/*.egg-info/**",
+  "**/.pytest_cache/**",
+  "**/.ruff_cache/**",
+  "**/.mypy_cache/**",
+  "**/.pyright/**",
+  "**/htmlcov/**",
+  "**/.coverage",
+  "**/.coverage.*",
+  "**/coverage.xml",
+  "**/test-results/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 NovelAI Image MCP contributors"
+SPDX-License-Identifier = "CC0-1.0"

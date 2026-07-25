@@ -1,0 +1,57 @@
+# prek.toml — pre-commit hook configuration for the prek runner.
+#
+# Hooks run via `uv run prek run --config prek.toml --stage pre-commit` (see
+# .husky/pre-commit). The split is:
+#   - prek (Phase 1)     : auto-fix hooks + ruff --fix + ruff-format
+#   - husky pre-commit   : markdownlint + pyright + pytest (heavier phases)
+# This avoids double-execution: ruff and format live only in prek.
+#
+# Commits to ``prek/pre-commit-hooks`` and ``astral-sh/ruff-pre-commit`` are
+# pinned by SHA. Bump via Dependabot (see .github/dependabot.yml).
+
+exclude = '''(?x)^(
+  \.trae/|
+  \.venv/|
+  \.uv-cache/|
+  outputs/|
+  test-results/|
+  \.pytest_cache/|
+  \.ruff_cache/|
+  uv\.lock
+)'''
+
+[[repos]]
+repo = "https://github.com/pre-commit/pre-commit-hooks"
+# pinned from pre-commit/pre-commit-hooks@v6.0.0
+rev = "3e8a8703264a2f4a69428a0aa4dcb512790b2c8c"
+hooks = [
+  { id = "trailing-whitespace" },
+  { id = "end-of-file-fixer" },
+  { id = "check-yaml" },
+  { id = "check-toml" },
+  { id = "check-json" },
+  { id = "check-xml" },
+  { id = "check-merge-conflict" },
+  { id = "check-added-large-files", args = [
+    "--maxkb=2048",
+  ] },
+  { id = "detect-private-key" },
+  { id = "check-case-conflict" },
+  { id = "mixed-line-ending", args = [
+    "--fix=lf",
+  ] },
+  { id = "check-symlinks" },
+  { id = "destroyed-symlinks" },
+]
+
+[[repos]]
+# ruff — Python linter + formatter. ``--fix`` applies auto-fixes; ``ruff-format``
+# reformats in place. Both write back to staged files; .husky/pre-commit
+# re-stages the changes after a successful run.
+repo = "https://github.com/astral-sh/ruff-pre-commit"
+# pinned from astral-sh/ruff-pre-commit@v0.15.22
+rev = "2700fd5671c633760d912769c041bfcde2b9a01b"
+hooks = [
+  { id = "ruff", args = ["--fix"] },
+  { id = "ruff-format" },
+]

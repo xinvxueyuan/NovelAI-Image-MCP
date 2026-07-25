@@ -1,0 +1,64 @@
+name: novelai-image-mcp
+
+# Service-level anchors for host/port reuse. Override via shell env or .env.
+x-config-host: &config-host ${MCP_HOST:-127.0.0.1}
+x-config-port: &config-port ${MCP_PORT:-8000}
+
+services:
+  # ── Primary MCP server (streamable-http transport) ──────────────────
+  # Use this when running as a remote service for multiple agents / clients.
+  # For local single-agent use, prefer `novelai-image-mcp serve` (stdio).
+  mcp:
+    build: .
+    ports:
+      - *config-port
+    env_file:
+      - .env
+    environment:
+      MCP_TRANSPORT: streamable-http
+      MCP_HOST: *config-host
+      MCP_PORT: *config-port
+      # Container-aware defaults (override in .env if needed).
+      # NOVELAI_OUTPUT_DIR is relative to /app; the named volume below
+      # persists generated images across container restarts.
+      NOVELAI_OUTPUT_DIR: /app/outputs
+      IN_CONTAINER: "true"
+    volumes:
+      - novelai-outputs:/app/outputs
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - >
+          python -c "import socket, os;
+          p=int(os.getenv('MCP_PORT','8000'));
+          s=socket.socket();
+          s.settimeout(2);
+          s.connect(('localhost', p));
+          s.close()"
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+  # ── Smoke-test image (built with SMOKE_TEST=true build-arg) ─────────
+  # Verifies the image boots, the project imports cleanly, and every MCP
+  # tool registers against the server without making real API calls.
+  # Run with: `docker compose --profile smoke up --build smoke-test`
+  smoke-test:
+    build:
+      context: .
+      args:
+        SMOKE_TEST: "true"
+    env_file:
+      - .env
+    environment:
+      SMOKE_TEST: "true"
+      NOVELAI_TOKEN: pst-smoke-test
+      NOVELAI_OUTPUT_DIR: /tmp/outputs
+    command: python /app/docker/smoke-test.py
+    profiles:
+      - smoke
+
+volumes:
+  novelai-outputs:

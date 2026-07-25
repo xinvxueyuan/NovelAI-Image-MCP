@@ -1,0 +1,70 @@
+name: Detect Changes
+description: Detect changed file categories (Python, Markdown, Docker) for CI workflow routing
+
+outputs:
+  python:
+    description: "true if Python-related files changed"
+    value: ${{ steps.detect.outputs.python }}
+  markdown:
+    description: "true if Markdown files changed"
+    value: ${{ steps.detect.outputs.markdown }}
+  docker:
+    description: "true if Docker-related files changed"
+    value: ${{ steps.detect.outputs.docker }}
+
+runs:
+  using: composite
+  # Pre-requisite: the calling workflow MUST run `actions/checkout` (with
+  # `fetch-depth: 0`) before `uses: ./.github/actions/detect-changes`.
+  # GitHub Actions resolves the local action path at step parse time —
+  # before this composite's own `runs.steps` run — so the checkout inside
+  # the composite would arrive too late and the action would fail with
+  # "Can't find 'action.yml' under .../.github/actions/detect-changes".
+  steps:
+    - name: Detect changes
+      id: detect
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Determine diff range: PR → base..HEAD, push → before..after
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          BASE="origin/${{ github.base_ref }}"
+        else
+          BASE="HEAD~1"
+        fi
+        FILES=$(git diff --name-only "$BASE" HEAD 2>/dev/null || git ls-files)
+
+        PYTHON=false
+        MARKDOWN=false
+        DOCKER=false
+
+        # Python: .py / pyproject.toml / uv.lock / .python-version / ruff config
+        if echo "$FILES" | grep -qE '\.py$|(^|/)(pyproject\.toml|uv\.lock|\.python-version|ruff\.toml|\.ruff\.toml)$'; then
+          PYTHON=true
+        fi
+        # Markdown: .md
+        if echo "$FILES" | grep -qE '\.md$'; then
+          MARKDOWN=true
+        fi
+        # Docker: Dockerfile / docker-compose.yml / docker/* / .dockerignore
+        if echo "$FILES" | grep -qE '(^|/)(Dockerfile|docker-compose\.yml|docker-compose\.yaml|\.dockerignore)$|^docker/'; then
+          DOCKER=true
+        fi
+
+        {
+          echo "python=$PYTHON"
+          echo "markdown=$MARKDOWN"
+          echo "docker=$DOCKER"
+        } >> "$GITHUB_OUTPUT"
+
+        # Step summary
+        {
+          echo "## 🔍 Change Detection"
+          echo ""
+          echo "| Category | Detected |"
+          echo "|----------|----------|"
+          echo "| Python | \`$PYTHON\` |"
+          echo "| Markdown | \`$MARKDOWN\` |"
+          echo "| Docker | \`$DOCKER\` |"
+        } >> "$GITHUB_STEP_SUMMARY"

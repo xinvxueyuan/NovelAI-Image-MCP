@@ -1,0 +1,257 @@
+name: 🧪 CI
+
+on:
+  pull_request:
+    branches: [main, "dev**", "release/**"]
+    paths:
+      - "**.py"
+      - "**.md"
+      - "**.toml"
+      - "uv.lock"
+      - "prek.toml"
+      - ".markdownlint-cli2.jsonc"
+      - ".husky/**"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "docker/**"
+      - ".github/workflows/ci.yml"
+      - ".github/actions/detect-changes/**"
+  push:
+    branches: [main, dev]
+    paths:
+      - "**.py"
+      - "**.md"
+      - "**.toml"
+      - "uv.lock"
+      - "prek.toml"
+      - ".markdownlint-cli2.jsonc"
+      - ".husky/**"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "docker/**"
+      - ".github/workflows/ci.yml"
+      - ".github/actions/detect-changes/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # ── Change Detection ──────────────────────────────────────────────
+  # Per-granularity change routing so we don't run Python checks when only
+  # markdown changed (and vice versa). Logic mirrors .husky/pre-commit.
+  changes:
+    name: 🔍 Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.detect.outputs.python }}
+      markdown: ${{ steps.detect.outputs.markdown }}
+      docker: ${{ steps.detect.outputs.docker }}
+    steps:
+      - name: Checkout
+        # pinned from actions/checkout@v6.1.0
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
+      - id: detect
+        uses: ./.github/actions/detect-changes
+
+  static-analysis:
+    name: 🔍 Static Analysis
+    needs: changes
+    if: needs.changes.outputs.python == 'true' || needs.changes.outputs.markdown == 'true'
+    runs-on: ubuntu-latest
+    env:
+      # Prevent uv run from auto-syncing the environment, which would
+      # install the test group unnecessarily. Static analysis only needs
+      # the lint group + the project's runtime deps.
+      UV_NO_SYNC: "1"
+    steps:
+      - name: Checkout
+        # pinned from actions/checkout@v6.1.0
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Setup Node
+        # pinned from actions/setup-node@v6.5.0
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24
+      - name: Setup pnpm
+        # pinned from pnpm/action-setup@v6.0.9
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271
+      - name: Install Node dependencies (markdownlint only)
+        run: pnpm install --frozen-lockfile
+      - name: Setup uv
+        # pinned from astral-sh/setup-uv@v8.3.2
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install Python dependencies (lint group only)
+        # Skip the test group — static analysis only needs lint + the project
+        # itself for type-checking and ruff.
+        run: uv sync --no-dev --all-extras --group lint --frozen
+      - name: Markdownlint
+        if: needs.changes.outputs.markdown == 'true'
+        run: pnpm exec markdownlint-cli2
+      - name: Ruff format check
+        if: needs.changes.outputs.python == 'true'
+        run: uv run ruff format --check src tests
+      - name: Ruff lint
+        if: needs.changes.outputs.python == 'true'
+        run: uv run ruff check src tests
+      - name: REUSE compliance
+        run: uv run reuse lint
+      - name: Pyright
+        if: needs.changes.outputs.python == 'true'
+        run: uv run -m pyright
+
+  tests:
+    name: 🧪 Tests
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    # publish-unit-test-result-action needs checks: write to create
+    # check runs and pull-requests: write to annotate PR check runs.
+    permissions:
+      checks: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        # pinned from actions/checkout@v6.1.0
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+
+      - name: Setup uv
+        # pinned from astral-sh/setup-uv@v8.3.2
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python dependencies
+        # pinned from nick-fields/retry@v4.0.0
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60
+        with:
+          timeout_minutes: 5
+          max_attempts: 4
+          retry_wait_seconds: 30
+          command: uv sync --frozen --all-extras
+
+      - name: Run Tests
+        run: uv run -m pytest --junitxml=test-results/pytest.xml --timeout=120
+
+      - name: Upload Coverage Report
+        # pinned from actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: coverage-report-${{ matrix.os }}
+          path: |
+            test-results/coverage.xml
+            test-results/pytest.xml
+          retention-days: 14
+
+      - name: Publish Test Results
+        # pinned from EnricoMi/publish-unit-test-result-action@v2.24.0
+        uses: EnricoMi/publish-unit-test-result-action@d0a4676d0e0b938bc201470d88276b7c74c712b3
+        if: always() && matrix.os == 'ubuntu-latest'
+        with:
+          files: test-results/pytest.xml
+
+  docker-build:
+    name: 🐳 Docker Build (Smoke)
+    needs: changes
+    if: needs.changes.outputs.docker == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        # pinned from actions/checkout@v6.1.0
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Set up Docker Buildx
+        # pinned from docker/setup-buildx-action@v3.11.1
+        uses: docker/setup-buildx-action@e46886c8c6ef4e8d1f0bd4f6bb4e7cd90e66e859
+      - name: Build runtime image
+        # pinned from docker/build-push-action@v6.18.0
+        uses: docker/build-push-action@263435318d21b81e6680810a306d55fa191b83f2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: novelai-image-mcp:smoke
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke-test container entrypoint
+        run: |
+          docker run --rm \
+            --env NOVELAI_TOKEN=pst-smoke-test \
+            --env SMOKE_TEST=true \
+            novelai-image-mcp:smoke
+
+  auto-format:
+    name: 🎨 Auto Fix & Format
+    needs: [changes, static-analysis, tests]
+    # always() allows running even when static-analysis/tests are skipped.
+    # Only run on push to main/dev (standard convention: no commits in PR).
+    # Block on failure (not skip) of upstream jobs.
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      contains(fromJSON('["refs/heads/main", "refs/heads/dev"]'), github.ref) &&
+      (needs.changes.outputs.python == 'true' || needs.changes.outputs.markdown == 'true') &&
+      needs.static-analysis.result != 'failure' &&
+      needs.tests.result != 'failure'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    env:
+      UV_NO_SYNC: "1"
+    steps:
+      # pinned from actions/checkout@v6.1.0
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Node
+        # pinned from actions/setup-node@v6.5.0
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24
+      - name: Setup pnpm
+        # pinned from pnpm/action-setup@v6.0.9
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Setup uv
+        # pinned from astral-sh/setup-uv@v8.3.2
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
+        with:
+          python-version: "3.13"
+          cache-dependency-glob: uv.lock
+      - name: Install Python dependencies (lint group only)
+        run: uv sync --no-dev --all-extras --group lint --frozen
+      - name: Auto-fix
+        run: |
+          uv run ruff check --fix src tests || true
+          uv run ruff format src tests
+          pnpm exec markdownlint-cli2 --fix || true
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No formatting changes — tree already clean."
+          else
+            git commit -m "🎨 style: auto-format [skip ci]"
+            git push
+          fi

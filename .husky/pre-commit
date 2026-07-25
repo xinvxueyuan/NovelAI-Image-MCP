@@ -1,0 +1,101 @@
+#!/usr/bin/env sh
+# POSIX-compliant shell; invoked via .husky/_/h with `sh -e` (shebang is informational)
+#
+# Pre-commit hook: auto-fix → markdown → python checks
+# Phases (fast-feedback first, blocking before non-blocking analysis):
+#   Phase 1   prek        auto-fix (ruff --fix + ruff-format + general hooks)
+#   Phase 2   markdownlint  .md validation
+#   Phase 3   Pyright     type checking (slow; only on .py changes)
+#   Phase 4   pytest      unit tests (slowest; only on .py changes)
+#
+# Pre-requisites (installed by `uv sync` / `pnpm install`):
+#   - uv                https://docs.astral.sh/uv/
+#   - pnpm              https://pnpm.io/  (for markdownlint-cli2)
+#   - prek              https://github.com/j178/prek  (via lint dependency-group)
+set +e
+
+# ── Locate the husky directory (POSIX, no readlink) ────────────────
+HUSKY_DIR=$(dirname "$0")
+case "$HUSKY_DIR" in
+    /*) ;;
+    *)  HUSKY_DIR="$PWD/$HUSKY_DIR" ;;
+esac
+HUSKY_DIR=$(cd "$HUSKY_DIR" && pwd)
+
+# ── Tool resolution ──────────────────────────────────────────────────
+GIT_CMD=${GIT_CMD:-git}
+UV_CMD=${UV_CMD:-uv}
+PNPM_RUNNER=${PNPM_RUNNER:-pnpm}
+
+# Detect whether uv / pnpm are on PATH; missing tools degrade gracefully.
+if ! command -v "$UV_CMD" >/dev/null 2>&1; then
+    UV_CMD=""
+fi
+if ! command -v "$PNPM_RUNNER" >/dev/null 2>&1; then
+    PNPM_RUNNER=""
+fi
+
+# ── Staged file detection (cheap pre-filter; skips everything if no files) ──
+STAGED=$("$GIT_CMD" diff --cached --name-only --diff-filter=ACM 2>/dev/null)
+if [ -z "$STAGED" ]; then
+    # Nothing staged — nothing to check.
+    exit 0
+fi
+
+PY_STAGED=$(printf '%s\n' "$STAGED" | grep -E '\.py$' || true)
+MD_STAGED=$(printf '%s\n' "$STAGED" | grep -E '\.md$' || true)
+
+echo "🚀 Running pre-commit checks..."
+
+# ── Phase 1: prek auto-fix (always runs; gates everything) ─────────
+# prek runs its own staged-file filtering by stage. If prek modifies files
+# (ruff --fix, ruff-format, end-of-file-fixer), we re-stage and retry once.
+if [ -n "$UV_CMD" ]; then
+    echo "🔧 Running prek auto-fix..."
+    if ! "$UV_CMD" run prek validate-config prek.toml ||
+       ! "$UV_CMD" run prek run --config prek.toml --stage pre-commit; then
+        echo "ℹ️  prek modified files — re-staging and retrying..."
+        "$GIT_CMD" add -u
+        if ! "$UV_CMD" run prek validate-config prek.toml ||
+           ! "$UV_CMD" run prek run --config prek.toml --stage pre-commit; then
+            echo "❌ prek checks failed. Fix the issues and re-stage."
+            exit 1
+        fi
+    fi
+else
+    echo "⚠️  uv not found — skipping prek auto-fix."
+fi
+
+# ── Phase 2: markdownlint (only on .md changes) ────────────────────
+if [ -n "$MD_STAGED" ] && [ -n "$PNPM_RUNNER" ]; then
+    echo "📝 Running markdownlint..."
+    # Pass staged .md files explicitly so unchanged docs don't slow the run.
+    if ! "$PNPM_RUNNER" exec markdownlint-cli2 $MD_STAGED; then
+        echo "❌ markdownlint failed. Run 'pnpm exec markdownlint-cli2 --fix' to auto-fix."
+        exit 1
+    fi
+elif [ -n "$MD_STAGED" ]; then
+    echo "⚠️  pnpm not found — skipping markdownlint."
+fi
+
+# ── Phase 3: Pyright (only on .py changes) ──────────────────────────
+if [ -n "$PY_STAGED" ] && [ -n "$UV_CMD" ]; then
+    echo "🔍 Running Pyright..."
+    if ! "$UV_CMD" run -m pyright; then
+        echo "❌ Pyright failed. Fix the type errors and re-stage."
+        exit 1
+    fi
+fi
+
+# ── Phase 4: pytest (only on .py changes; slowest) ─────────────────
+# Tests are the slowest phase; skip when only docstrings/comments changed
+# in non-Python files. Use --no-header to keep output concise.
+if [ -n "$PY_STAGED" ] && [ -n "$UV_CMD" ]; then
+    echo "🧪 Running pytest..."
+    if ! "$UV_CMD" run -m pytest -q --no-header --timeout=60 -p no:cacheprovider; then
+        echo "❌ pytest failed. Fix the failing tests and re-stage."
+        exit 1
+    fi
+fi
+
+echo "✅ All checks passed!"
