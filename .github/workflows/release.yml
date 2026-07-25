@@ -108,14 +108,14 @@ jobs:
     steps:
       - name: 📥 Download artifacts
         # pinned from actions/download-artifact@v5.0.0
-        uses: actions/download-artifact@634f73cb9f2e5d6ddbb8a07d7f3d28a4c8c4a41a
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
           name: python-distributions
           path: dist/
 
       - name: 🚀 Publish to PyPI (trusted publisher)
         # pinned from pypa/gh-action-pypi-publish@v1.13.0
-        uses: pypa/gh-action-pypi-publish@ed0c5ee1f035267c9e1a6cf40409ab86376c0a13
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e
 
   publish-ghcr:
     name: 🐳 Publish to GHCR
@@ -134,7 +134,7 @@ jobs:
 
       - name: 🔑 Log in to GHCR
         # pinned from docker/login-action@v3.5.0
-        uses: docker/login-action@184bdaa07210781af1f86b0f57aa62c8f57b8c92
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -143,7 +143,7 @@ jobs:
       - name: 📝 Extract metadata
         id: meta
         # pinned from docker/metadata-action@v5.8.0
-        uses: docker/metadata-action@c1e56473de5d0e7aec1ec9a5d4edc6423fcdd3f2
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -158,13 +158,13 @@ jobs:
 
       - name: 🐳 Set up Buildx
         # pinned from docker/setup-buildx-action@v3.11.1
-        uses: docker/setup-buildx-action@e46886c8c6ef4e8d1f0bd4f6bb4e7cd90e66e859
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
 
       - name: 🔨 Build & push
         # Build context is the repo root so uv can resolve the workspace graph;
         # the Dockerfile lives at apps/server/Dockerfile.
         # pinned from docker/build-push-action@v6.18.0
-        uses: docker/build-push-action@263435318d21b81e6680810a306d55fa191b83f2
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
           context: .
           file: ./apps/server/Dockerfile
@@ -180,7 +180,7 @@ jobs:
 
       - name: ✍️ Install cosign
         # pinned from sigstore/cosign-installer@v3.9.0
-        uses: sigstore/cosign-installer@d754684f3aa9a1c48922d723b4d734fe96f359b8
+        uses: sigstore/cosign-installer@fb28c2b6339dcd94da6e4cbcbc5e888961f6f8c3
 
       - name: 🔏 Sign image (keyless)
         run: |
@@ -203,7 +203,7 @@ jobs:
 
       - name: 📥 Download artifacts
         # pinned from actions/download-artifact@v5.0.0
-        uses: actions/download-artifact@634f73cb9f2e5d6ddbb8a07d7f3d28a4c8c4a41a
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
           name: python-distributions
           path: dist/

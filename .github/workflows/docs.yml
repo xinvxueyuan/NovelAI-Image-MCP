@@ -46,7 +46,7 @@ jobs:
       - name: 🔧 Configure GitHub Pages
         # pinned from actions/configure-pages@v5.0.0
         id: pages
-        uses: actions/configure-pages@98cba057c2c12a3e4ae9c8d2e32251ca23b52359
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
         with:
           enablement: false  # we don't try to enable Pages on the repo from CI
 
@@ -77,7 +77,7 @@ jobs:
 
       - name: 📤 Upload Pages artifact
         # pinned from actions/upload-pages-artifact@v3.0.1
-        uses: actions/upload-pages-artifact@56b5a8d69c6d4ba0b1e9bccea78f64fc00f3646d
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           path: apps/docs/_build/html
 
@@ -95,4 +95,4 @@ jobs:
       - name: 🚀 Deploy to GitHub Pages
         id: deployment
         # pinned from actions/deploy-pages@v4.0.1
-        uses: actions/deploy-pages@d6db903b6e1386f8bde85e6e8f1fd5fd0dbfb57c
+        uses: actions/deploy-pages@d8af841ac341d06640cbe393899ae55e59e77c00
