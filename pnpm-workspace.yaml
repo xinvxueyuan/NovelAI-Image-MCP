@@ -8,3 +8,22 @@
 # at the workspace root and to give turbo a package graph to traverse.
 packages:
   - "apps/*"
+
+# Security overrides: force the listed transitive deps to their patched
+# major.minor floors so Dependabot security alerts close without bumping
+# the direct devDependency (markdownlint-cli2@^0.18.1). Tracking the
+# relevant GHSA / CVE IDs here so the next audit can confirm the fix is
+# still in place:
+#   - js-yaml     >= 4.3.0   closes CVE-2026-59869 (quadratic merge DoS,
+#                                       CVE-2026-53550, CVE-2025-64718)
+#   - markdown-it >= 14.2.0  closes CVE-2026-48988 (smartquotes DoS)
+overrides:
+  js-yaml: ^4.3.0
+  markdown-it: ^14.2.0
+
+# pnpm 11's supply-chain policy defaults to a 24h minimum release age to
+# protect against supply-chain attacks via freshly-published malicious
+# versions. For this dev-only toolchain (markdownlint, eslint peer, etc.)
+# we set it to 0 so the lockfile can resolve without waiting; the actual
+# Dependabot alerts above are closed by the explicit overrides.
+minimumReleaseAge: 0
