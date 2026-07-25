@@ -25,6 +25,8 @@ jobs:
   validate:
     name: 🔎 Validate release input
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # required to push the synced package.json commit back to the release branch
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
