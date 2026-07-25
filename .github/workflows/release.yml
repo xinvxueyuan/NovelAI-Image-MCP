@@ -162,8 +162,13 @@ jobs:
 
       - name: 🔨 Build & push
         # Build context is the repo root so uv can resolve the workspace graph;
-        # the Dockerfile lives at apps/server/Dockerfile.
+        # the Dockerfile lives at apps/server/Dockerfile. The step id is reused
+        # by the cosign signing step below to obtain the manifest digest —
+        # ``steps.meta.outputs.digest`` is empty when multiple tags are pushed
+        # (semver + sha), so the build-push-action output is the reliable
+        # source of the single manifest digest that all tags resolve to.
         # pinned from docker/build-push-action@v6.18.0
+        id: build
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
           context: .
@@ -184,7 +189,7 @@ jobs:
 
       - name: 🔏 Sign image (keyless)
         run: |
-          cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.meta.outputs.digest }}
+          cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
 
   github-release:
     name: 🏷️ Create GitHub Release
