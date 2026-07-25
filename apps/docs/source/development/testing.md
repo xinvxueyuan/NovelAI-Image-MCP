@@ -16,7 +16,7 @@ uv run --directory apps/server pytest --tb=short
 uv run --directory apps/server pytest apps/server/tests/test_tools.py
 
 # Single test:
-uv run --directory apps/server pytest apps/server/tests/test_tools.py::test_generate_image_basic
+uv run --directory apps/server pytest apps/server/tests/test_tools.py::test_generate_image_calls_client
 
 # With coverage report:
 uv run --directory apps/server pytest --cov-report=term-missing
@@ -114,13 +114,13 @@ verifying the container actually boots and the tools register.
 ```python
 # apps/server/tests/test_tools.py
 
-async def test_generate_image_with_v4_model(fake_ctx):
+async def test_generate_image_with_v4_model(fake_ctx, fake_client):
     """generate_image should pass through V4 model ids."""
-    fake_ctx.request_context.lifespan_context.client.generate.return_value = (
+    fake_client.generate.return_value = (
         NovelAIImage(filename="test.png", data=PNG_BYTES),
     )
 
-    # Call the tool directly (the recording_mcp fixture also works for this)
+    # Call the tool directly (recording_mcp also works)
     from novelai_image_mcp.tools.generate import register
     from tests._helpers import RecordingMCPServer
 

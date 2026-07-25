@@ -15,7 +15,7 @@ graph TD
     Q{How will you use the server?}
     Q -->|Local agent on the same machine| A[stdio]
     Q -->|Remote / multi-client / production| B[streamable-http]
-    Q -->|Scripting — direct CLI use| C[CLI: novelai-image-mcp generate]
+    Q -->|Scripting — direct CLI use| C[CLI: novelai-image-mcp generate<br/>uv run python -m ...]
 ```
 
 ## Transport-agnostic design

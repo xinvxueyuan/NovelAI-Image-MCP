@@ -1,9 +1,9 @@
-# Tutorial: ControlNet workflow
+# Tutorial: ControlNet preprocessors
 
-Use NovelAI's ControlNet preprocessors to drive a generation from a
-structural map. The workflow: extract an annotation (depth, line art, etc.)
-from a reference image, then generate a new image conditioned on that
-annotation.
+Use NovelAI's ControlNet preprocessors to extract a structural map from a
+reference image — depth, line art, semantic segmentation. In v0.1.0 the
+extracted annotation is returned as a standalone image you can save or
+inspect; feeding it back into a generation is a v0.2 feature.
 
 ## Workflow overview
 
@@ -11,8 +11,7 @@ annotation.
 graph LR
     A[Reference image] --> B[annotate_image]
     B --> C[Annotation<br/>depth / line art]
-    C --> D[generate_image<br/>with controlnet_condition]
-    D --> E[Final image]
+    C --> D[Save or display]
 ```
 
 ## 1. Extract a depth map
@@ -27,35 +26,15 @@ depth_result = await ctx.session.call_tool("annotate_image", {
     "image": photo_b64,
     "model": "midas",
 })
-# depth_result[0] is an Image block with the depth map.
+# depth_result[0] is an Image content block with the depth map;
+# depth_result[1] is the saved file path.
 ```
 
-## 2. Generate with the annotation as a condition
-
-Pass the annotation back to `generate_image` via the
-`controlnet_condition` parameter (V4+ models):
-
-```python
-# Extract the base64 image bytes from the previous result
-depth_b64 = depth_result[0].data  # base64-encoded PNG
-
-result = await ctx.session.call_tool("generate_image", {
-    "prompt": "1girl, oil painting, renaissance style",
-    "controlnet_condition": depth_b64,
-    "controlnet_model": "midas",
-    "width": 832,
-    "height": 1216,
-})
-```
-
-The generated image inherits the depth structure of the photo but takes on
-the style and subject of the prompt.
-
-## 3. Try different preprocessors
+## 2. Try different preprocessors
 
 | Preprocessor | Best for |
 |---|---|
-| `midas` (depth) | Preserves pose, volumetric composition. |
+| `midas` (depth) | Pose, volumetric composition. |
 | `hed` (soft edges) | Anime, painterly line preservation. |
 | `fake_scribble` | Loose sketch → coherent line art. |
 | `mlsd` | Architecture, interiors, straight lines. |
@@ -67,48 +46,30 @@ for model in ("midas", "hed", "fake_scribble"):
         "image": photo_b64,
         "model": model,
     })
-    # save annotation, then use in a generate call
+    # Save each annotation for inspection
 ```
 
-## 4. Combine with Director tools
+## 3. CLI equivalent
 
-Extract line art from a photo with `director_tool`, then use it as a
-ControlNet condition for a fresh stylized generation:
-
-```python
-# Step 1: extract clean line art
-lineart = await ctx.session.call_tool("director_tool", {
-    "tool": "lineart",
-    "image": photo_b64,
-    "defry": 5,
-})
-
-# Step 2: use the line art as a condition (use hed preprocessor
-# semantics, since lineart is effectively an edge map)
-result = await ctx.session.call_tool("generate_image", {
-    "prompt": "1girl, anime style, watercolor",
-    "controlnet_condition": lineart[0].data,
-    "controlnet_model": "hed",
-})
+```bash
+# Extract a depth map
+uv run python -m novelai_image_mcp annotate ./photo.png --model midas
 ```
 
-## 5. Tips
-
-:::{tip}
-**Match the preprocessor to the source.** A depth map extracted from a
-photograph works great for re-posing a 3D scene; it's noisy for anime
-line art. Use `hed` or `fake_scribble` for drawn inputs.
-:::
+## 4. Limitations in v0.1.0
 
 :::{warning}
-**ControlNet conditioning requires V4+.** V3 models don't accept
-`controlnet_condition` / `controlnet_model`. Use `is_v4_model()` to check:
+**Generation does not consume annotations yet.** `generate_image` accepts
+text prompts, character prompts, and vibe references — but not a
+ControlNet condition. The `controlnet_condition` / `controlnet_model`
+parameters planned for v0.2 will let `generate_image` use an extracted
+annotation as a structural condition.
+:::
 
-```python
-from novelai_image_mcp.nai import is_v4_model
-is_v4_model("nai-diffusion-4-5-full")  # True
-is_v4_model("nai-diffusion-3")          # False
-```
+:::{tip}
+**Workaround:** For now, combine `annotate_image` with `director_tool` to
+produce a stylized line-art output from a photo, then optionally use
+`image_to_image` to refine. See [Director tools](director.md).
 :::
 
 ## What's next?

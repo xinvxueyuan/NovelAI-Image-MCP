@@ -27,7 +27,7 @@ pnpm install --frozen-lockfile
 # 3. Run all checks
 uv run --directory apps/server poe check
 # or via turbo:
-pnpm check  # (alias for: pnpm lint && pnpm typecheck && pnpm test)
+pnpm check  # (runs: pnpm lint, pnpm typecheck, pnpm test via turbo)
 ```
 
 ## Repository layout

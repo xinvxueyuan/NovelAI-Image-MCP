@@ -81,17 +81,40 @@ result = await ctx.session.call_tool("inpaint", {
 })
 ```
 
-## 5. CLI equivalent
+## 5. Use the Python API
 
-The CLI exposes inpaint as the `inpaint` subcommand (wrap of the MCP tool):
+For scripting without an MCP host, call the underlying client directly:
 
-```bash
-uv run python -m novelai_image_mcp inpaint \
-  --prompt "1girl, masterpiece, smiling" \
-  --image ./input.png \
-  --mask ./mask.png \
-  --model nai-diffusion-4-5-full-inpainting \
-  --strength 0.5 --seed 42
+```python
+import asyncio
+import base64
+from pathlib import Path
+
+import httpx
+from novelai_image_mcp.nai import (
+    Action, GenerationRequest, Model, create_novelai_client,
+)
+from novelai_image_mcp.settings import NovelAISettings
+
+async def main():
+    settings = NovelAISettings(token="pst-...")
+    image_b64 = base64.b64encode(Path("input.png").read_bytes()).decode("ascii")
+    mask_b64 = base64.b64encode(Path("mask.png").read_bytes()).decode("ascii")
+    async with httpx.AsyncClient(timeout=settings.timeout) as http_client:
+        client = create_novelai_client(settings, http_client=http_client)
+        try:
+            request = GenerationRequest(
+                prompt="1girl, masterpiece, smiling",
+                action=Action.INPAINT,
+                model=Model.V4_5_INPAINT,
+                image=image_b64, mask=mask_b64,
+                strength=0.5, seed=42,
+            )
+            images = await client.generate(request)
+        finally:
+            await client.aclose()
+
+asyncio.run(main())
 ```
 
 ## Common pitfalls
@@ -101,9 +124,9 @@ uv run python -m novelai_image_mcp inpaint \
 with a non-inpaint model raises `NovelAIValidationError`. Check with:
 
 ```python
-from novelai_image_mcp.nai import is_inpaint_model
-is_inpaint_model("nai-diffusion-4-5-full-inpainting")  # True
-is_inpaint_model("nai-diffusion-4-5-full")             # False
+from novelai_image_mcp.nai import is_inpaint_model, Model
+is_inpaint_model(Model.V4_5_INPAINT)  # True
+is_inpaint_model(Model.V4_5)           # False
 ```
 :::
 

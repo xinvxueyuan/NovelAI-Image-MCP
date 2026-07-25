@@ -72,7 +72,7 @@ without an API call.
 
 :::{warning}
 **V3 models do not support vibes.** Calling `encode_vibe` with a V3 model
-id raises `ValueError`. Use `Model.is_v4_model()` to check before encoding.
+id raises `ValueError`. Use the `is_v4_model()` function from `novelai_image_mcp.nai` to check before encoding.
 :::
 
 :::{tip}

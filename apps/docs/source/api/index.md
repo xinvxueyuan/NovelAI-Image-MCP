@@ -41,7 +41,7 @@ async def main():
         request = GenerationRequest(
             prompt="1girl, masterpiece",
             action=Action.GENERATE,
-            model=Model.NAI_DIFFUSION_4_5_FULL,
+            model=Model.V4_5,
             width=832, height=1216,
         )
         images = await client.generate(request)

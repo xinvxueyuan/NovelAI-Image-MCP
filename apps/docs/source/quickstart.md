@@ -37,7 +37,7 @@ uv run python -m novelai_image_mcp generate \
 The CLI prints the path to the saved PNG:
 
 ```text
-outputs/generate-20260725-133702-001.png
+outputs/generate-YYYYMMDD-HHMMSS-NNN.png
 ```
 
 Open the file — you should see your generated cat.

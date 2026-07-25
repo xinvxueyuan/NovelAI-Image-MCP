@@ -101,13 +101,15 @@ vibe2 = await ctx.session.call_tool("encode_vibe", {
 # vibe1 == vibe2
 ```
 
-## 6. Vibe + ControlNet
+## 6. Vibe transfer only (v0.1.0)
 
-Combine vibe transfer (style/identity) with ControlNet (composition) for
-maximum control:
+`generate_image` accepts vibe references but not ControlNet conditions in
+v0.1.0. To combine a structural map with a style, extract the annotation
+with `annotate_image` and apply it via `director_tool` for now; full
+ControlNet conditioning is planned for v0.2.
 
 ```python
-# Step 1: extract depth map from a pose reference
+# Step 1: extract depth from a pose reference (saved to disk)
 depth = await ctx.session.call_tool("annotate_image", {
     "image": pose_photo_b64,
     "model": "midas",
@@ -119,22 +121,27 @@ style_vibe = await ctx.session.call_tool("encode_vibe", {
     "information_extracted": 0.2,
 })
 
-# Step 3: generate with both
+# Step 3: generate with the vibe (v0.1.0 supports references, not controlnet)
 result = await ctx.session.call_tool("generate_image", {
     "prompt": "1girl, standing in a meadow",
     "references": [style_vibe],
-    "controlnet_condition": depth[0].data,
-    "controlnet_model": "midas",
 })
 ```
 
-The result has the painting's style and the pose photo's composition.
+The result carries the painting's style; structural conditioning will
+arrive in v0.2.
 
 ## 7. Pitfalls
 
 :::{warning}
 **V3 models do not support vibes.** `encode_vibe` with a V3 model id
-raises `ValueError`. Use `is_v4_model()` to check before encoding.
+raises `ValueError`. Check with `is_v4_model()` (takes a `Model` enum):
+
+```python
+from novelai_image_mcp.nai import is_v4_model, Model
+is_v4_model(Model.V4_5)  # True
+is_v4_model(Model.V3)    # False
+```
 :::
 
 :::{tip}

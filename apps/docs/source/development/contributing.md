@@ -26,7 +26,7 @@ corepack enable pnpm
 pnpm install --frozen-lockfile
 ```
 
-The first `uv sync` downloads ~60 wheels; subsequent runs are instant.
+The first `uv sync` downloads all transitive dependencies; subsequent runs are instant.
 
 ## Workflow
 
@@ -197,7 +197,7 @@ Include:
 
 - The exact command you ran.
 - The full error output (stack trace if Python).
-- The server version (`uv run python -m novelai_image_mcp --version`).
+- The server version (via `uv run python -c "import novelai_image_mcp; print(novelai_image_mcp.__version__)"`).
 - Your OS, Python version, and uv version.
 - A minimal reproduction (script or steps).
 
