@@ -30,7 +30,7 @@ jobs:
     steps:
       - name: 📥 Checkout
         # pinned from actions/checkout@v6.1.0
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
 
@@ -73,11 +73,11 @@ jobs:
     steps:
       - name: 📥 Checkout
         # pinned from actions/checkout@v6.1.0
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: ⚡ Setup uv
         # pinned from astral-sh/setup-uv@v8.3.2
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
         with:
           python-version: "3.13"
           enable-cache: true
@@ -130,7 +130,7 @@ jobs:
     steps:
       - name: 📥 Checkout
         # pinned from actions/checkout@v6.1.0
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: 🔑 Log in to GHCR
         # pinned from docker/login-action@v3.5.0
@@ -158,13 +158,13 @@ jobs:
 
       - name: 🐳 Set up Buildx
         # pinned from docker/setup-buildx-action@v3.11.1
-        uses: docker/setup-buildx-action@e46886c8c6ef4e8d1f0bd4f6bb4e7cd90e66e859
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
 
       - name: 🔨 Build & push
         # Build context is the repo root so uv can resolve the workspace graph;
         # the Dockerfile lives at apps/server/Dockerfile.
         # pinned from docker/build-push-action@v6.18.0
-        uses: docker/build-push-action@263435318d21b81e6680810a306d55fa191b83f2
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
           context: .
           file: ./apps/server/Dockerfile
@@ -197,7 +197,7 @@ jobs:
     steps:
       - name: 📥 Checkout
         # pinned from actions/checkout@v6.1.0
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
 

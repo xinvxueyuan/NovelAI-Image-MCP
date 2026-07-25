@@ -63,7 +63,7 @@ jobs:
     steps:
       - name: Checkout
         # pinned from actions/checkout@v6.1.0
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
       - id: detect
@@ -82,10 +82,10 @@ jobs:
     steps:
       - name: Checkout
         # pinned from actions/checkout@v6.1.0
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Setup Node
         # pinned from actions/setup-node@v6.5.0
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24
       - name: Setup pnpm
@@ -95,7 +95,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Setup uv
         # pinned from astral-sh/setup-uv@v8.3.2
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
         with:
           python-version: "3.13"
           enable-cache: true
@@ -143,11 +143,11 @@ jobs:
     steps:
       - name: Checkout
         # pinned from actions/checkout@v6.1.0
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup uv
         # pinned from astral-sh/setup-uv@v8.3.2
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
         with:
           python-version: "3.13"
           enable-cache: true
@@ -197,15 +197,15 @@ jobs:
     steps:
       - name: Checkout
         # pinned from actions/checkout@v6.1.0
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Set up Docker Buildx
         # pinned from docker/setup-buildx-action@v3.11.1
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c
       - name: Build runtime image
         # Build context is the repo root so uv can resolve the workspace
         # graph; the Dockerfile lives at apps/server/Dockerfile.
         # pinned from docker/build-push-action@v6.18.0
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
         with:
           context: .
           file: ./apps/server/Dockerfile
@@ -241,12 +241,12 @@ jobs:
       UV_NO_SYNC: "1"
     steps:
       # pinned from actions/checkout@v6.1.0
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup Node
         # pinned from actions/setup-node@v6.5.0
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24
       - name: Setup pnpm
@@ -256,7 +256,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Setup uv
         # pinned from astral-sh/setup-uv@v8.3.2
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
         with:
           python-version: "3.13"
           cache-dependency-glob: uv.lock
