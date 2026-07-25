@@ -1,20 +1,41 @@
 {
-  "name": "novelai-image-mcp-tooling",
+  "name": "novelai-image-mcp",
   "version": "0.1.0",
   "private": true,
-  "description": "Node-side tooling for the NovelAI Image MCP repository (markdownlint only).",
+  "description": "NovelAI Image MCP monorepo: MCP server + Sphinx docs site",
   "license": "MIT",
   "packageManager": "pnpm@10.0.0",
   "engines": {
     "node": ">=24"
   },
   "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "turbo run format",
+    "format:check": "turbo run format:check",
+    "reuse": "uv run reuse lint",
+    "serve": "turbo run serve",
+    "dev": "turbo run dev",
+    "clean": "turbo run clean",
+    "linkcheck": "turbo run linkcheck",
+    "docs:build": "turbo run build --filter=@novelai-image-mcp/docs",
+    "docs:serve": "turbo run serve --filter=@novelai-image-mcp/docs",
+    "docs:linkcheck": "turbo run linkcheck --filter=@novelai-image-mcp/docs",
+    "server:build": "turbo run build --filter=@novelai-image-mcp/server",
+    "server:serve": "turbo run serve --filter=@novelai-image-mcp/server",
     "markdownlint": "markdownlint-cli2",
     "markdownlint:fix": "markdownlint-cli2 --fix",
+    "check": "turbo run lint typecheck test",
     "prepare": "husky"
   },
   "devDependencies": {
+    "eslint-plugin-turbo": "^2.10.5",
     "husky": "^9.1.7",
-    "markdownlint-cli2": "^0.18.1"
+    "markdownlint-cli2": "^0.18.1",
+    "rimraf": "^6.0.1",
+    "turbo": "^2.10.5"
   }
 }

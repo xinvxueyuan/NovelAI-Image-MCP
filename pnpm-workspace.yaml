@@ -1,0 +1,10 @@
+# pnpm workspace declaration.
+#
+# Each entry below is a workspace package whose package.json declares
+# turbo-runnable scripts. None of the workspaces carry Node runtime deps —
+# the server is pure Python (uv-managed) and the docs site is Sphinx (also
+# uv-managed). pnpm is used here only to install the cross-cutting Node
+# toolchain (turbo, husky, markdownlint-cli2, rimraf, eslint-plugin-turbo)
+# at the workspace root and to give turbo a package graph to traverse.
+packages:
+  - "apps/*"

@@ -1,327 +1,36 @@
-[project]
-name = "novelai-image-mcp"
-version = "0.1.0"
-description = "MCP server exposing NovelAI image generation as tools for AI agents"
-readme = "README.md"
-license = "MIT"
-license-files = ["LICENSE"]
-requires-python = ">=3.13,<3.14"
-keywords = [
-    "mcp",
-    "model-context-protocol",
-    "novelai",
-    "image-generation",
-    "ai",
-    "agent",
-    "diffusion",
-]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Environment :: Console",
-    "Framework :: AsyncIO",
-    "Intended Audience :: Developers",
-    "Natural Language :: English",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.13",
-    "Topic :: Multimedia :: Graphics",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
-]
-authors = [{ name = "NovelAI Image MCP contributors" }]
-maintainers = [{ name = "NovelAI Image MCP contributors" }]
-dependencies = [
-    # MCP SDK v2: FastMCP renamed to MCPServer (from mcp.server import MCPServer, Image).
-    # 2.0.0b2 is the latest beta; the spec auto-enables pre-releases via the
-    # explicit beta reference, and `[tool.uv] prerelease = "allow"` propagates
-    # to the transitive `mcp-types==2.0.0b2` constraint.
-    "mcp>=2.0.0b2",
-    # httpx is pinned below 1.0 because respx (test dep) doesn't yet support
-    # httpx 1.x and the 1.0.dev pre-release leaks in via `prerelease = "allow"`.
-    "httpx>=0.28.0,<1.0.0",
-    "argon2-cffi>=25.1.0",
-    "msgpack>=1.1.0",
-    "pydantic>=2.10.0",
-    "pydantic-settings>=2.7.0",
-    "typer>=0.15.0",
-]
-
-[project.scripts]
-novelai-image-mcp = "novelai_image_mcp.cli:app"
-
-[project.urls]
-Homepage = "https://github.com/novelai-image-mcp/NovelAI-Image-MCP"
-Repository = "https://github.com/novelai-image-mcp/NovelAI-Image-MCP"
-Issues = "https://github.com/novelai-image-mcp/NovelAI-Image-MCP/issues"
-
-[dependency-groups]
-dev = [{ include-group = "lint" }, { include-group = "test" }]
-lint = [
-    "ruff>=0.15.0",
-    "pyright>=1.1.400",
-    "poethepoet>=0.33.0",
-    "prek>=0.4.10",
-    # charset-normalizer is required by reuse on Windows (no libmagic);
-    # it lets reuse detect file encodings without a system `file` binary.
-    "reuse[charset-normalizer]>=5.0.0",
-]
-test = [
-    "pytest>=9.0.0",
-    "pytest-asyncio>=1.0.0",
-    "pytest-cov>=7.0.0",
-    "pytest-timeout>=2.4.0",
-    "respx>=0.22.0",
-]
-
-[build-system]
-requires = ["uv_build>=0.11.8,<0.12"]
-build-backend = "uv_build"
-
-[tool.uv.build-backend]
-module-name = ["novelai_image_mcp"]
-module-root = "src"
+# Root pyproject.toml — uv workspace root (virtual, not a package).
+#
+# This file declares the uv workspace; per-package dependencies and tool
+# configuration live in each member's pyproject.toml:
+#   - apps/server/pyproject.toml  — MCP server (real package, builds a wheel)
+#   - apps/docs/pyproject.toml   — Sphinx documentation site (virtual project)
+#
+# Run `uv sync` from the repository root to materialize the shared workspace
+# virtualenv. Run `uv run --directory apps/server <cmd>` (or
+# `uv run --package novelai-image-mcp <cmd>`) to scope a command to a member.
 
 [tool.uv]
-package = true
+# Root is a virtual workspace, not an installable project.
+package = false
 # mcp 2.x is currently in beta; allow pre-releases workspace-wide so the
 # transitive `mcp-types==2.0.0bN` constraint resolves without --prerelease.
 # Drop this once mcp 2.0.0 stable is released.
 prerelease = "allow"
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Ruff
-# ─────────────────────────────────────────────────────────────────────────────
-[tool.ruff]
-line-length = 88
-target-version = "py313"
-extend-exclude = [".trae", ".venv", "outputs"]
-
-[tool.ruff.format]
-line-ending = "lf"
-preview = true
-
-[tool.ruff.lint]
-preview = true
-explicit-preview-rules = true
-future-annotations = true
-task-tags = ["TODO", "FIXME", "XXX", "HACK", "BUG", "NOTE"]
-select = [
-    "F",     # Pyflakes
-    "W",     # pycodestyle warnings
-    "E",     # pycodestyle errors
-    "I",     # isort
-    "C90",   # mccabe
-    "N",     # pep8-naming
-    "PL",    # pylint
-    "UP",    # pyupgrade
-    "YTT",   # flake8-2020
-    "ANN",   # flake8-annotations
-    "ASYNC", # flake8-async
-    "BLE",   # flake8-blind-except
-    "FBT",   # flake8-boolean-trap
-    "B",     # flake8-bugbear
-    "A",     # flake8-builtins
-    "COM",   # flake8-commas
-    "C4",    # flake8-comprehensions
-    "D",     # pydocstyle
-    "DTZ",   # flake8-datetimez
-    "T10",   # flake8-debugger
-    "ICN",   # flake8-import-conventions
-    "PIE",   # flake8-pie
-    "T20",   # flake8-print
-    "PYI",   # flake8-pyi
-    "Q",     # flake8-quotes
-    "RSE",   # flake8-raise
-    "RET",   # flake8-return
-    "SIM",   # flake8-simplify
-    "SLOT",  # flake8-slots
-    "TID",   # flake8-tidy-imports
-    "TC",    # flake8-type-checking
-    "ARG",   # flake8-unused-arguments
-    "PTH",   # flake8-use-pathlib
-    "FAST",  # FastAPI
-    "PERF",  # Perflint
-    "PGH",   # pygrep-hooks
-    "FURB",  # refurb
-    "TRY",   # tryceratops
-    "RUF",   # Ruff-specific
-]
-ignore = [
-    "B008",  # function-call-in-default-argument (typer defaults)
-    "ANN202", # missing-return-type-private-function
-    "ANN401", # any-type (ToolError contexts use Any for provider payloads)
-    "COM812", # missing-trailing-comma (conflicts with ruff-format)
-    "PLC0415", # import-outside-top-level (lazy optional imports)
-    "TID252", # prefer-absolute-imports
-    # pydocstyle: enforce style on existing docstrings, don't require new ones everywhere
-    "D100", # missing-module-docstring
-    "D101", # missing-public-class-docstring
-    "D102", # missing-public-method-docstring
-    "D103", # missing-public-function-docstring
-    "D104", # missing-public-package-docstring
-    "D105", # missing-magic-method-docstring
-    "D107", # missing-__init__-docstring
-    "D203", # one-blank-line-before-class (conflicts with D213)
-    "D212", # multi-line-summary-first-line (conflicts with D213)
-    "D400", # ends-in-period (too strict for CJK content)
-    "D415", # ends-in-punctuation (too strict for CJK content)
-]
-allowed-confusables = [
-    # CJK punctuation used in docstrings and comments.
-    "，", "。", "“", "”", "：", "；", "？", "！", "【", "】", "《", "》", "…", "—",
-    "（", "）", "、",
-    # Intentional typography in user-facing docstrings: en dash for ranges
-    # (e.g. "0–5") and the multiplication sign for "2×/4×" upscaling factors.
-    "–", "×",
-]
-
-[tool.ruff.lint.per-file-ignores]
-# Tests may use magic values, fixtures, and lack explicit return types.
-"tests/**" = [
-    "ARG002",
-    "ANN201",
-    "PLR2004",
-    "E501",
-    "F841",
-    "PLR0913",
-    "PLR0917",
-    "TC002",
-    "TC003",
-    "TC005",
-    "TRY003",
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "S101", # assert in tests
-]
-# CLI scripts use print for diagnostic output.
-"scripts/**" = ["T201", "E501", "BLE001", "TRY003"]
-# Ported NovelAI client modules preserve their original validated style.
-"src/novelai_image_mcp/nai/**" = [
-    "TRY003",  # domain failures carry endpoint-specific diagnostics
-    "PLR2004", # NovelAI protocol limits are clearest beside their validation
-    "C901",    # centralized generation validation
-    "PLR0912", # validation covers independent feature families
-    "PLR0915", # coupled protocol invariants kept together
-    "PLR0911", # compatibility event classification has explicit terminal shapes
-    "PLR0913", # Director tools have a fixed public protocol parameter surface
-    "TC003",   # AsyncIterator/Mapping annotations document the public client API
-]
-# MCP tool wrappers and the typer CLI mirror the NovelAI protocol surface: a
-# fixed set of named parameters per generation mode. The preview rule families
-# below flag that shape (too-many-args, boolean-default-positional, long raise
-# messages, magic-value thresholds) but the protocol leaves no room to refactor
-# them away without obscuring the wire format.
-"src/novelai_image_mcp/tools/**" = [
-    "PLR0913", # too-many-arguments — protocol parameter surface
-    "PLR0917", # too-many-positional-arguments — same surface, keyword-only
-    "FBT001",  # boolean-type-hint-positional-argument — toggles like `smea`
-    "FBT002",  # boolean-default-value-positional-argument — defaults match API
-    "TRY003",  # raise-vanilla-args — long messages guide the agent caller
-    "PLR2004", # magic-value-comparison — protocol thresholds (0.01, 28, …)
-    "TC001", "TC002", "TC003", "TC005", # type-only imports document the public API
-]
-# The CLI mirrors the same protocol surface (typer options per subcommand) and
-# raises ``typer.BadParameter`` with actionable messages for the operator.
-"src/novelai_image_mcp/cli.py" = [
-    "PLR0913",
-    "PLR0917",
-    "FBT001",
-    "FBT002",
-    "TRY003",
-    "TC001", "TC002", "TC003", "TC005",
-]
-# Server module: ``RuntimeError`` for missing credentials is operator guidance.
-"src/novelai_image_mcp/server.py" = [
-    "TRY003",
-    "TC001", "TC003", "TC005",
-]
-# Payload module imports only type-only models under ``from __future__ import
-# annotations``; TC002 is the matching third-party rule for ``msgpack`` types.
-"src/novelai_image_mcp/nai/payload.py" = [
-    "TC001", "TC002", "TC003",
-]
-# ``nai/__init__.py`` groups ``__all__`` by re-export source module for
-# navigability; the alphabetical sort would erase that documentation.
-# RUF022 = unsorted-dunder-all (was historically mis-coded as PLC0206).
-"src/novelai_image_mcp/nai/__init__.py" = [
-    "RUF022",
-]
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
-[tool.ruff.lint.pyupgrade]
-keep-runtime-typing = true
-
-[tool.ruff.lint.flake8-quotes]
-inline-quotes = "double"
-multiline-quotes = "double"
-docstring-quotes = "double"
-
-[tool.ruff.lint.isort]
-known-first-party = ["novelai_image_mcp"]
-force-sort-within-sections = true
-combine-as-imports = true
+[tool.uv.workspace]
+members = ["apps/server", "apps/docs"]
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Pyright (standard mode — lenient on the ported nai/ client)
+# Shared dev tooling (installed into the root workspace virtualenv)
 # ─────────────────────────────────────────────────────────────────────────────
-[tool.pyright]
-pythonVersion = "3.13"
-pythonPlatform = "All"
-typeCheckingMode = "standard"
-include = ["src", "tests"]
-exclude = [
-    ".trae",
-    ".venv",
-    "outputs",
-    "docker",
-    "__pycache__",
-    ".ruff_cache",
-    ".pytest_cache",
-    "node_modules",
-    "tmp",
+# Repo-wide concerns only. Per-package dev tools (ruff, pyright, pytest,
+# poethepoet) live in apps/server/pyproject.toml; per-docs dev tools
+# (sphinx-autobuild) live in apps/docs/pyproject.toml.
+[dependency-groups]
+dev = [{ include-group = "lint" }]
+lint = [
+    # FSFE REUSE compliance — runs from the repo root to scan the whole tree.
+    "reuse[charset-normalizer]>=5.0.0",
+    # prek runs from the repo root to wire repo-wide pre-commit hooks.
+    "prek>=0.4.10",
 ]
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Pytest
-# ─────────────────────────────────────────────────────────────────────────────
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "session"
-pythonpath = [".", "src"]
-testpaths = ["tests"]
-addopts = "--import-mode=importlib --strict-markers --strict-config --cov=src/novelai_image_mcp --cov-branch --cov-report=term-missing --cov-report=xml:test-results/coverage.xml --cov-fail-under=70"
-timeout = 60
-timeout_method = "thread"
-filterwarnings = ["error"]
-
-[tool.coverage.run]
-source = ["src/novelai_image_mcp"]
-branch = true
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "if TYPE_CHECKING:",
-    "raise NotImplementedError",
-    "if __name__ == .__main__.:",
-]
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Poe tasks (cross-platform, uv-friendly runner: `uv run poe <task>`)
-# ─────────────────────────────────────────────────────────────────────────────
-[tool.poe.tasks]
-lint = "ruff check src tests"
-lint-fix = "ruff check --fix src tests"
-format = "ruff format src tests"
-format-check = "ruff format --check src tests"
-typecheck = "pyright"
-test = "pytest"
-check.sequence = ["format-check", "lint", "typecheck", "test"]
-check.ignore_fail = "return_zero"
-serve = "python -m novelai_image_mcp serve"
-serve-http.shell = "MCP_TRANSPORT=streamable-http python -m novelai_image_mcp serve"
-reuse = "reuse lint"

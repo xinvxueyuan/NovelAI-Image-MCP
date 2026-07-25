@@ -22,8 +22,14 @@
     }
   },
   "globs": [
-    "*.md", // root .md files (README, README-zh, CHANGELOG, etc.)
-    ".github/**/*.md"
+    // Root-level markdown (README, README-zh, CONTRIBUTING, CHANGELOG, …)
+    "*.md",
+    // GitHub templates & actions
+    ".github/**/*.md",
+    // Documentation site source (apps/docs/source/**/*.md)
+    "apps/docs/source/**/*.md",
+    // Per-package READMEs
+    "apps/*/README.md"
   ],
   "ignores": [
     // Defensive fallback: skip common dependency / cache directories even
@@ -32,6 +38,8 @@
     "**/.venv/**",
     "**/.pytest_cache/**",
     "**/test-results/**",
+    // Sphinx build output (generated, never linted)
+    "apps/docs/_build/**",
     // GitHub issue FORM templates use YAML ``body:`` syntax (``- type:`` list
     // items) that markdownlint flags as ill-indented markdown — they are not
     // free-form markdown, so skip them.

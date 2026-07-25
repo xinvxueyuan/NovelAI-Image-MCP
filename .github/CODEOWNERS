@@ -4,19 +4,37 @@
 # Lines starting with `#` are comments.
 
 # Default owner — every file not otherwise claimed.
-*                        @novelai-image-mcp/maintainers
+*                                @novelai-image-mcp/maintainers
 
-# Core MCP server composition root and lifespan.
-/src/novelai_image_mcp/server.py    @novelai-image-mcp/maintainers
-/src/novelai_image_mcp/settings.py  @novelai-image-mcp/maintainers
+# ── MCP server (apps/server) ────────────────────────────────────────────
+# Composition root and lifespan
+/apps/server/src/novelai_image_mcp/server.py     @novelai-image-mcp/maintainers
+/apps/server/src/novelai_image_mcp/settings.py   @novelai-image-mcp/maintainers
+# Ported NovelAI client — special review for protocol wire-format changes
+/apps/server/src/novelai_image_mcp/nai/         @novelai-image-mcp/maintainers
+# MCP tool definitions
+/apps/server/src/novelai_image_mcp/tools/        @novelai-image-mcp/maintainers
+# Server packaging + Docker
+/apps/server/pyproject.toml                      @novelai-image-mcp/maintainers
+/apps/server/Dockerfile                          @novelai-image-mcp/maintainers
+/apps/server/docker/                             @novelai-image-mcp/maintainers
 
-# Ported NovelAI client. Special review for protocol wire-format changes.
-/src/novelai_image_mcp/nai/        @novelai-image-mcp/maintainers
+# ── Documentation site (apps/docs) ─────────────────────────────────────
+/apps/docs/                                      @novelai-image-mcp/maintainers
 
-# CI / release infrastructure.
-/.github/                          @novelai-image-mcp/maintainers
-/Dockerfile                        @novelai-image-mcp/maintainers
-/docker-compose.yml                @novelai-image-mcp/maintainers
-/docker/                           @novelai-image-mcp/maintainers
-/.husky/                           @novelai-image-mcp/maintainers
-/prek.toml                         @novelai-image-mcp/maintainers
+# ── Workspace + cross-cutting tooling ────────────────────────────────
+/pyproject.toml                                  @novelai-image-mcp/maintainers
+/uv.lock                                         @novelai-image-mcp/maintainers
+/pnpm-workspace.yaml                             @novelai-image-mcp/maintainers
+/pnpm-lock.yaml                                  @novelai-image-mcp/maintainers
+/turbo.json                                      @novelai-image-mcp/maintainers
+/package.json                                    @novelai-image-mcp/maintainers
+
+# ── CI / release infrastructure ───────────────────────────────────────
+/.github/                                        @novelai-image-mcp/maintainers
+/docker-compose.yml                              @novelai-image-mcp/maintainers
+/.dockerignore                                   @novelai-image-mcp/maintainers
+/.husky/                                         @novelai-image-mcp/maintainers
+/prek.toml                                       @novelai-image-mcp/maintainers
+/REUSE.toml                                      @novelai-image-mcp/maintainers
+/.markdownlint-cli2.jsonc                        @novelai-image-mcp/maintainers

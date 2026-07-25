@@ -3,10 +3,17 @@
 #
 # Pre-commit hook: auto-fix → markdown → python checks
 # Phases (fast-feedback first, blocking before non-blocking analysis):
-#   Phase 1   prek        auto-fix (ruff --fix + ruff-format + general hooks)
+#   Phase 1   prek          auto-fix (ruff --fix + ruff-format + general hooks)
 #   Phase 2   markdownlint  .md validation
-#   Phase 3   Pyright     type checking (slow; only on .py changes)
-#   Phase 4   pytest      unit tests (slowest; only on .py changes)
+#   Phase 3   Pyright       type checking (slow; only on apps/server .py changes)
+#   Phase 4   pytest        unit tests (slowest; only on apps/server .py changes)
+#
+# Workspace layout (uv monorepo):
+#   apps/server/   installable MCP server package — Python tooling (ruff,
+#                  pyright, pytest, poethepoet) all live in
+#                  apps/server/pyproject.toml.
+#   apps/docs/     Sphinx documentation site (virtual project) — no tests,
+#                  no pyright, no ruff config.
 #
 # Pre-requisites (installed by `uv sync` / `pnpm install`):
 #   - uv                https://docs.astral.sh/uv/
@@ -42,14 +49,20 @@ if [ -z "$STAGED" ]; then
     exit 0
 fi
 
-PY_STAGED=$(printf '%s\n' "$STAGED" | grep -E '\.py$' || true)
+# Split into per-workspace buckets so the slow Python phases only run when
+# apps/server source actually changes (docs conf.py changes don't need pyright
+# or pytest, since they're outside the server's [tool.pyright] / testpaths).
 MD_STAGED=$(printf '%s\n' "$STAGED" | grep -E '\.md$' || true)
+PY_SERVER_STAGED=$(printf '%s\n' "$STAGED" | grep -E '^apps/server/.*\.py$' || true)
 
 echo "🚀 Running pre-commit checks..."
 
 # ── Phase 1: prek auto-fix (always runs; gates everything) ─────────
 # prek runs its own staged-file filtering by stage. If prek modifies files
 # (ruff --fix, ruff-format, end-of-file-fixer), we re-stage and retry once.
+# prek discovers the [tool.ruff] config per file (walking up from each file),
+# so apps/server/src/**/*.py uses apps/server/pyproject.toml and
+# apps/docs/source/conf.py uses apps/docs/pyproject.toml.
 if [ -n "$UV_CMD" ]; then
     echo "🔧 Running prek auto-fix..."
     if ! "$UV_CMD" run prek validate-config prek.toml ||
@@ -67,9 +80,11 @@ else
 fi
 
 # ── Phase 2: markdownlint (only on .md changes) ────────────────────
+# Pass staged .md files explicitly so unchanged docs don't slow the run.
+# markdownlint-cli2 still applies the repo-wide .markdownlint-cli2.jsonc
+# config (rules + ignores) to each file.
 if [ -n "$MD_STAGED" ] && [ -n "$PNPM_RUNNER" ]; then
     echo "📝 Running markdownlint..."
-    # Pass staged .md files explicitly so unchanged docs don't slow the run.
     if ! "$PNPM_RUNNER" exec markdownlint-cli2 $MD_STAGED; then
         echo "❌ markdownlint failed. Run 'pnpm exec markdownlint-cli2 --fix' to auto-fix."
         exit 1
@@ -78,21 +93,26 @@ elif [ -n "$MD_STAGED" ]; then
     echo "⚠️  pnpm not found — skipping markdownlint."
 fi
 
-# ── Phase 3: Pyright (only on .py changes) ──────────────────────────
-if [ -n "$PY_STAGED" ] && [ -n "$UV_CMD" ]; then
+# ── Phase 3: Pyright (only on apps/server .py changes) ─────────────
+# Scope to apps/server via --directory so pyright picks up the
+# [tool.pyright] config from apps/server/pyproject.toml (include = ["src",
+# "tests"]). Changes to apps/docs/source/conf.py are out of scope — they
+# are not part of the publishable server package.
+if [ -n "$PY_SERVER_STAGED" ] && [ -n "$UV_CMD" ]; then
     echo "🔍 Running Pyright..."
-    if ! "$UV_CMD" run -m pyright; then
+    if ! "$UV_CMD" run --directory apps/server -m pyright; then
         echo "❌ Pyright failed. Fix the type errors and re-stage."
         exit 1
     fi
 fi
 
-# ── Phase 4: pytest (only on .py changes; slowest) ─────────────────
-# Tests are the slowest phase; skip when only docstrings/comments changed
-# in non-Python files. Use --no-header to keep output concise.
-if [ -n "$PY_STAGED" ] && [ -n "$UV_CMD" ]; then
+# ── Phase 4: pytest (only on apps/server .py changes; slowest) ──────
+# Tests live at apps/server/tests and are configured via
+# [tool.pytest.ini_options] in apps/server/pyproject.toml. Scope with
+# --directory so pytest picks up pythonpath, testpaths, addopts correctly.
+if [ -n "$PY_SERVER_STAGED" ] && [ -n "$UV_CMD" ]; then
     echo "🧪 Running pytest..."
-    if ! "$UV_CMD" run -m pytest -q --no-header --timeout=60 -p no:cacheprovider; then
+    if ! "$UV_CMD" run --directory apps/server -m pytest -q --no-header --timeout=60 -p no:cacheprovider; then
         echo "❌ pytest failed. Fix the failing tests and re-stage."
         exit 1
     fi

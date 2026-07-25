@@ -21,6 +21,16 @@ SPDX-FileCopyrightText = "2026 NovelAI Image MCP contributors"
 SPDX-License-Identifier = "MIT"
 
 # ---------------------------------------------------------------------------
+# License text files — MIT (the LICENSE files themselves carry the MIT text;
+# REUSE needs to know they are MIT-licensed to avoid "missing license info").
+# ---------------------------------------------------------------------------
+[[annotations]]
+path = ["LICENSE", "**/LICENSE", "LICENSES/MIT.txt"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 NovelAI Image MCP contributors"
+SPDX-License-Identifier = "MIT"
+
+# ---------------------------------------------------------------------------
 # Documentation — MIT
 # ---------------------------------------------------------------------------
 [[annotations]]
@@ -61,8 +71,13 @@ path = [
   "**/*.cfg",
   "**/*.xml",
   "**/*.ini",
-  # docker / compose
-  "Dockerfile",
+  # stylesheets (apps/docs/source/_static/custom.css — Sphinx theme overrides)
+  "**/*.css",
+  # makefiles (apps/docs/Makefile)
+  "**/Makefile",
+  # docker / compose (Dockerfile lives at apps/server/Dockerfile; the root
+  # .dockerignore scopes the build context)
+  "**/Dockerfile",
   "docker-compose.yml",
   # github ownership routing (extensionless)
   "**/CODEOWNERS",
@@ -88,10 +103,11 @@ SPDX-License-Identifier = "CC0-1.0"
 # Build artifacts — CC0 1.0
 # ---------------------------------------------------------------------------
 # Python bytecode caches (``*.pyc``, ``__pycache__/``), pytest / coverage
-# outputs and the bundled Node.js toolchain under ``node_modules/`` are all
-# derivative artifacts that REUSE still scans; we annotate them as CC0 (public
-# domain) to avoid false "missing license" reports. They are also in .gitignore
-# and never committed.
+# outputs, Sphinx build output (apps/docs/_build/), the Turborepo cache
+# (.turbo/), and the bundled Node.js toolchain under ``node_modules/`` are
+# all derivative artifacts that REUSE still scans; we annotate them as CC0
+# (public domain) to avoid false "missing license" reports. They are also in
+# .gitignore and never committed.
 [[annotations]]
 path = [
   "**/*.pyc",
@@ -108,7 +124,18 @@ path = [
   "**/.coverage.*",
   "**/coverage.xml",
   "**/test-results/**",
+  # Sphinx build output (apps/docs/_build/**)
+  "**/_build/**",
+  # Turborepo cache
+  "**/.turbo/**",
+  # uv cache (per-user)
+  "**/.uv-cache/**",
+  # Node toolchain
   "node_modules/**",
+  # Agent / tool caches (never committed but scanned by REUSE)
+  ".trae/**",
+  ".codex/**",
+  ".firecrawl/**"
 ]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 NovelAI Image MCP contributors"

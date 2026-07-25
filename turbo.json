@@ -1,0 +1,93 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "stream",
+  "globalDependencies": [
+    "uv.lock",
+    "pnpm-lock.yaml",
+    "pyproject.toml",
+    "turbo.json",
+    "pnpm-workspace.yaml"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "pyproject.toml",
+        "source/**",
+        "src/**",
+        "tests/**"
+      ],
+      "outputs": ["dist/**", "_build/html/**"]
+    },
+    "lint": {
+      "dependsOn": ["^lint"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "pyproject.toml",
+        "src/**",
+        "tests/**",
+        "source/**"
+      ]
+    },
+    "lint:fix": {
+      "dependsOn": ["^lint:fix"],
+      "cache": false,
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "pyproject.toml",
+        "src/**",
+        "tests/**",
+        "source/**"
+      ]
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "pyproject.toml",
+        "src/**",
+        "tests/**"
+      ]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "pyproject.toml",
+        "src/**",
+        "tests/**"
+      ],
+      "outputs": ["test-results/**"]
+    },
+    "format": {
+      "cache": false,
+      "inputs": ["src/**", "tests/**"]
+    },
+    "format:check": {
+      "inputs": ["src/**", "tests/**"]
+    },
+    "reuse": {
+      "cache": false
+    },
+    "serve": {
+      "cache": false,
+      "persistent": true
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "clean": {
+      "cache": false
+    },
+    "linkcheck": {
+      "cache": false,
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "source/**"
+      ],
+      "outputs": ["_build/linkcheck/**"]
+    }
+  }
+}

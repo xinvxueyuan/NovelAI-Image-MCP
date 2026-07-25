@@ -1,0 +1,66 @@
+/* NovelAI Image MCP — Furo theme overrides
+ *
+ * The brand color palette is set in conf.py via html_theme_options. This
+ * file holds structural / typography overrides that are easier to express
+ * in CSS than through Furo's CSS-variable hooks.
+ */
+
+/* ── Code blocks ──────────────────────────────────────────────────────────── */
+/* Tighter line-height for code so parameter tables don't balloon. */
+.highlight,
+.literal-block-wrapper {
+  line-height: 1.4;
+}
+
+/* Make copybutton slightly more visible on Furo's default backgrounds. */
+.copybutton {
+  opacity: 0.5;
+  transition: opacity 0.15s ease-in-out;
+}
+.copybutton:hover,
+.copybutton:focus-visible {
+  opacity: 1;
+}
+
+/* ── Tables ───────────────────────────────────────────────────────────────── */
+/* Tighten parameter tables so long type signatures don't wrap mid-token. */
+table.docutils {
+  table-layout: auto;
+}
+table.docutils td,
+table.docutils th {
+  word-break: break-word;
+}
+
+/* ── Admonitions ─────────────────────────────────────────────────────────── */
+/* Furo renders MyST admonitions well by default; tweak the side stripe width
+ * for stronger visual hierarchy. */
+.admonition {
+  border-left-width: 4px;
+}
+
+/* ── Mermaid diagrams ─────────────────────────────────────────────────────── */
+.mermaid {
+  text-align: center;
+}
+
+/* ── Brand link in the sidebar ─────────────────────────────────────────────── */
+.sidebar-brand-text {
+  font-weight: 600;
+}
+
+/* ── Print styles ──────────────────────────────────────────────────────────── */
+@media print {
+  .toc-tree,
+  .related-pages,
+  .copybutton,
+  .footer-icons,
+  .edit-this-page {
+    display: none !important;
+  }
+  .article-container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}

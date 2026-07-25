@@ -4,6 +4,10 @@
 # Slim image + build tools for any C-extension dependencies that lack
 # pre-built wheels. The builder is discarded in the final image, so build
 # tools do not affect the runtime image size.
+#
+# The build context is the repository root (see docker-compose.yml or the
+# release workflow). We copy both the workspace root pyproject.toml and the
+# apps/server member's pyproject.toml so uv can resolve the workspace graph.
 FROM python:3.13-slim@sha256:7ba5f5888fbe0014ab9edb2278922995c2201fc3752c46b0be24763eb46fa9f3 AS requirements_stage
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -14,12 +18,17 @@ WORKDIR /wheel
 
 RUN python -m pip install --user uv
 
+# Copy workspace root + lockfile so uv can resolve the full workspace graph.
 COPY ./pyproject.toml ./uv.lock /wheel/
+# Copy the server member's manifest so --package novelai-image-mcp resolves.
+COPY ./apps/server/pyproject.toml /wheel/apps/server/pyproject.toml
 
-# Export only third-party runtime dependencies (no dev groups). --no-emit-project
-# excludes the local ``-e .`` entry so the builder does not need README/license
-# files; the source is copied into the runtime stage directly.
-RUN python -m uv export --frozen --no-dev --all-extras --no-emit-project --no-hashes \
+# Export only third-party runtime dependencies for the server (no dev groups).
+# --no-emit-project excludes the local ``-e .`` entry so the builder does not
+# need README/license files; the source is copied into the runtime stage
+# directly via the project_build stage below.
+RUN python -m uv export --package novelai-image-mcp \
+      --frozen --no-dev --all-extras --no-emit-project --no-hashes \
       --output-file requirements.txt
 
 # Build wheels for offline installation in the runtime stage.
@@ -30,8 +39,10 @@ RUN python -m pip wheel --wheel-dir=/wheels --no-cache-dir --requirement ./requi
 # Build the project wheel for installation in the runtime image.
 FROM requirements_stage AS project_build
 WORKDIR /build
+
+# Copy the full workspace so `uv build --package` can resolve the member.
 COPY . /build/
-RUN python -m uv build --wheel --no-sources --out-dir /dist
+RUN python -m uv build --package novelai-image-mcp --wheel --no-sources --out-dir /dist
 
 
 # ── Runtime stage ────────────────────────────────────────────────────────────
@@ -81,7 +92,7 @@ RUN pip install --no-cache-dir /tmp/*.whl && rm /tmp/*.whl
 # (.github/workflows/ci.yml) to verify the image boots and tools register.
 ARG SMOKE_TEST=false
 ENV SMOKE_TEST=${SMOKE_TEST}
-COPY --chown=app:app ./docker/smoke-test.py /app/docker/smoke-test.py
+COPY --chown=app:app ./apps/server/docker/smoke-test.py /app/docker/smoke-test.py
 
 USER app
 

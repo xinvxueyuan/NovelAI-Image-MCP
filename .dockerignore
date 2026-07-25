@@ -1,67 +1,81 @@
+# Root .dockerignore — scopes the Docker build context (always the repo root,
+# see docker-compose.yml and .github/workflows/release.yml) so only files the
+# server image actually needs are sent to the builder. Everything excluded
+# here is also excluded from the sdist/wheel produced by `uv build`.
+
 # ── Version control ──
 .git
 .gitignore
 .gitattributes
+.github
 
-# ── Python ──
-.venv
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-*.egg-info/
-*.egg
-.Python
-build/
-dist/
+# ── Python — caches / packaging artifacts ──
+**/.venv
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+**/*.so
+**/*.egg-info/
+**/.Python
+**/build/
+**/dist/
+**/_build/
+**/.turbo/
 
-# ── Python caches / tooling ──
-.pytest_cache/
-.ruff_cache/
-.mypy_cache/
-.pyright/
-htmlcov/
-.coverage
-.coverage.*
-coverage.xml
-test-results/
+# ── Lint / test / coverage caches ──
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+**/.pyright/
+**/htmlcov/
+**/.coverage
+**/.coverage.*
+**/coverage.xml
+**/test-results/
 
-# ── Environment files (keep example for reference) ──
+# ── Environment files (keep .env.example for reference) ──
 .env
 .env.*
 !.env.example
 
 # ── Tests (not needed in runtime image) ──
-tests/
+apps/server/tests/
 
 # ── Runtime data ──
 outputs/
 data/
 tmp/
 
-# ── Infrastructure (not needed in image) ──
-.github/
-.trae/
-.husky/
-.editorconfig
-prek.toml
-Taskfile.yml
-package.json
+# ── Documentation site (not needed in runtime image) ──
+apps/docs/
+
+# ── Cross-cutting Node tooling (not needed in runtime image) ──
+node_modules/
+**/node_modules/
 pnpm-lock.yaml
 pnpm-workspace.yaml
-node_modules/
+package.json
+**/package.json
+turbo.json
+.husky/
 .markdownlint-cli2.jsonc
 .prettierrc.json
 .prettierignore
 
-# ── Documentation (not needed in runtime image) ──
-*.md
-!README.md
+# ── Repo-level infra not needed in image ──
+.trae/
+.vscode/
+.codex/
+.firecrawl/
+.editorconfig
+prek.toml
+REUSE.toml
+LICENSES/
 
-# ── Docker files (not needed inside image) ──
-Dockerfile
-.dockerignore
-docker-compose.yml
+# ── Markdown (kept at root + apps/server for license metadata) ──
+**/*.md
+!README.md
+!apps/server/README.md
 
 # ── IDE / OS ──
 .idea/
@@ -74,4 +88,3 @@ Thumbs.db
 *.log
 *.tmp
 *.bak
-REUSE.toml

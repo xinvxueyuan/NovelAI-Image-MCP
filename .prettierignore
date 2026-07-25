@@ -2,12 +2,17 @@
 **/*.md
 
 # Build / packaging artifacts
-dist/**
-build/**
-coverage/**
-test-results/**
-.coverage
-.coverage.*
+**/dist/**
+**/build/**
+**/_build/**
+**/coverage/**
+**/test-results/**
+**/.coverage
+**/.coverage.*
+
+# Workspace per-member caches
+**/.turbo/**
+**/.egg-info/**
 
 # Dependencies
 node_modules/**
@@ -32,6 +37,7 @@ outputs/
 .codex/
 .firecrawl/
 
-# License files
+# License files (preserve exact text)
 LICENSE
 LICENSE-*
+**/LICENSE

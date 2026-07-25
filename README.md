@@ -1,5 +1,12 @@
 # NovelAI Image MCP
 
+[![CI](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/actions/workflows/ci.yml)
+[![Docs](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/actions/workflows/docs.yml/badge.svg)](https://novelai-image-mcp.github.io/NovelAI-Image-MCP/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+[![uv](https://img.shields.io/badge/uv-managed-261230.svg)](https://docs.astral.sh/uv/)
+[![REUSE](https://img.shields.io/badge/REUSE-3.0-compliant-green.svg)](https://reuse.software/)
+
 An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that
 exposes **NovelAI image generation** as tools for AI agents (Claude Desktop,
 Cline, custom agents, remote clients).
@@ -10,33 +17,94 @@ emotion, background removal, …), annotate with ControlNet, suggest tags, encod
 vibes, and query account subscription — all through the standard MCP tool
 interface.
 
+> 📖 **Documentation**: <https://novelai-image-mcp.github.io/NovelAI-Image-MCP/>
+
 ## Features
 
 - **11 MCP tools** covering the full NovelAI image API surface.
-- **Transports**: stdio (local agents) + streamable-http (remote / multi-client).
-- **Image return**: base64 `Image` content blocks (the agent *sees* the image)
+- **Two transports**: stdio (local agents) + streamable-http (remote / multi-client).
+- **Dual image return**: base64 `Image` content blocks (the agent *sees* the image)
   **and** PNG saved to disk (path returned as text).
 - **Async + sync**: async tool handlers + a `typer` CLI for direct invocation.
-- **uv-managed**, single Python package, MIT-licensed, Docker-ready.
+- **Monorepo**: uv workspace (Python) + pnpm workspace (Node tooling) orchestrated
+  by Turbo; MIT-licensed, Docker-ready, GitHub Pages docs.
+
+## Repository layout
+
+This is a **uv + pnpm monorepo**:
+
+```text
+NovelAI-Image-MCP/
+├── apps/
+│   ├── server/                 # MCP server (the installable PyPI package)
+│   │   ├── src/novelai_image_mcp/   # 11 MCP tools + NovelAI HTTP client
+│   │   ├── tests/
+│   │   ├── docker/              # smoke-test entrypoint
+│   │   ├── Dockerfile           # built with repo root as context
+│   │   └── pyproject.toml       # ruff / pyright / pytest config
+│   └── docs/                    # Sphinx documentation site
+│       ├── source/              # MyST Markdown + conf.py
+│       ├── Makefile
+│       └── pyproject.toml
+├── .github/                     # workflows, CODEOWNERS, issue templates
+├── pyproject.toml               # uv workspace root (virtual)
+├── uv.lock                      # single shared lockfile
+├── pnpm-workspace.yaml          # pnpm workspace declaration
+├── pnpm-lock.yaml               # Node toolchain lockfile
+├── turbo.json                   # cross-workspace task graph
+├── package.json                 # root scripts + dev toolchain
+└── docker-compose.yml           # local container orchestration
+```
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the developer guide and
+[`apps/docs/source/`](apps/docs/source/) for the full documentation source.
 
 ## Quick start
 
+### Install from source (development)
+
 ```bash
-# 1. Install (uv ≥ 0.5)
+# 1. Clone
+git clone https://github.com/novelai-image-mcp/NovelAI-Image-MCP.git
+cd NovelAI-Image-MCP
+
+# 2. Sync the uv workspace (installs server + docs + dev tools)
 uv sync
 
-# 2. Configure credentials
+# 3. Configure credentials
 cp .env.example .env
 #   set NOVELAI_TOKEN=...  (preferred)
 #   or  NOVELAI_USERNAME + NOVELAI_PASSWORD
 
-# 3. Run (stdio — for local agents)
+# 4. Run (stdio — for local agents)
 uv run python -m novelai_image_mcp serve
 
-# 4. Or run over HTTP
+# 5. Or over HTTP
 MCP_TRANSPORT=streamable-http uv run python -m novelai_image_mcp serve
 #   → http://127.0.0.1:8000/mcp
 ```
+
+### Install from PyPI (runtime only)
+
+```bash
+pip install novelai-image-mcp
+export NOVELAI_TOKEN=pst-...
+novelai-image-mcp serve
+```
+
+### Optional: Node tooling (contributors)
+
+If you plan to contribute, install the cross-cutting Node toolchain (turbo,
+husky, markdownlint) via pnpm:
+
+```bash
+corepack enable pnpm      # one-time
+pnpm install --frozen-lockfile
+```
+
+This wires the husky pre-commit + commit-msg hooks and gives you `turbo` /
+`markdownlint-cli2` for local development. The MCP server has **zero** Node
+runtime dependencies — this step is only for contributors.
 
 ## Connect an agent (stdio)
 
@@ -80,6 +148,9 @@ uv run python -m novelai_image_mcp --help
 | `get_user_data` | Account user data |
 | `estimate_anlas_cost` | Estimate Anlas cost for a generation (no API call) |
 
+See the [tools reference](https://novelai-image-mcp.github.io/NovelAI-Image-MCP/tools/index.html)
+on the docs site for parameters and examples.
+
 ## Configuration
 
 All settings are environment variables (see `.env.example`). Key ones:
@@ -96,37 +167,49 @@ NovelAI API reference: <https://image.novelai.net/docs/index.html>
 
 ## Development
 
+The project is a uv + pnpm monorepo orchestrated by Turbo. See
+[`CONTRIBUTING.md`](CONTRIBUTING.md) for the full setup; the short version:
+
 ```bash
-uv sync --group dev      # install lint + test tooling
-uv run poe check         # ruff format-check + lint + pyright + tests
-uv run poe lint          # ruff check
-uv run poe format        # ruff format (write)
-uv run poe test          # pytest
-uv run poe typecheck     # pyright
+uv sync                              # Python workspace (server + docs + dev)
+pnpm install --frozen-lockfile       # Node toolchain (turbo + husky + markdownlint)
+
+pnpm check                           # lint + typecheck + test (all workspaces)
+pnpm docs:build                       # build the docs site
+pnpm server:serve                     # run the MCP server
+pnpm docs:serve                       # sphinx-autobuild with live reload
+```
+
+Per-member commands (via uv):
+
+```bash
+uv run --directory apps/server ruff check src tests    # lint
+uv run --directory apps/server -m pyright              # typecheck
+uv run --directory apps/server -m pytest               # tests
 ```
 
 ### Docker
 
 ```bash
-docker compose up --build      # builds and runs the server
+docker compose up --build      # builds and runs the server (HTTP transport)
 ```
 
-## Project layout
+The Dockerfile lives at [`apps/server/Dockerfile`](apps/server/Dockerfile) but
+the build context is the repository root (so uv can resolve the workspace
+graph). See [`docker-compose.yml`](docker-compose.yml).
 
-```text
-src/novelai_image_mcp/
-├── server.py          # MCPServer (mcp v2) + lifespan + transport selection
-├── settings.py        # pydantic-settings env config
-├── cli.py / __main__.py  # typer sync CLI
-├── output.py          # save-image helper
-├── tools/             # 11 MCP tool definitions
-└── nai/               # NovelAI HTTP client (httpx.AsyncClient transport)
-    ├── auth.py  constants.py  models.py  payload.py
-    ├── response.py  imaging.py  exceptions.py
-    └── client.py  service.py
-```
+## Documentation
+
+The Sphinx documentation site is built with Furo + MyST Markdown and
+auto-deploys to GitHub Pages on every push to `main`:
+
+- **Live site**: <https://novelai-image-mcp.github.io/NovelAI-Image-MCP/>
+- **Source**: [`apps/docs/source/`](apps/docs/source/)
+- **Build locally**: `pnpm docs:serve`
 
 ## License
 
 MIT — see [LICENSE](LICENSE). Per-file SPDX annotations live in
-[REUSE.toml](REUSE.toml).
+[REUSE.toml](REUSE.toml). Contributions are subject to the
+[Developer Certificate of Origin](https://developercertificate.org/) (the
+`commit-msg` hook signs off commits automatically).

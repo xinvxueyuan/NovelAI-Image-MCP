@@ -17,10 +17,10 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 import sys
 import time
 import traceback
-from pathlib import Path
 from xml.etree.ElementTree import Element, SubElement, tostring
 
 # Ensure the source tree is importable both in the container (PYTHONPATH=/app)
@@ -55,7 +55,9 @@ class _RecordingMCPServer:
 
     def tool(self, **_kwargs: object) -> object:
         def decorator(fn: object) -> object:
-            assert hasattr(fn, "__name__"), "tool decorator received a nameless callable"
+            assert hasattr(fn, "__name__"), (
+                "tool decorator received a nameless callable"
+            )
             self.tools[fn.__name__] = fn  # type: ignore[reportGeneralTypeIssues]
             return fn
 
@@ -133,8 +135,6 @@ _CHECKS: list[tuple[str, object]] = [
 
 async def _run_checks() -> list[dict[str, object]]:
     """Run each smoke check, collecting pass/fail metadata."""
-    import asyncio
-
     results: list[dict[str, object]] = []
     for name, check in _CHECKS:
         start = time.monotonic()

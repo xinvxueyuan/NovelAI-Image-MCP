@@ -8,8 +8,13 @@ services:
   # ── Primary MCP server (streamable-http transport) ──────────────────
   # Use this when running as a remote service for multiple agents / clients.
   # For local single-agent use, prefer `novelai-image-mcp serve` (stdio).
+  #
+  # The build context is the repository root so uv can resolve the workspace
+  # graph; the Dockerfile itself lives at apps/server/Dockerfile.
   mcp:
-    build: .
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
     ports:
       - *config-port
     env_file:
@@ -48,6 +53,7 @@ services:
   smoke-test:
     build:
       context: .
+      dockerfile: apps/server/Dockerfile
       args:
         SMOKE_TEST: "true"
     env_file:

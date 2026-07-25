@@ -1,0 +1,20 @@
+{
+  "name": "@novelai-image-mcp/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP server exposing NovelAI image generation as tools for AI agents",
+  "license": "MIT",
+  "scripts": {
+    "build": "uv build --out-dir dist",
+    "lint": "uv run ruff check src tests",
+    "lint:fix": "uv run ruff check --fix src tests",
+    "format": "uv run ruff format src tests",
+    "format:check": "uv run ruff format --check src tests",
+    "typecheck": "uv run pyright",
+    "test": "uv run pytest",
+    "reuse": "uv run --directory ../.. reuse lint",
+    "serve": "uv run python -m novelai_image_mcp serve",
+    "serve:http": "MCP_TRANSPORT=streamable-http uv run python -m novelai_image_mcp serve",
+    "clean": "rimraf dist build *.egg-info test-results .pytest_cache .ruff_cache"
+  }
+}

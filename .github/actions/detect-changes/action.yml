@@ -40,15 +40,16 @@ runs:
         DOCKER=false
 
         # Python: .py / pyproject.toml / uv.lock / .python-version / ruff config
+        # Anywhere in the tree (apps/server/**, apps/docs/source/conf.py, etc.).
         if echo "$FILES" | grep -qE '\.py$|(^|/)(pyproject\.toml|uv\.lock|\.python-version|ruff\.toml|\.ruff\.toml)$'; then
           PYTHON=true
         fi
-        # Markdown: .md
+        # Markdown: .md (covers README, apps/docs/source/**, .github/**)
         if echo "$FILES" | grep -qE '\.md$'; then
           MARKDOWN=true
         fi
-        # Docker: Dockerfile / docker-compose.yml / docker/* / .dockerignore
-        if echo "$FILES" | grep -qE '(^|/)(Dockerfile|docker-compose\.yml|docker-compose\.yaml|\.dockerignore)$|^docker/'; then
+        # Docker: apps/server/Dockerfile / docker-compose.yml / docker/** / .dockerignore
+        if echo "$FILES" | grep -qE '(^|/)(apps/server/Dockerfile|docker-compose\.yml|docker-compose\.yaml|\.dockerignore)$|^apps/server/docker/'; then
           DOCKER=true
         fi
 

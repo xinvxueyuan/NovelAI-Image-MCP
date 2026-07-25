@@ -1,5 +1,12 @@
 # NovelAI Image MCP
 
+[![CI](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/actions/workflows/ci.yml)
+[![Docs](https://github.com/novelai-image-mcp/NovelAI-Image-MCP/actions/workflows/docs.yml/badge.svg)](https://novelai-image-mcp.github.io/NovelAI-Image-MCP/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+[![uv](https://img.shields.io/badge/uv-managed-261230.svg)](https://docs.astral.sh/uv/)
+[![REUSE](https://img.shields.io/badge/REUSE-3.0-compliant-green.svg)](https://reuse.software/)
+
 一个 [MCP（模型上下文协议）](https://modelcontextprotocol.io/) 服务端，将 **NovelAI
 图像生成** 能力以工具形式暴露给 AI 智能体（Claude Desktop、Cline、自定义 Agent、
 远程客户端）。
@@ -8,6 +15,8 @@
 生图（文生图 / 图生图 / 局部重绘）、放大、Director 工具（线稿、表情、去背景……）、
 ControlNet 标注、标签建议、Vibe 编码以及账户订阅查询。
 
+> 📖 **在线文档**：<https://novelai-image-mcp.github.io/NovelAI-Image-MCP/>
+
 ## 特性
 
 - **11 个 MCP 工具**，覆盖 NovelAI 图像 API 全部能力。
@@ -15,26 +24,83 @@ ControlNet 标注、标签建议、Vibe 编码以及账户订阅查询。
 - **图像返回**：base64 `Image` 内容块（Agent 能“看到”图）**同时** 保存 PNG 到磁盘
   （返回路径）。
 - **异步 + 同步**：异步工具处理器 + `typer` CLI 直接调用。
-- **uv 管理**，单一 Python 包，MIT 许可，开箱即用的 Docker。
+- **单体仓库**：uv workspace（Python）+ pnpm workspace（Node 工具链）由 Turbo 编排；
+  MIT 许可，开箱即用的 Docker，GitHub Pages 文档。
+
+## 仓库结构
+
+这是一个 **uv + pnpm 单体仓库**：
+
+```text
+NovelAI-Image-MCP/
+├── apps/
+│   ├── server/                 # MCP 服务端（可发布的 PyPI 包）
+│   │   ├── src/novelai_image_mcp/   # 11 个 MCP 工具 + NovelAI HTTP 客户端
+│   │   ├── tests/
+│   │   ├── docker/              # 烟雾测试入口
+│   │   ├── Dockerfile           # 构建上下文为仓库根目录
+│   │   └── pyproject.toml       # ruff / pyright / pytest 配置
+│   └── docs/                    # Sphinx 文档站点
+│       ├── source/              # MyST Markdown 源 + conf.py
+│       ├── Makefile
+│       └── pyproject.toml
+├── .github/                     # workflows, CODEOWNERS, issue 模板
+├── pyproject.toml               # uv workspace 根（虚拟）
+├── uv.lock                      # 单一共享锁文件
+├── pnpm-workspace.yaml          # pnpm workspace 声明
+├── pnpm-lock.yaml               # Node 工具链锁文件
+├── turbo.json                   # 跨 workspace 任务图
+├── package.json                 # 根脚本 + 开发工具链
+└── docker-compose.yml           # 本地容器编排
+```
+
+完整开发指南见 [`CONTRIBUTING.md`](CONTRIBUTING.md)，文档源码见
+[`apps/docs/source/`](apps/docs/source/)。
 
 ## 快速开始
 
+### 从源码安装（开发用）
+
 ```bash
-# 1. 安装（需要 uv ≥ 0.5）
+# 1. 克隆
+git clone https://github.com/novelai-image-mcp/NovelAI-Image-MCP.git
+cd NovelAI-Image-MCP
+
+# 2. 同步 uv workspace（安装服务端 + 文档 + 开发工具）
 uv sync
 
-# 2. 配置凭证
+# 3. 配置凭证
 cp .env.example .env
 #   设置 NOVELAI_TOKEN=...  （推荐）
 #   或   NOVELAI_USERNAME + NOVELAI_PASSWORD
 
-# 3. 运行（stdio —— 用于本地 Agent）
+# 4. 运行（stdio —— 用于本地 Agent）
 uv run python -m novelai_image_mcp serve
 
-# 4. 或通过 HTTP 运行
+# 5. 或通过 HTTP 运行
 MCP_TRANSPORT=streamable-http uv run python -m novelai_image_mcp serve
 #   → http://127.0.0.1:8000/mcp
 ```
+
+### 从 PyPI 安装（仅运行时）
+
+```bash
+pip install novelai-image-mcp
+export NOVELAI_TOKEN=pst-...
+novelai-image-mcp serve
+```
+
+### 可选：Node 工具链（贡献者）
+
+若要参与贡献，请通过 pnpm 安装横切 Node 工具链（turbo、husky、markdownlint）：
+
+```bash
+corepack enable pnpm      # 一次性
+pnpm install --frozen-lockfile
+```
+
+该步骤会挂载 husky 的 pre-commit / commit-msg 钩子，并提供 `turbo` /
+`markdownlint-cli2`。MCP 服务端 **不依赖** 任何 Node 运行时——此步骤仅面向贡献者。
 
 ## 接入 Agent（stdio）
 
@@ -78,6 +144,9 @@ uv run python -m novelai_image_mcp --help
 | `get_user_data` | 账户信息 |
 | `estimate_anlas_cost` | 估算生图 Anlas 消耗（不调用 API） |
 
+工具参数与示例见文档站
+[工具参考](https://novelai-image-mcp.github.io/NovelAI-Image-MCP/tools/index.html)。
+
 ## 配置
 
 全部通过环境变量配置（见 `.env.example`）。关键项：
@@ -94,37 +163,49 @@ NovelAI API 文档：<https://image.novelai.net/docs/index.html>
 
 ## 开发
 
+本项目为 uv + pnpm 单体仓库，由 Turbo 编排。完整设置见
+[`CONTRIBUTING.md`](CONTRIBUTING.md)，简版如下：
+
 ```bash
-uv sync --group dev      # 安装 lint + test 工具
-uv run poe check         # ruff format-check + lint + pyright + 测试
-uv run poe lint          # ruff check
-uv run poe format        # ruff format（写入）
-uv run poe test          # pytest
-uv run poe typecheck     # pyright
+uv sync                              # Python workspace（server + docs + dev）
+pnpm install --frozen-lockfile       # Node 工具链（turbo + husky + markdownlint）
+
+pnpm check                           # 全 workspace 的 lint + typecheck + test
+pnpm docs:build                       # 构建文档站点
+pnpm server:serve                     # 运行 MCP 服务端
+pnpm docs:serve                       # sphinx-autobuild 实时预览
+```
+
+单成员命令（通过 uv）：
+
+```bash
+uv run --directory apps/server ruff check src tests    # lint
+uv run --directory apps/server -m pyright              # 类型检查
+uv run --directory apps/server -m pytest               # 测试
 ```
 
 ### Docker
 
 ```bash
-docker compose up --build      # 构建并运行服务端
+docker compose up --build      # 构建并运行服务端（HTTP 传输）
 ```
 
-## 项目结构
+Dockerfile 位于 [`apps/server/Dockerfile`](apps/server/Dockerfile)，但构建上下文为
+仓库根目录（这样 uv 能解析 workspace 图）。详见
+[`docker-compose.yml`](docker-compose.yml)。
 
-```text
-src/novelai_image_mcp/
-├── server.py          # MCPServer（mcp v2）+ lifespan + 传输选择
-├── settings.py        # pydantic-settings 环境配置
-├── cli.py / __main__.py  # typer 同步 CLI
-├── output.py          # 保存图像辅助
-├── tools/             # 11 个 MCP 工具定义
-└── nai/               # NovelAI HTTP 客户端（httpx.AsyncClient 传输）
-    ├── auth.py  constants.py  models.py  payload.py
-    ├── response.py  imaging.py  exceptions.py
-    └── client.py  service.py
-```
+## 文档
+
+Sphinx 文档站点使用 Furo + MyST Markdown 构建，每次推送到 `main` 时自动部署到
+GitHub Pages：
+
+- **在线站点**：<https://novelai-image-mcp.github.io/NovelAI-Image-MCP/>
+- **源码**：[`apps/docs/source/`](apps/docs/source/)
+- **本地构建**：`pnpm docs:serve`
 
 ## 许可证
 
 MIT —— 见 [LICENSE](LICENSE)。逐文件 SPDX 标注见
-[REUSE.toml](REUSE.toml)。
+[REUSE.toml](REUSE.toml)。提交即表示你同意
+[Developer Certificate of Origin](https://developercertificate.org/)（`commit-msg`
+钩子会自动添加 `Signed-off-by`）。

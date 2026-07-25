@@ -1,0 +1,98 @@
+name: 📚 Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Rebuild the site only when docs source or the autodoc introspection
+      # surface (server package) changes.
+      - "apps/docs/**"
+      - "apps/server/src/**"
+      - "apps/server/pyproject.toml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+# Cancel in-flight runs for the same ref when a new commit lands.
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+# `id-token: write` is required by actions/deploy-pages for OIDC;
+# `pages: write` lets the workflow publish to the Pages environment.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: 📦 Build Sphinx site
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        # pinned from actions/checkout@v6.1.0
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+
+      - name: ⚡ Setup uv
+        # pinned from astral-sh/setup-uv@v8.3.2
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: 🔧 Configure GitHub Pages
+        # pinned from actions/configure-pages@v5.0.0
+        id: pages
+        uses: actions/configure-pages@98cba057c2c12a3e4ae9c8d2e32251ca23b52359
+        with:
+          enablement: false  # we don't try to enable Pages on the repo from CI
+
+      - name: 📥 Sync workspace
+        # Sync the full workspace (server + docs) so autodoc can introspect
+        # the in-tree novelai_image_mcp package. Skip the dev/test groups.
+        run: uv sync --no-dev --all-extras --frozen
+
+      - name: 🔨 Build HTML
+        # Build with -W --keep-going so any Sphinx warning fails the build
+        # but every warning is reported in a single pass. --fail-on-warning
+        # would stop at the first warning and hide the rest.
+        run: |
+          uv run --package novelai-image-mcp-docs \
+            sphinx-build -b html \
+              apps/docs/source apps/docs/_build/html \
+              -W --keep-going
+
+      - name: 📄 Inject Pages base URL
+        # Sphinx writes absolute URLs (e.g. /_static/...) by default. For
+        # project Pages (https://<org>.github.io/<repo>/), rewrite them to
+        # the proper base so assets load correctly.
+        if: steps.pages.outputs.base_path != ''
+        run: |
+          base="${{ steps.pages.outputs.base_path }}"
+          find apps/docs/_build/html -type f -name '*.html' -print0 \
+            | xargs -0 sed -i "s|href=\"/|href=\"${base}/|g; s|src=\"/|src=\"${base}/|g"
+
+      - name: 📤 Upload Pages artifact
+        # pinned from actions/upload-pages-artifact@v3.0.1
+        uses: actions/upload-pages-artifact@56b5a8d69c6d4ba0b1e9bccea78f64fc00f3646d
+        with:
+          path: apps/docs/_build/html
+
+  deploy:
+    name: 🚀 Deploy to GitHub Pages
+    needs: build
+    # Deploy only on pushes to main (skip workflow_dispatch to allow previewing
+    # the build artifact without publishing).
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚀 Deploy to GitHub Pages
+        id: deployment
+        # pinned from actions/deploy-pages@v4.0.1
+        uses: actions/deploy-pages@d6db903b6e1386f8bde85e6e8f1fd5fd0dbfb57c

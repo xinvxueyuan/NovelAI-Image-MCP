@@ -8,12 +8,17 @@ on:
       - "**.md"
       - "**.toml"
       - "uv.lock"
+      - "pnpm-lock.yaml"
       - "prek.toml"
+      - "turbo.json"
+      - "pnpm-workspace.yaml"
       - ".markdownlint-cli2.jsonc"
       - ".husky/**"
-      - "Dockerfile"
+      - "apps/server/Dockerfile"
+      - "apps/server/docker/**"
+      - "apps/server/.dockerignore"
       - "docker-compose.yml"
-      - "docker/**"
+      - ".dockerignore"
       - ".github/workflows/ci.yml"
       - ".github/actions/detect-changes/**"
   push:
@@ -23,12 +28,17 @@ on:
       - "**.md"
       - "**.toml"
       - "uv.lock"
+      - "pnpm-lock.yaml"
       - "prek.toml"
+      - "turbo.json"
+      - "pnpm-workspace.yaml"
       - ".markdownlint-cli2.jsonc"
       - ".husky/**"
-      - "Dockerfile"
+      - "apps/server/Dockerfile"
+      - "apps/server/docker/**"
+      - "apps/server/.dockerignore"
       - "docker-compose.yml"
-      - "docker/**"
+      - ".dockerignore"
       - ".github/workflows/ci.yml"
       - ".github/actions/detect-changes/**"
 
@@ -92,22 +102,26 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Install Python dependencies (lint group only)
         # Skip the test group — static analysis only needs lint + the project
-        # itself for type-checking and ruff.
+        # itself for type-checking and ruff. The workspace sync resolves both
+        # apps/server (the installable package) and apps/docs (virtual).
         run: uv sync --no-dev --all-extras --group lint --frozen
       - name: Markdownlint
         if: needs.changes.outputs.markdown == 'true'
         run: pnpm exec markdownlint-cli2
       - name: Ruff format check
         if: needs.changes.outputs.python == 'true'
-        run: uv run ruff format --check src tests
+        # Scope to apps/server so ruff finds the [tool.ruff] config block
+        # in apps/server/pyproject.toml (the workspace root pyproject.toml
+        # is a virtual manifest with no ruff config).
+        run: uv run --directory apps/server ruff format --check src tests
       - name: Ruff lint
         if: needs.changes.outputs.python == 'true'
-        run: uv run ruff check src tests
+        run: uv run --directory apps/server ruff check src tests
       - name: REUSE compliance
         run: uv run reuse lint
       - name: Pyright
         if: needs.changes.outputs.python == 'true'
-        run: uv run -m pyright
+        run: uv run --directory apps/server -m pyright
 
   tests:
     name: 🧪 Tests
@@ -147,7 +161,12 @@ jobs:
           command: uv sync --frozen --all-extras
 
       - name: Run Tests
-        run: uv run -m pytest --junitxml=test-results/pytest.xml --timeout=120
+        # Scope pytest to apps/server so it picks up the [tool.pytest.ini_options]
+        # config (pythonpath, testpaths, addopts) from apps/server/pyproject.toml.
+        # pytest writes its outputs (junitxml, coverage.xml) relative to the
+        # cwd, which is apps/server/ — so the artifacts end up at
+        # apps/server/test-results/.
+        run: uv run --directory apps/server -m pytest --junitxml=test-results/pytest.xml --timeout=120
 
       - name: Upload Coverage Report
         # pinned from actions/upload-artifact@v7.0.1
@@ -156,8 +175,8 @@ jobs:
         with:
           name: coverage-report-${{ matrix.os }}
           path: |
-            test-results/coverage.xml
-            test-results/pytest.xml
+            apps/server/test-results/coverage.xml
+            apps/server/test-results/pytest.xml
           retention-days: 14
 
       - name: Publish Test Results
@@ -165,7 +184,7 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@d0a4676d0e0b938bc201470d88276b7c74c712b3
         if: always() && matrix.os == 'ubuntu-latest'
         with:
-          files: test-results/pytest.xml
+          files: apps/server/test-results/pytest.xml
 
   docker-build:
     name: 🐳 Docker Build (Smoke)
@@ -181,11 +200,13 @@ jobs:
         # pinned from docker/setup-buildx-action@v3.11.1
         uses: docker/setup-buildx-action@e46886c8c6ef4e8d1f0bd4f6bb4e7cd90e66e859
       - name: Build runtime image
+        # Build context is the repo root so uv can resolve the workspace
+        # graph; the Dockerfile lives at apps/server/Dockerfile.
         # pinned from docker/build-push-action@v6.18.0
         uses: docker/build-push-action@263435318d21b81e6680810a306d55fa191b83f2
         with:
           context: .
-          file: ./Dockerfile
+          file: ./apps/server/Dockerfile
           push: false
           load: true
           tags: novelai-image-mcp:smoke
@@ -241,8 +262,8 @@ jobs:
         run: uv sync --no-dev --all-extras --group lint --frozen
       - name: Auto-fix
         run: |
-          uv run ruff check --fix src tests || true
-          uv run ruff format src tests
+          uv run --directory apps/server ruff check --fix src tests || true
+          uv run --directory apps/server ruff format src tests
           pnpm exec markdownlint-cli2 --fix || true
       - name: Commit changes
         run: |

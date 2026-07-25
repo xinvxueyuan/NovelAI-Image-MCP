@@ -6,18 +6,34 @@
 #   - husky pre-commit   : markdownlint + pyright + pytest (heavier phases)
 # This avoids double-execution: ruff and format live only in prek.
 #
+# prek discovers the [tool.ruff] config per file (walking up from each file's
+# directory), so apps/server/src/**/*.py uses apps/server/pyproject.toml and
+# apps/docs/source/conf.py uses apps/docs/pyproject.toml. The exclude below
+# keeps generated / cache directories off prek's radar.
+#
 # Commits to ``prek/pre-commit-hooks`` and ``astral-sh/ruff-pre-commit`` are
 # pinned by SHA. Bump via Dependabot (see .github/dependabot.yml).
 
 exclude = '''(?x)^(
   \.trae/|
+  \.codex/|
+  \.firecrawl/|
   \.venv/|
   \.uv-cache/|
+  \.turbo/|
   outputs/|
   test-results/|
   \.pytest_cache/|
   \.ruff_cache/|
-  uv\.lock
+  \.mypy_cache/|
+  \.pyright/|
+  apps/docs/_build/|
+  apps/server/build/|
+  apps/server/dist/|
+  apps/server/.*\.egg-info/|
+  node_modules/|
+  uv\.lock|
+  pnpm-lock\.yaml
 )'''
 
 [[repos]]

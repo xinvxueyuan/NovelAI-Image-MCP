@@ -50,14 +50,16 @@ jobs:
           esac
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: 🔎 Verify version matches pyproject.toml
+      - name: 🔎 Verify version matches apps/server/pyproject.toml
         shell: bash
         run: |
           set -euo pipefail
           version="${{ steps.version.outputs.version }}"
-          project_version=$(grep -E '^version\s*=' pyproject.toml | head -1 | sed -E 's/^version\s*=\s*"([^"]+)".*/\1/')
+          # The installable package manifest lives at apps/server/pyproject.toml
+          # (the root pyproject.toml is a virtual uv workspace root with no version).
+          project_version=$(grep -E '^version\s*=' apps/server/pyproject.toml | head -1 | sed -E 's/^version\s*=\s*"([^"]+)".*/\1/')
           if [ "$project_version" != "$version" ]; then
-            echo "Version mismatch: pyproject.toml has '$project_version', expected '$version'" >&2
+            echo "Version mismatch: apps/server/pyproject.toml has '$project_version', expected '$version'" >&2
             exit 1
           fi
 
@@ -82,7 +84,9 @@ jobs:
           cache-dependency-glob: uv.lock
 
       - name: 🔨 Build wheel and sdist
-        run: uv build
+        # Build only the server package (the workspace root is a virtual
+        # manifest and apps/docs is `package = false` — neither is publishable).
+        run: uv build --package novelai-image-mcp
 
       - name: 📤 Upload artifacts
         # pinned from actions/upload-artifact@v7.0.1
@@ -157,11 +161,13 @@ jobs:
         uses: docker/setup-buildx-action@e46886c8c6ef4e8d1f0bd4f6bb4e7cd90e66e859
 
       - name: 🔨 Build & push
+        # Build context is the repo root so uv can resolve the workspace graph;
+        # the Dockerfile lives at apps/server/Dockerfile.
         # pinned from docker/build-push-action@v6.18.0
         uses: docker/build-push-action@263435318d21b81e6680810a306d55fa191b83f2
         with:
           context: .
-          file: ./Dockerfile
+          file: ./apps/server/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

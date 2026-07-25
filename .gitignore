@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 *.so
 
-# Distribution / packaging
+# Distribution / packaging (per workspace member + repo-wide)
 .Python
 build/
 dist/
@@ -12,7 +12,7 @@ dist/
 *.egg
 .installed.cfg
 
-# Virtual environments
+# Virtual environments (single shared venv at the workspace root)
 .venv/
 venv/
 env/
@@ -55,6 +55,7 @@ outputs/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 *.code-workspace
 
 # ===== OS =====
@@ -71,11 +72,28 @@ Thumbs.db
 .codex/
 .firecrawl/
 
-# ===== Node.js =====
-# Node-side tooling (husky + markdownlint) is installed via pnpm; the bundled
-# third-party code under node_modules/ is never committed.
+# ===== Node.js (cross-cutting tooling via pnpm) =====
+# Node-side tooling (turbo + husky + markdownlint) is installed via pnpm; the
+# bundled third-party code under node_modules/ is never committed.
 node_modules/
 pnpm-store/
+
 # This project standardizes on pnpm (see package.json ``packageManager``).
 # Guard against accidental ``npm install`` runs that drop a stray lockfile.
 package-lock.json
+
+# ===== Turborepo =====
+# ``.turbo/`` caches turbo's task outputs; ``turbo-*.log`` is the daemon log.
+.turbo/
+**/.turbo/
+
+# ===== Sphinx docs build (apps/docs) =====
+# Generated HTML lives at apps/docs/_build/. Never commit build output.
+apps/docs/_build/
+
+# ===== Workspace per-member build artifacts =====
+# Each workspace member may produce its own dist/build dir; ignore them all
+# so a stale build in one member never leaks into a commit.
+**/dist/
+**/build/
+**/*.egg-info/

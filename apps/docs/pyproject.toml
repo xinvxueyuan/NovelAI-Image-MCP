@@ -1,0 +1,57 @@
+[project]
+name = "novelai-image-mcp-docs"
+version = "0"
+description = "Sphinx documentation site for NovelAI Image MCP"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.13,<3.14"
+keywords = ["sphinx", "myst", "furo", "docs", "novelai", "mcp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Framework :: Sphinx",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Documentation :: Sphinx",
+]
+authors = [{ name = "NovelAI Image MCP contributors" }]
+maintainers = [{ name = "NovelAI Image MCP contributors" }]
+
+dependencies = [
+    # Core Sphinx stack
+    "sphinx>=8.1.3,<9.0",
+    "myst-parser>=4.0.0",
+    "furo>=2024.8.6",
+    # MyST optional extra: linkify (auto-converts bare URLs to clickable links)
+    "linkify-it-py>=2.0.0",
+    # Extensions
+    "sphinx-autobuild>=2024.10.4",
+    "sphinx-copybutton>=0.5.2",
+    "sphinx-design>=0.6.1",
+    "sphinx-togglebutton>=0.3.2",
+    "sphinxcontrib-mermaid>=1.0.0",
+    # The server package — required for autodoc to introspect in-tree source.
+    "novelai-image-mcp",
+]
+
+[project.urls]
+Homepage = "https://github.com/novelai-image-mcp/NovelAI-Image-MCP"
+Repository = "https://github.com/novelai-image-mcp/NovelAI-Image-MCP"
+Issues = "https://github.com/novelai-image-mcp/NovelAI-Image-MCP/issues"
+
+[tool.uv]
+# docs is a non-package virtual project: no wheel/sdist is built. Only the
+# dependencies are installed into the shared workspace virtualenv so that
+# `sphinx-build` can import sphinx / myst / furo and (via autodoc) the
+# novelai_image_mcp package.
+package = false
+
+# Pull the server from the workspace (not PyPI) so autodoc always reflects
+# the in-tree source under apps/server/src/.
+[tool.uv.sources]
+novelai-image-mcp = { workspace = true }

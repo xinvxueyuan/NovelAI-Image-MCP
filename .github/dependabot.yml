@@ -1,5 +1,6 @@
-# Dependabot — keeps GitHub Actions, Python deps, and Docker base images current.
-# Each updater runs weekly with a coordinated open-PR-per-ecosystem policy.
+# Dependabot — keeps GitHub Actions, Python deps, Node tooling, and Docker
+# base images current. Each updater runs weekly with a coordinated
+# open-PR-per-ecosystem policy.
 
 version: 2
 
@@ -27,9 +28,12 @@ updates:
           - "*"
 
   # ── Python (uv) ───────────────────────────────────────────────────
-  # Tracks pyproject.toml runtime + dev dependencies. uv.lock is updated
-  # by the `uv lock` step in the post-update command so the lockfile and
-  # manifest stay in sync.
+  # Tracks the installable server package's runtime + dev dependencies.
+  # The root pyproject.toml holds the workspace declaration + repo-wide
+  # dev tools (reuse, prek); apps/server/pyproject.toml holds the server
+  # runtime + per-package dev tools (ruff, pyright, pytest, poethepoet).
+  # uv.lock is updated by the `uv lock` step in the post-update command so
+  # the lockfile and manifest stay in sync.
   - package-ecosystem: pip
     directory: /
     schedule:
@@ -52,10 +56,35 @@ updates:
         patterns:
           - "*"
 
-  # ── Docker base image ─────────────────────────────────────────────
-  # Bumps the `python:3.13-slim` base image digest in the Dockerfile.
-  - package-ecosystem: docker
+  # ── npm (pnpm) ───────────────────────────────────────────────────
+  # Tracks the cross-cutting Node toolchain at the workspace root
+  # (turbo, husky, markdownlint-cli2, rimraf, eslint-plugin-turbo).
+  # None of the workspace packages carry Node runtime deps.
+  - package-ecosystem: npm
     directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "javascript"
+    commit-message:
+      prefix: "⬆️ build(deps):"
+    groups:
+      npm-minor:
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
+
+  # ── Docker base image ─────────────────────────────────────────────
+  # Bumps the `python:3.13-slim` base image digest in apps/server/Dockerfile.
+  - package-ecosystem: docker
+    directory: /apps/server
     schedule:
       interval: weekly
       day: monday

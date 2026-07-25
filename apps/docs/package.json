@@ -1,0 +1,15 @@
+{
+  "name": "@novelai-image-mcp/docs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sphinx documentation site for NovelAI Image MCP",
+  "license": "MIT",
+  "scripts": {
+    "build": "uv run sphinx-build -b html source _build/html",
+    "build:strict": "uv run sphinx-build -b html source _build/html -W --keep-going",
+    "lint": "markdownlint-cli2 \"source/**/*.md\"",
+    "serve": "uv run sphinx-autobuild source _build/html --open-browser",
+    "linkcheck": "uv run sphinx-build -b linkcheck source _build/linkcheck",
+    "clean": "rimraf _build"
+  }
+}
