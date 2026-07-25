@@ -30,7 +30,7 @@ members = ["apps/server", "apps/docs"]
 dev = [{ include-group = "lint" }]
 lint = [
     # FSFE REUSE compliance — runs from the repo root to scan the whole tree.
-    "reuse[charset-normalizer]>=5.0.0",
+    "reuse[charset-normalizer]>=6.2.0",
     # prek runs from the repo root to wire repo-wide pre-commit hooks.
     "prek>=0.4.10",
 ]
