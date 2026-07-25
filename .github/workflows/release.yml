@@ -146,7 +146,14 @@ jobs:
         uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # 注意：``type=semver,pattern={{version}}`` 仅在 ``github.ref`` 形如
+          # ``refs/tags/...`` 时才会设置 ``version.main``。在 workflow_dispatch
+          # 触发时（即使 ref 指向 ``releases/0.1.0`` 分支），该路径被跳过，
+          # 只会生成 ``sha-*`` 标签，导致 0.1.0 镜像缺失。因此用 ``type=raw``
+          # 显式将 validate job 解析出来的 ``${{ env.VERSION }}`` 注入到标签
+          # 列表中，保证 ``0.1.0`` / ``0.1`` / ``0`` 在两种触发方式下都生成。
           tags: |
+            type=raw,value=${{ env.VERSION }},priority=950,enable=${{ env.VERSION != '' }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
