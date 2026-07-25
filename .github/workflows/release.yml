@@ -196,10 +196,17 @@ jobs:
         # still match the case pushed by the build step (the GHCR registry
         # normalises internally and ``docker pull`` handles the
         # case-insensitive lookup the same way).
+        #
+        # 使用 ``--replace`` 标志使 cosign 签名可幂等重跑：当 tag（如
+        # ``0.1.0``）在 GHCR 上被新一次构建覆盖为新的 digest 时，
+        # 直接 ``cosign sign`` 会因 rekor 中已存在旧 UUID 而失败
+        # （``getLogEntryByUuidNotFound`` / hash already exists）。
+        # ``--replace`` 会先删除同 tag 关联的旧签名再写新签名，
+        # 从而保证 workflow 重跑/手动 dispatch 时签名的幂等性。
         run: |
           image_ref="$(echo "${REGISTRY}/${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]')@${{ steps.build.outputs.digest }}"
           echo "Signing ${image_ref}"
-          cosign sign --yes "${image_ref}"
+          cosign sign --yes --replace "${image_ref}"
 
   github-release:
     name: 🏷️ Create GitHub Release
