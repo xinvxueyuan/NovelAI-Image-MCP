@@ -69,7 +69,7 @@ annotation as a structural condition.
 :::{tip}
 **Workaround:** For now, combine `annotate_image` with `director_tool` to
 produce a stylized line-art output from a photo, then optionally use
-`image_to_image` to refine. See [Director tools](director.md).
+`image_to_image` to refine. See [Director tools](../tools/director.md).
 :::
 
 ## What's next?
