@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![uv](https://img.shields.io/badge/uv-managed-261230.svg)](https://docs.astral.sh/uv/)
-[![REUSE](https://img.shields.io/badge/REUSE-3.0-compliant-green.svg)](https://reuse.software/)
+[![REUSE status](https://api.reuse.software/badge/github.com/xinvxueyuan/NovelAI-Image-MCP)](https://api.reuse.software/info/github.com/xinvxueyuan/NovelAI-Image-MCP)
 
 An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that
 exposes **NovelAI image generation** as tools for AI agents (Claude Desktop,
