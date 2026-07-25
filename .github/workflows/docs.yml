@@ -28,8 +28,14 @@ permissions:
 
 jobs:
   build:
-    name: 📦 Build Sphinx site
+    name: 📦 Build Sphinx site (${{ matrix.language }})
     runs-on: ubuntu-latest
+    strategy:
+      # If any language fails (e.g., a broken cross-reference in zh), cancel
+      # the others so we never deploy a partial site.
+      fail-fast: true
+      matrix:
+        language: ['en', 'zh', 'ja']
     steps:
       - name: 📥 Checkout
         # pinned from actions/checkout@v6.1.0
@@ -43,47 +49,97 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
 
-      - name: 🔧 Configure GitHub Pages
+      - name: 📥 Sync workspace
+        # Sync the full workspace (server + docs) so autodoc can introspect
+        # the in-tree novelai_image_mcp package. Skip the dev/test groups.
+        run: uv sync --no-dev --all-extras --frozen
+
+      - name: 🔨 Build HTML (${{ matrix.language }})
+        # Build with -W --keep-going so any Sphinx warning fails the build
+        # but every warning is reported in a single pass. --fail-on-warning
+        # would stop at the first warning and hide the rest.
+        #
+        # English builds from the source root (which defaults to
+        # `language = "en"` in conf.py). Translated builds point at the
+        # per-language source tree, share the root conf.py via `-c`, and
+        # override `language` so html_title / html_context branch correctly.
+        run: |
+          if [ "${{ matrix.language }}" = "en" ]; then
+            uv run --package novelai-image-mcp-docs \
+              sphinx-build -b html \
+                apps/docs/source apps/docs/_build/html \
+                -W --keep-going
+          else
+            uv run --package novelai-image-mcp-docs \
+              sphinx-build -b html \
+                apps/docs/source/${{ matrix.language }} apps/docs/_build/html \
+                -c apps/docs/source \
+                -D language=${{ matrix.language }} \
+                -W --keep-going
+          fi
+
+      - name: 📦 Upload language artifact
+        # pinned from actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: docs-${{ matrix.language }}
+          path: apps/docs/_build/html/
+          retention-days: 1
+
+  combine:
+    name: 🔗 Combine language artifacts
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Configure GitHub Pages
         # pinned from actions/configure-pages@v5.0.0
         id: pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
         with:
           enablement: false  # we don't try to enable Pages on the repo from CI
 
-      - name: 📥 Sync workspace
-        # Sync the full workspace (server + docs) so autodoc can introspect
-        # the in-tree novelai_image_mcp package. Skip the dev/test groups.
-        run: uv sync --no-dev --all-extras --frozen
+      - name: 📥 Download all language artifacts
+        # pinned from actions/download-artifact@v4.3.0
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          path: artifacts
+          pattern: docs-*
+          merge-multiple: false
 
-      - name: 🔨 Build HTML
-        # Build with -W --keep-going so any Sphinx warning fails the build
-        # but every warning is reported in a single pass. --fail-on-warning
-        # would stop at the first warning and hide the rest.
+      - name: 🔗 Arrange into subpath layout
+        # English at the Pages root, each translated language under its own
+        # ISO 639-1 subpath so the language switcher can swap prefixes.
         run: |
-          uv run --package novelai-image-mcp-docs \
-            sphinx-build -b html \
-              apps/docs/source apps/docs/_build/html \
-              -W --keep-going
+          mkdir -p staging
+          # English at root
+          cp -r artifacts/docs-en/* staging/
+          # Chinese at /zh/
+          mkdir -p staging/zh
+          cp -r artifacts/docs-zh/* staging/zh/
+          # Japanese at /ja/
+          mkdir -p staging/ja
+          cp -r artifacts/docs-ja/* staging/ja/
 
       - name: 📄 Inject Pages base URL
         # Sphinx writes absolute URLs (e.g. /_static/...) by default. For
         # project Pages (https://<org>.github.io/<repo>/), rewrite them to
-        # the proper base so assets load correctly.
+        # the proper base so assets load correctly. Applies to every
+        # language subtree under staging/.
         if: steps.pages.outputs.base_path != ''
         run: |
           base="${{ steps.pages.outputs.base_path }}"
-          find apps/docs/_build/html -type f -name '*.html' -print0 \
+          find staging -type f -name '*.html' -print0 \
             | xargs -0 sed -i "s|href=\"/|href=\"${base}/|g; s|src=\"/|src=\"${base}/|g"
 
       - name: 📤 Upload Pages artifact
         # pinned from actions/upload-pages-artifact@v3.0.1
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
-          path: apps/docs/_build/html
+          path: staging
 
   deploy:
     name: 🚀 Deploy to GitHub Pages
-    needs: build
+    needs: combine
     # Deploy only on pushes to main (skip workflow_dispatch to allow previewing
     # the build artifact without publishing).
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

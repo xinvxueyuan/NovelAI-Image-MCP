@@ -49,6 +49,53 @@ table.docutils th {
   font-weight: 600;
 }
 
+/* ── Language switcher ─────────────────────────────────────────────────────── */
+/* Rendered by ``_templates/sidebar/language-switcher.html`` inside the
+ * sidebar scroll wrapper. Kept compact so it doesn't crowd the nav tree. */
+.sidebar-language-switcher {
+  margin-top: 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-sidebar-border, rgba(0, 0, 0, 0.1));
+  border-radius: 6px;
+}
+
+.sidebar-language-switcher-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-foreground-muted, #6b7280);
+}
+
+.sidebar-language-switcher-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+}
+
+.sidebar-language-switcher-links a {
+  color: var(--color-link, #7c3aed);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.sidebar-language-switcher-links a:hover,
+.sidebar-language-switcher-links a:focus-visible {
+  color: var(--color-link--hover, #6d28d9);
+  text-decoration: underline;
+}
+
+/* Active language — non-interactive marker, no underline. */
+.language-switcher-active {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--color-foreground-primary, currentColor);
+  text-decoration: none;
+  cursor: default;
+}
+
 /* ── Print styles ──────────────────────────────────────────────────────────── */
 @media print {
   .toc-tree,

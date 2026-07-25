@@ -68,6 +68,12 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
    pyproject 不一致会触发警告。
 7. **不要在 PyPI 重发同版本**——PyPI 不允许覆盖。失败的发布用 yank +
    patch 版本（`0.1.x` → `0.1.x+1`）补救。
+8. **i18n 翻译页面放在 `apps/docs/source/<lang-code>/`**（如 `source/zh/`、
+   `source/ja/`）。英文留在 `source/` 根。每个语言独立构建，共享同一份
+   `conf.py`。**按语言的 toctree 只能引用该语言目录下实际存在的页面** ——
+   不要在 `source/zh/index.md` 的 toctree 里链接未翻译的 `tools/` 或
+   `tutorials/` 章节。未翻译的章节用户切换到英文查看即可。新增语言时同步
+   更新 `conf.py` 的 `AVAILABLE_LANGUAGES` 与 `docs.yml` 的 matrix。
 
 ## 关键约定
 
@@ -123,3 +129,5 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
 - ❌ 在 LICENSE / 协议声明中加入 LGPL 衍生代码说明（纯 MIT）
 - ❌ GitHub Actions 使用非 SHA pin 的外部 action（必须 pin 到
   `@<full-sha>`，与官方 tag commit 对应）
+- ❌ 在翻译页面的 toctree 里链接未翻译的章节（用户会撞到 404）
+- ❌ 为翻译页面创建"翻译中"占位 stub —— 要么完整翻译，要么不创建

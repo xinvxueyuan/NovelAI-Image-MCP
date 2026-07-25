@@ -1,0 +1,65 @@
+{# Language switcher — included in the sidebar via the ``html_sidebars``
+   override in ``conf.py`` (between ``sidebar/navigation.html`` and
+   ``sidebar/ethical-ads.html``).
+
+   ``available_languages``, ``current_language``, ``current_base_path`` and
+   ``translated_pages`` are injected through ``html_context`` and are
+   therefore top-level template variables here. Each entry in
+   ``available_languages`` is a ``(code, label, base_path)`` tuple where
+   ``base_path`` is the deploy subdirectory (``""`` for English at the site
+   root, ``"zh"`` / ``"ja"`` for the translations).
+
+   Link target logic
+   -----------------
+   Each language is built independently against this shared ``conf.py``
+   with its own source root, so translated pages are NOT in the current
+   build's doctree. We therefore compute relative URLs directly from the
+   ``base_path`` structure rather than calling ``pathto()`` (which resolves
+   against the current build's source tree and would produce wrong paths
+   for cross-language links).
+
+   The relative URL from the current page (in ``current_base_path``) to the
+   same page in the target language (``base_path``) is:
+
+     up   = "../"  if current_base_path else ""    # leave the current subdir
+     down = base_path + "/"  if base_path else ""  # enter the target subdir
+     href = up + down + <page>.html
+
+   Examples (for ``pagename = "quickstart"``):
+     en → zh: "zh/quickstart.html"
+     zh → en: "../quickstart.html"
+     zh → ja: "../ja/quickstart.html"
+
+   Fallback
+   --------
+   ``translated_pages`` lists page names that exist in every non-English
+   language. If the current page is NOT in that set and the target language
+   is non-English, we link to the target language's ``index.html`` instead
+   (per the spec: "falling back to the language's index page if the
+   translated page does not exist"). English has all pages, so links to
+   English always point at the same ``pagename``.
+#}
+<div class="sidebar-language-switcher">
+  <p class="sidebar-language-switcher-label">Language</p>
+  <div class="sidebar-language-switcher-links">
+    {%- for code, label, base_path in available_languages -%}
+      {%- if code == current_language -%}
+        <span class="language-switcher-active">{{ label }}</span>
+      {%- else -%}
+        {#- Leave the current language's subdirectory (if any). -#}
+        {%- set up = "../" if current_base_path else "" -%}
+        {#- Enter the target language's subdirectory (if any). -#}
+        {%- set down = base_path + "/" if base_path else "" -%}
+        {#- Fall back to the index page for non-English targets when the
+            current page has no translation in those languages. English
+            has every page so the same ``pagename`` is always used. -#}
+        {%- if base_path and pagename not in translated_pages -%}
+          {%- set page = "index" -%}
+        {%- else -%}
+          {%- set page = pagename -%}
+        {%- endif -%}
+        <a href="{{ up + down + page + ".html" }}">{{ label }}</a>
+      {%- endif -%}
+    {%- endfor -%}
+  </div>
+</div>

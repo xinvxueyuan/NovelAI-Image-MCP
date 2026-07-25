@@ -6,9 +6,14 @@
   "license": "MIT",
   "scripts": {
     "build": "uv run sphinx-build -b html source _build/html",
+    "build:zh": "uv run sphinx-build -b html source/zh _build/zh/html -c source -D language=zh",
+    "build:ja": "uv run sphinx-build -b html source/ja _build/ja/html -c source -D language=ja",
+    "build:all": "pnpm run build && pnpm run build:zh && pnpm run build:ja",
     "build:strict": "uv run sphinx-build -b html source _build/html -W --keep-going",
     "lint": "markdownlint-cli2 \"source/**/*.md\"",
     "serve": "uv run sphinx-autobuild source _build/html --open-browser",
+    "serve:zh": "uv run sphinx-autobuild source/zh _build/zh/html -c source -D language=zh --open-browser",
+    "serve:ja": "uv run sphinx-autobuild source/ja _build/ja/html -c source -D language=ja --open-browser",
     "linkcheck": "uv run sphinx-build -b linkcheck source _build/linkcheck",
     "clean": "rimraf _build"
   }

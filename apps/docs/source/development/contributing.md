@@ -143,6 +143,55 @@ To preview docs locally:
 uv run --package novelai-image-mcp-docs sphinx-autobuild apps/docs/source apps/docs/_build/html --open-browser
 ```
 
+## Translating docs
+
+The docs site supports multiple languages via per-language source trees.
+English lives at the `apps/docs/source/` root; each additional language
+lives under `apps/docs/source/<lang-code>/` (e.g., `source/zh/`,
+`source/ja/`). All languages share the same `conf.py`.
+
+### Rules
+
+1. **Full translations only — no stubs.** A translated page must cover
+   the full English source. Code blocks remain unchanged; only prose is
+   translated. Do NOT create "translation in progress" placeholder
+   pages — they break the build's `-W` warning gate and confuse users.
+
+2. **Toctree scope = translated pages only.** The `index.md` toctree in
+   each language directory must only reference pages that exist under
+   that language's directory. If a section (e.g., `tools/`,
+   `tutorials/`) is not translated, omit it from the translated
+   toctree — users switch to English for untranslated sections.
+
+3. **Preserve MyST directives.** Keep all MyST syntax (`:::tip`,
+   `=== "Unix"` tabs, `{toctree}`, `{image}`, etc.) intact. Only
+   translate the prose inside them.
+
+4. **CJK punctuation in headings.** `MD026` forbids trailing `.,;:!` in
+   headings — use `。、！？` instead. (`MD013` line-length is disabled,
+   so long CJK lines are fine.)
+
+### Adding a new language
+
+1. Create `apps/docs/source/<code>/` with at minimum `index.md`.
+2. Add the language to `AVAILABLE_LANGUAGES` in
+   `apps/docs/source/conf.py` (tuple of `(code, label, base_path)`).
+3. Add the language to the matrix in `.github/workflows/docs.yml`.
+4. Build locally and confirm zero warnings:
+
+   ```bash
+   uv run --package novelai-image-mcp-docs sphinx-build -b html \
+     apps/docs/source/<code> apps/docs/_build/<code>/html \
+     -c apps/docs/source -D language=<code> -W --keep-going
+   ```
+
+### Keeping translations in sync
+
+When English source changes, update the translated page in the same PR
+if practical. Translated pages that fall badly out of sync should be
+deleted rather than left stale — a missing translation is better than a
+misleading one.
+
 ## Commit messages
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/) +

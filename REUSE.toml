@@ -73,6 +73,9 @@ path = [
   "**/*.ini",
   # stylesheets (apps/docs/source/_static/custom.css — Sphinx theme overrides)
   "**/*.css",
+  # Sphinx Jinja templates (apps/docs/source/_templates/**/*.html —
+  # language switcher, sidebar overrides; build infrastructure, not docs)
+  "**/*.html",
   # makefiles (apps/docs/Makefile)
   "**/Makefile",
   # docker / compose (Dockerfile lives at apps/server/Dockerfile; the root
