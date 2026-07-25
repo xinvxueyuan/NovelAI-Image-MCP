@@ -63,6 +63,36 @@ jobs:
             exit 1
           fi
 
+      - name: 🔄 Sync version to all manifests
+        # Propagate the validated version into every Node package.json so a
+        # single edit (apps/server/pyproject.toml) is enough to bump the
+        # whole workspace. The composite action also re-asserts that every
+        # version-bearing file agrees before downstream jobs see the tree.
+        uses: ./.github/actions/sync-version
+        with:
+          version: ${{ steps.version.outputs.version }}
+
+      - name: 📤 Commit synced manifests back to the release branch
+        # The sync step above edits the package.json manifests in the job
+        # workspace. To make the bump stick in the repo (so future clones
+        # and the post-release git tree show consistent versions) we push
+        # the edits back to the triggering branch. workflow_dispatch
+        # triggered against a tag has no writable ref, so we only commit
+        # when the run is anchored to a branch (the release-branch flow).
+        if: startsWith(github.ref, 'refs/heads/releases/')
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json apps/server/package.json apps/docs/package.json
+          if git diff --cached --quiet; then
+            echo "No version drift in package.json — already in sync."
+          else
+            git commit -m "🔧 chore(release): sync package.json versions to ${{ steps.version.outputs.version }}"
+            git push
+          fi
+
   build:
     name: 📦 Build artifacts
     runs-on: ubuntu-latest

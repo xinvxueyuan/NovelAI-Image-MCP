@@ -1,0 +1,105 @@
+name: 🔄 Sync version
+description: >-
+  Propagate the validated release version to every place the workspace
+  carries it (Node package.json manifests) and assert that the canonical
+  Python version, the Node versions, and the input all agree. This is the
+  single source of truth for "no forgotten version bumps" at release time.
+branding:
+  icon: refresh-cw
+  color: blue
+
+inputs:
+  version:
+    description: >-
+      The release version (e.g. ``0.2.0``) to propagate. Typically the
+      ``version`` output of the ``validate`` job in ``release.yml``.
+    required: true
+  package-json-paths:
+    description: >-
+      Newline-separated list of ``package.json`` files to update, relative
+      to the workspace root. Defaults to every workspace member plus the
+      root manifest.
+    required: false
+    default: |
+      package.json
+      apps/server/package.json
+      apps/docs/package.json
+  python-version-file:
+    description: >-
+      Path to the canonical Python version source (a ``pyproject.toml``
+      carrying ``[project] version``). The version here is the anchor —
+      sync fails if it disagrees with ``inputs.version``.
+    required: false
+    default: apps/server/pyproject.toml
+
+runs:
+  using: composite
+  steps:
+    - name: 🔖 Echo target version
+      shell: bash
+      run: |
+        set -euo pipefail
+        echo "Target version: ${{ inputs.version }}"
+
+    - name: 📦 Update Node package.json versions
+      shell: bash
+      run: |
+        set -euo pipefail
+        version="${{ inputs.version }}"
+
+        if ! command -v jq >/dev/null 2>&1; then
+          echo "❌ jq is required to sync package.json versions" >&2
+          exit 1
+        fi
+
+        while IFS= read -r f; do
+          # Skip blank lines and comments.
+          case "$f" in ''|\#*) continue ;; esac
+          if [ ! -f "$f" ]; then
+            echo "❌ Manifest not found: $f" >&2
+            exit 1
+          fi
+          previous=$(jq -r '.version // ""' "$f")
+          tmp=$(mktemp)
+          jq --arg v "$version" '.version = $v' "$f" > "$tmp"
+          mv "$tmp" "$f"
+          echo "✅ $f: $previous → $version"
+        done <<< "${{ inputs.package-json-paths }}"
+
+    - name: 🔎 Verify every version-bearing location agrees
+      shell: bash
+      run: |
+        set -euo pipefail
+        version="${{ inputs.version }}"
+
+        # Python canonical source — must already match the input. The human
+        # updates this file before opening the release branch; the workflow
+        # only propagates from it, never rewrites it.
+        py_file="${{ inputs.python-version-file }}"
+        if [ ! -f "$py_file" ]; then
+          echo "❌ Python version file not found: $py_file" >&2
+          exit 1
+        fi
+        py_version=$(grep -E '^version\s*=' "$py_file" \
+          | head -1 \
+          | sed -E 's/^version\s*=\s*"([^"]+)".*/\1/')
+        if [ "$py_version" != "$version" ]; then
+          echo "❌ $py_file reports '$py_version', expected '$version'" >&2
+          echo "   Update $py_file and re-trigger the release." >&2
+          exit 1
+        fi
+        echo "✅ $py_file: $py_version"
+
+        # Node manifests — must now match after the update step above.
+        while IFS= read -r f; do
+          case "$f" in ''|\#*) continue ;; esac
+          actual=$(jq -r '.version' "$f")
+          if [ "$actual" != "$version" ]; then
+            echo "❌ $f reports '$actual', expected '$version'" >&2
+            exit 1
+          fi
+          echo "✅ $f: $actual"
+        done <<< "${{ inputs.package-json-paths }}"
+
+        echo
+        echo "🎯 All version locations agree on $version"

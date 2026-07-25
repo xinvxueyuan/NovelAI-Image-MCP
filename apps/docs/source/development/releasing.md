@@ -13,20 +13,59 @@ The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
 - `MINOR`: new features, backward-compatible
 - `PATCH`: bug fixes, backward-compatible
 
-The version is the canonical source of truth in
+### Single source of truth
+
+The canonical version lives in
 [`apps/server/pyproject.toml`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/server/pyproject.toml)'s
-`[project] version` field. The release workflow validates that the input
-version matches this field before publishing.
+`[project] version` field. Every other place that carries the version is
+**derived** from it at release time — you only ever edit one file:
+
+| Location | How it stays in sync |
+|---|---|
+| `apps/server/pyproject.toml` | **Edit this** (canonical). |
+| `apps/server/src/novelai_image_mcp/__init__.py` (`__version__`) | Resolved at import time from the installed wheel's METADATA, which is generated from `pyproject.toml`. No edit needed. |
+| `package.json`, `apps/server/package.json`, `apps/docs/package.json` | Auto-updated by the `.github/actions/sync-version` composite action in `release.yml` and committed back to the release branch. |
+| `apps/docs/source/conf.py` (`release`) | Resolved at Sphinx build time from the installed package metadata, with a `0.0.0` fallback for un-synced checkouts. |
+| `apps/server/Dockerfile` (`ARG VERSION`) | Injected at build time from `validate.outputs.version`. |
+| Docker image labels (`org.opencontainers.image.version`) | Injected via `docker/metadata-action` from `validate.outputs.version`. |
+| Git tag, PyPI version, GitHub Release | All sourced from `validate.outputs.version`. |
+
+### What you do NOT edit
+
+The release workflow ([`release.yml`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/.github/workflows/release.yml))
+runs the `.github/actions/sync-version` composite action as part of the
+`validate` job. That action:
+
+1. Re-reads `apps/server/pyproject.toml` to confirm the canonical version
+   matches the release input.
+2. Updates every Node `package.json` to that version with `jq`.
+3. Asserts that every version-bearing file agrees. The release fails fast
+   if anything has drifted.
+
+For branch-based releases (`releases/X.Y.Z`), the synced `package.json`
+edits are pushed back to the same branch as a `🔧 chore(release): sync
+package.json versions to X.Y.Z` commit, so the workspace tree stays
+consistent after the run.
+
+:::{note}
+Tutorials and changelogs that mention historical versions (e.g. "v0.1.0
+supports references but not ControlNet") are **content**, not config — the
+sync action does not touch them. Update them by hand when the relevant
+feature changes.
+:::
 
 ## Pre-release checklist
 
 Before triggering a release:
 
 - [ ] All CI checks pass on `main`.
-- [ ] `apps/server/pyproject.toml`'s `version` is bumped to the target.
+- [ ] `apps/server/pyproject.toml`'s `version` is bumped to the target
+      (this is the **only** version string you need to edit).
 - [ ] `CHANGELOG.md` has an entry for the new version (under `## [Unreleased]`
       → rename to `## [X.Y.Z] - YYYY-MM-DD`).
 - [ ] `uv.lock` is up to date (`uv lock`).
+- [ ] Tutorials that quote the previous version's feature set have been
+      updated to reflect the new behaviour.
 - [ ] The release branch (`releases/X.Y.Z`) has been pushed.
 
 ## Triggering a release
@@ -73,6 +112,10 @@ graph TD
 ### 1. Validate
 
 - Verifies the input version matches `apps/server/pyproject.toml`.
+- Calls `.github/actions/sync-version`, which auto-bumps every Node
+  `package.json` to the validated version and re-asserts that every
+  version-bearing file agrees. For branch-based releases, the synced
+  `package.json` edits are pushed back to the release branch.
 
 ### 2. Build
 
@@ -108,25 +151,32 @@ git checkout main
 git pull
 uv run --directory apps/server poe check
 
-# 2. Bump version
-# Edit apps/server/pyproject.toml: version = "0.2.0"
+# 2. Bump version — this is the ONLY version string you edit
+#    Edit apps/server/pyproject.toml: version = "0.2.0"
+#    (The release workflow will propagate this to every package.json
+#    and commit them back to the release branch automatically.)
 
 # 3. Update CHANGELOG
-# Edit CHANGELOG.md: rename [Unreleased] to [0.2.0] - 2026-07-25
+#    Edit CHANGELOG.md: rename [Unreleased] to [0.2.0] - 2026-07-25
 
-# 4. Re-lock
+# 4. Update tutorials that pin to a previous version
+#    e.g. "v0.1.0 supports references but not ControlNet"
+
+# 5. Re-lock
 uv lock
 
-# 5. Commit + push
+# 6. Commit + push
 git add apps/server/pyproject.toml CHANGELOG.md uv.lock
 git commit -m "🏷️ chore(release): 0.2.0"
 git push
 
-# 6. Create the release branch (triggers the workflow)
+# 7. Create the release branch (triggers the workflow).
+#    The workflow's sync-version step will auto-bump the package.json
+#    files and push a follow-up commit to this branch.
 git checkout -b releases/0.2.0
 git push -u origin releases/0.2.0
 
-# 7. Watch the workflow
+# 8. Watch the workflow
 gh run watch
 ```
 
