@@ -45,18 +45,19 @@ point your MCP host at the URL with the `http` type:
   "mcpServers": {
     "novelai-image-http": {
       "type": "http",
-      "url": "https://mcp.example.com/v1/",
+      "url": "http://127.0.0.1:8000/mcp",
       "headers": {
-        "Authorization": "Bearer ${input:novelai_token}"
+        "Authorization": "Bearer pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
       }
     }
   }
 }
 ```
 
-`${input:novelai_token}` resolves to a host-managed secret. Replace
-`https://mcp.example.com/v1/` with the actual endpoint — for a local
-`docker compose up` that's `http://127.0.0.1:8000/mcp`.
+Replace `http://127.0.0.1:8000/mcp` with your self-deployed endpoint (e.g.
+`https://mcp.example.com/mcp` behind a TLS-terminating reverse proxy). Swap
+the literal token placeholder for a host-managed secret reference if your
+MCP host (Claude Desktop, Cline, …) supports one.
 
 ### Custom Python agent
 

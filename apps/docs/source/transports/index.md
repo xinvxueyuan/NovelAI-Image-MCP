@@ -45,4 +45,5 @@ See [Configuration](../configuration.md#mcp-transport) for the full list of
 
 stdio
 http
+agent-hosts
 ```

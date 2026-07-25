@@ -92,9 +92,10 @@ If you installed from PyPI, the shorthand is:
 ```json
 {
   "mcpServers": {
-    "novelai-image-uvx": {
-      "type": "uvx",
-      "args": ["novelai-image-mcp", "serve"]
+    "novelai-image": {
+      "command": "uvx",
+      "args": ["--prerelease=allow", "novelai-image-mcp", "serve"],
+      "env": { "NOVELAI_TOKEN": "pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" }
     }
   }
 }
@@ -112,18 +113,24 @@ host), point the host at the URL directly:
   "mcpServers": {
     "novelai-image-http": {
       "type": "http",
-      "url": "https://mcp.example.com/v1/",
+      "url": "http://127.0.0.1:8000/mcp",
       "headers": {
-        "Authorization": "Bearer ${input:novelai_token}"
+        "Authorization": "Bearer pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
       }
     }
   }
 }
 ```
 
+Replace `http://127.0.0.1:8000/mcp` with your self-deployed endpoint (e.g.
+`https://mcp.example.com/mcp` behind a TLS-terminating reverse proxy).
+
 Restart Claude Desktop. You'll see a `novelai-image` MCP server registered
 with 11 tools. Ask Claude to *"generate a watercolor painting of a fox"*
 and watch it call `generate_image`.
+
+For other agent hosts (Cline, Cursor, Continue, Windsurf, Codex CLI), see
+[Agent hosts](transports/agent-hosts.md).
 
 ## 5. Verify your account balance
 

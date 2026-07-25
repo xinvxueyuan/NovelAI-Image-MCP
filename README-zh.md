@@ -107,7 +107,7 @@ pnpm install --frozen-lockfile
 
 ## 接入 Agent
 
-MCP 服务端在 `mcpServers` 下支持三种配置形态：
+MCP 服务端在 `mcpServers` 下支持两种传输（stdio + http）：
 
 ### stdio（本地 Agent —— Claude Desktop / Cline）
 
@@ -136,14 +136,15 @@ MCP 服务端在 `mcpServers` 下支持三种配置形态：
 }
 ```
 
-### uvx（简写 —— 直接运行已发布的包）
+#### 备选：uvx（已发布的包）
 
 ```json
 {
   "mcpServers": {
-    "novelai-image-uvx": {
-      "type": "uvx",
-      "args": ["novelai-image-mcp", "serve"]
+    "novelai-image": {
+      "command": "uvx",
+      "args": ["--prerelease=allow", "novelai-image-mcp", "serve"],
+      "env": { "NOVELAI_TOKEN": "pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" }
     }
   }
 }
@@ -161,17 +162,19 @@ MCP 服务端在 `mcpServers` 下支持三种配置形态：
   "mcpServers": {
     "novelai-image-http": {
       "type": "http",
-      "url": "https://mcp.example.com/v1/",
+      "url": "http://127.0.0.1:8000/mcp",
       "headers": {
-        "Authorization": "Bearer ${input:novelai_token}"
+        "Authorization": "Bearer pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
       }
     }
   }
 }
 ```
 
-`${input:novelai_token}` 是宿主定义的密钥引用（Claude Desktop、Cline 等通过
-各自的密钥管理 UI 暴露）。本地 Docker 可直接使用字面量 token。
+将 `http://127.0.0.1:8000/mcp` 替换为自部署的端点（例如
+`https://mcp.example.com/mcp`，前置 TLS 终止的反向代理）。若宿主支持密钥
+引用（Claude Desktop、Cline 等通过各自的密钥管理 UI 暴露），可将字面量
+token 占位符替换为宿主定义的密钥引用。
 
 ## CLI（同步，用于脚本）
 

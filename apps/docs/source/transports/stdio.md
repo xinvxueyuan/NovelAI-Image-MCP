@@ -55,9 +55,10 @@ test, inline a literal token (`"pst-..."`) instead.
 ```json
 {
   "mcpServers": {
-    "novelai-image-uvx": {
-      "type": "uvx",
-      "args": ["novelai-image-mcp", "serve"]
+    "novelai-image": {
+      "command": "uvx",
+      "args": ["--prerelease=allow", "novelai-image-mcp", "serve"],
+      "env": { "NOVELAI_TOKEN": "pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" }
     }
   }
 }
@@ -82,7 +83,7 @@ Add to `cline_mcp_settings.json`:
         "run", "--directory", "/path/to/NovelAI-Image-MCP",
         "python", "-m", "novelai_image_mcp", "serve"
       ],
-      "env": { "NOVELAI_TOKEN": "${input:novelai_token}" },
+      "env": { "NOVELAI_TOKEN": "pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" },
       "disabled": false,
       "autoApprove": []
     }

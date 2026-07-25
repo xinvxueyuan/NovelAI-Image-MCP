@@ -90,6 +90,7 @@ api/index
 
 about/license
 about/changelog
+about/tool-validation
 ```
 
 ---
@@ -99,7 +100,7 @@ about/changelog
 - ⚡ [Quick start](quickstart.md) — install, configure, and generate your first image
 - 🛠️ [Tools reference](tools/index.md) — every MCP tool, parameter, and example
 - 🚀 [Transports](transports/index.md) — stdio vs streamable-http
-- 🔌 [Claude Desktop setup](transports/stdio.md) — agent integration
+- 🔌 [Agent host setup](transports/agent-hosts.md) — Claude Desktop, Cline, Cursor, Continue, Windsurf, Codex CLI
 - 🧩 [API reference](api/index.md) — autodoc-generated Python API
 - 🤝 [Contributing](development/contributing.md) — how to hack on the server
 

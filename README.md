@@ -111,7 +111,8 @@ runtime dependencies — this step is only for contributors.
 
 ## Connect an agent
 
-The MCP server supports three configuration shapes, all under `mcpServers`:
+The MCP server supports two transports (stdio + http), all configured under
+`mcpServers`:
 
 ### stdio (local agent — Claude Desktop / Cline)
 
@@ -140,14 +141,15 @@ The MCP server supports three configuration shapes, all under `mcpServers`:
 }
 ```
 
-### uvx (shorthand — runs the published package)
+#### Alternative: uvx (published package)
 
 ```json
 {
   "mcpServers": {
-    "novelai-image-uvx": {
-      "type": "uvx",
-      "args": ["novelai-image-mcp", "serve"]
+    "novelai-image": {
+      "command": "uvx",
+      "args": ["--prerelease=allow", "novelai-image-mcp", "serve"],
+      "env": { "NOVELAI_TOKEN": "pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" }
     }
   }
 }
@@ -165,18 +167,20 @@ After `docker compose up --build` (server listens on `http://HOST:8000/mcp`):
   "mcpServers": {
     "novelai-image-http": {
       "type": "http",
-      "url": "https://mcp.example.com/v1/",
+      "url": "http://127.0.0.1:8000/mcp",
       "headers": {
-        "Authorization": "Bearer ${input:novelai_token}"
+        "Authorization": "Bearer pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
       }
     }
   }
 }
 ```
 
-`${input:novelai_token}` is a host-defined secret reference (Claude Desktop,
-Cline, etc. expose this via their own secrets UI). For local Docker you can
-use a literal token instead.
+Replace `http://127.0.0.1:8000/mcp` with your self-deployed endpoint (e.g.
+`https://mcp.example.com/mcp` behind a TLS-terminating reverse proxy). Swap
+the literal token placeholder for a host-managed secret reference if your
+MCP host supports one (Claude Desktop, Cline, etc. expose this via their
+own secrets UI).
 
 ## CLI (sync, for scripting)
 
