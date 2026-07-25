@@ -9,10 +9,10 @@ from unittest.mock import AsyncMock
 from _helpers import PNG_BYTES, RecordingMCPServer
 import pytest
 
-from novelai_image_mcp._mcp import MCPServer
 from novelai_image_mcp.tools import account, enhance, generate, tags
 
 if TYPE_CHECKING:
+    from novelai_image_mcp._mcp import MCPServer
     from novelai_image_mcp.nai import NovelAIImage
 
 
@@ -25,7 +25,7 @@ def _register_all(mcp: RecordingMCPServer) -> None:
     # ``RecordingMCPServer`` is a structural test double that exposes the same
     # ``tool()`` decorator contract as the SDK's ``MCPServer``; cast to satisfy
     # the production-typed ``register(mcp: MCPServer)`` signatures.
-    server = cast(MCPServer, mcp)
+    server = cast("MCPServer", mcp)
     generate.register(server)
     enhance.register(server)
     tags.register(server)

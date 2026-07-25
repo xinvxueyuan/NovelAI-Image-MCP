@@ -70,3 +70,12 @@ Thumbs.db
 .trae/
 .codex/
 .firecrawl/
+
+# ===== Node.js =====
+# Node-side tooling (husky + markdownlint) is installed via pnpm; the bundled
+# third-party code under node_modules/ is never committed.
+node_modules/
+pnpm-store/
+# This project standardizes on pnpm (see package.json ``packageManager``).
+# Guard against accidental ``npm install`` runs that drop a stray lockfile.
+package-lock.json

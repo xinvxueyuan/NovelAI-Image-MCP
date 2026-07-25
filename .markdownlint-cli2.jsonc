@@ -31,6 +31,10 @@
     "**/node_modules/**",
     "**/.venv/**",
     "**/.pytest_cache/**",
-    "**/test-results/**"
+    "**/test-results/**",
+    // GitHub issue FORM templates use YAML ``body:`` syntax (``- type:`` list
+    // items) that markdownlint flags as ill-indented markdown — they are not
+    // free-form markdown, so skip them.
+    ".github/ISSUE_TEMPLATE/**"
   ]
 }

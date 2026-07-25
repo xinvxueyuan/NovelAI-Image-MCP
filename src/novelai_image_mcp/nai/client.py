@@ -1,10 +1,8 @@
 """Complete NovelAI HTTP client built on a shared httpx async session.
 
-Adapted from lingchu-bot's NovelAI subplugin: the NoneBot driver transport
-(``get_driver().get_session()`` / ``nonebot.drivers.Request``) is replaced by a
-long-lived ``httpx.AsyncClient`` owned by the instance (or supplied by the MCP
-lifespan). All generation, Director, utility, and account business logic is
-unchanged.
+A long-lived ``httpx.AsyncClient`` is owned by the instance (or supplied by the
+MCP lifespan) and used for all NovelAI API traffic. Covers generation, Director,
+utility, and account business logic.
 """
 
 from __future__ import annotations
@@ -412,9 +410,8 @@ async def generate_image_from_plan(
 ) -> bytes:
     """Generate a single image from a high-level plan (used by the sync CLI).
 
-    Replaces lingchu-bot's ``generate_image`` compat helper that depended on the
-    NoneBot ``NovelAIConfig`` object. The caller supplies the configured client
-    plus the generation defaults that were previously read from config.
+    The caller supplies the configured client plus the generation defaults
+    (read from settings, not from a global config).
     """
     characters: list[CharacterPrompt] = []
     for raw_character in plan.character_prompts:

@@ -113,25 +113,20 @@ docker compose up --build      # builds and runs the server
 
 ## Project layout
 
-```
+```text
 src/novelai_image_mcp/
 ├── server.py          # MCPServer (mcp v2) + lifespan + transport selection
 ├── settings.py        # pydantic-settings env config
 ├── cli.py / __main__.py  # typer sync CLI
 ├── output.py          # save-image helper
 ├── tools/             # 11 MCP tool definitions
-└── nai/               # NovelAI HTTP client (ported from lingchu-bot, decoupled)
+└── nai/               # NovelAI HTTP client (httpx.AsyncClient transport)
     ├── auth.py  constants.py  models.py  payload.py
     ├── response.py  imaging.py  exceptions.py
-    └── client.py  service.py    # adapted: NoneBot driver → httpx
+    └── client.py  service.py
 ```
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
-
-The NovelAI client modules under `src/novelai_image_mcp/nai/` are derived from
-the [lingchu-bot](https://github.com/xinvxueyuan/lingchu-bot) project
-(LGPL-3.0-or-later). Relicensing that derivative code to MIT is valid only if you
-hold the rights to the original work. See the note in [LICENSE](LICENSE) and
-[REUSE.toml](REUSE.toml) for per-file SPDX annotations.
+MIT — see [LICENSE](LICENSE). Per-file SPDX annotations live in
+[REUSE.toml](REUSE.toml).

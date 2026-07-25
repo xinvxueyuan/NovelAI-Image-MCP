@@ -1,10 +1,9 @@
 """High-level NovelAI service construction for the MCP server and CLI consumers.
 
-Adapted from lingchu-bot: the NoneBot ``get_novelai_config()`` dependency is
-replaced by a duck-typed config object (``NovelAIConfigLike`` Protocol) so the
-``nai`` package stays decoupled from the MCP wrapper. The wrapper's
-``NovelAISettings`` (pydantic-settings, env-driven) satisfies this protocol
-structurally; see ``novelai_image_mcp.settings``.
+A duck-typed config object (``NovelAIConfigLike`` Protocol) keeps the ``nai``
+package decoupled from the MCP wrapper. The wrapper's ``NovelAISettings``
+(pydantic-settings, env-driven) satisfies this protocol structurally; see
+``novelai_image_mcp.settings``.
 """
 
 from __future__ import annotations

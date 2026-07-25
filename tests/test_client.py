@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import io
 import struct
-import zipfile
 from typing import cast
+import zipfile
 
 from _helpers import PNG_BYTES
 import httpx
@@ -43,7 +43,7 @@ def _msgpack_final_frame(image: bytes = PNG_BYTES) -> bytes:
     # ``msgpack.packb`` is untyped in the shipped stubs; cast to ``bytes`` so
     # the ``len(payload)`` / concatenation below type-checks without ambiguity.
     payload = cast(
-        bytes,
+        "bytes",
         msgpack.packb(
             {
                 "event_type": "final",

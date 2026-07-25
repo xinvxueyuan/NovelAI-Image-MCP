@@ -111,24 +111,20 @@ docker compose up --build      # 构建并运行服务端
 
 ## 项目结构
 
-```
+```text
 src/novelai_image_mcp/
 ├── server.py          # MCPServer（mcp v2）+ lifespan + 传输选择
 ├── settings.py        # pydantic-settings 环境配置
 ├── cli.py / __main__.py  # typer 同步 CLI
 ├── output.py          # 保存图像辅助
 ├── tools/             # 11 个 MCP 工具定义
-└── nai/               # NovelAI HTTP 客户端（自 lingchu-bot 移植，已解耦）
+└── nai/               # NovelAI HTTP 客户端（httpx.AsyncClient 传输）
     ├── auth.py  constants.py  models.py  payload.py
     ├── response.py  imaging.py  exceptions.py
-    └── client.py  service.py    # 改造：NoneBot driver → httpx
+    └── client.py  service.py
 ```
 
 ## 许可证
 
-MIT —— 见 [LICENSE](LICENSE)。
-
-`src/novelai_image_mcp/nai/` 下的 NovelAI 客户端模块派生自
-[lingchu-bot](https://github.com/xinvxueyuan/lingchu-bot) 项目
-（LGPL-3.0-or-later）。仅当你拥有原作品权利时，才可将此衍生代码重新许可为 MIT。
-详见 [LICENSE](LICENSE) 中的说明与 [REUSE.toml](REUSE.toml) 的逐文件 SPDX 标注。
+MIT —— 见 [LICENSE](LICENSE)。逐文件 SPDX 标注见
+[REUSE.toml](REUSE.toml)。

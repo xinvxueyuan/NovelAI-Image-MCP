@@ -7,12 +7,6 @@
 #   - visual elements                  -> CC0-1.0
 #   - infrastructure & config           -> CC0-1.0
 #
-# Caveat: ``src/novelai_image_mcp/nai/`` is ported from lingchu-bot, which is
-# LGPL-3.0-or-later for its code. The port has been substantially refactored
-# (decoupled from NoneBot, httpx-transport rewired, type-system refreshed)
-# and is re-licensed under MIT for this project. See README.md "License" for
-# the full provenance statement.
-#
 # Run `uv run reuse lint` to verify compliance.
 
 version = 3
@@ -93,10 +87,11 @@ SPDX-License-Identifier = "CC0-1.0"
 # ---------------------------------------------------------------------------
 # Build artifacts — CC0 1.0
 # ---------------------------------------------------------------------------
-# Python bytecode caches (``*.pyc``, ``__pycache__/``) and pytest / coverage
-# outputs are derivative artifacts of the source; REUSE still scans them, so
-# we annotate them as CC0 (public domain) to avoid false "missing license"
-# reports. They are also in .gitignore and never committed.
+# Python bytecode caches (``*.pyc``, ``__pycache__/``), pytest / coverage
+# outputs and the bundled Node.js toolchain under ``node_modules/`` are all
+# derivative artifacts that REUSE still scans; we annotate them as CC0 (public
+# domain) to avoid false "missing license" reports. They are also in .gitignore
+# and never committed.
 [[annotations]]
 path = [
   "**/*.pyc",
@@ -113,6 +108,7 @@ path = [
   "**/.coverage.*",
   "**/coverage.xml",
   "**/test-results/**",
+  "node_modules/**",
 ]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 NovelAI Image MCP contributors"

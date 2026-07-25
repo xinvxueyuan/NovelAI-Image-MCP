@@ -10,9 +10,11 @@
   },
   "scripts": {
     "markdownlint": "markdownlint-cli2",
-    "markdownlint:fix": "markdownlint-cli2 --fix"
+    "markdownlint:fix": "markdownlint-cli2 --fix",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
     "markdownlint-cli2": "^0.18.1"
   }
 }

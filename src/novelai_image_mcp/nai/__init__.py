@@ -1,4 +1,4 @@
-"""NovelAI HTTP client — ported from lingchu-bot and decoupled from NoneBot.
+"""NovelAI HTTP client built on a shared ``httpx.AsyncClient``.
 
 Subpackage re-exports the public client surface used by the MCP server and CLI.
 """

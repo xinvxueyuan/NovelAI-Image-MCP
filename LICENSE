@@ -19,15 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-
-------
-
-NOTE: The NovelAI HTTP client modules under src/novelai_image_mcp/nai/
-(auth.py, constants.py, models.py, payload.py, response.py, imaging.py,
-exceptions.py, client.py, service.py) are derived from the lingchu-bot project
-(https://github.com/xinvxueyuan/lingchu-bot), which is licensed under
-LGPL-3.0-or-later. Relicensing this derivative code to MIT is only permitted if
-you hold the rights to the original work (e.g. you are the lingchu-bot author) or
-have explicit permission. If you do not hold such rights, keep the nai/ modules
-under LGPL-3.0-or-later and add the corresponding LICENSE-lgpl file. See
-REUSE.toml for per-file SPDX annotations.

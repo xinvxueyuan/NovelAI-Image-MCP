@@ -1,12 +1,11 @@
 """Environment-driven configuration for the NovelAI Image MCP server.
 
-Replaces lingchu-bot's NoneBot-coupled ``novelai_image/config.py`` with two
-``pydantic-settings`` models: ``NovelAISettings`` (credentials + generation
-defaults, ``NOVELAI_*`` env vars) and ``MCPServerSettings`` (transport,
-``MCP_*`` env vars).
+Two ``pydantic-settings`` models expose the runtime configuration surface:
+``NovelAISettings`` (credentials + generation defaults, ``NOVELAI_*`` env
+vars) and ``MCPServerSettings`` (transport, ``MCP_*`` env vars).
 
 ``NovelAISettings`` structurally satisfies ``nai.NovelAIConfigLike`` so the
-ported client factory consumes it directly.
+client factory consumes it directly.
 """
 
 from __future__ import annotations
