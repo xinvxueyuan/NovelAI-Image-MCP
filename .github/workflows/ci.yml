@@ -100,11 +100,13 @@ jobs:
           python-version: "3.13"
           enable-cache: true
           cache-dependency-glob: uv.lock
-      - name: Install Python dependencies (lint group only)
-        # Skip the test group — static analysis only needs lint + the project
-        # itself for type-checking and ruff. The workspace sync resolves both
-        # apps/server (the installable package) and apps/docs (virtual).
-        run: uv sync --no-dev --all-extras --group lint --frozen
+      - name: Install Python dependencies (lint + test groups)
+        # Pyright's config includes tests/ (apps/server/pyproject.toml:
+        # [tool.pyright] include = ["src", "tests"]), so the test group is
+        # required to resolve `import pytest` / `import respx` in test files.
+        # The workspace sync resolves both apps/server (installable package)
+        # and apps/docs (virtual).
+        run: uv sync --no-dev --all-extras --group lint --group test --frozen
       - name: Markdownlint
         if: needs.changes.outputs.markdown == 'true'
         run: pnpm exec markdownlint-cli2
@@ -198,12 +200,12 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
       - name: Set up Docker Buildx
         # pinned from docker/setup-buildx-action@v3.11.1
-        uses: docker/setup-buildx-action@e46886c8c6ef4e8d1f0bd4f6bb4e7cd90e66e859
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
       - name: Build runtime image
         # Build context is the repo root so uv can resolve the workspace
         # graph; the Dockerfile lives at apps/server/Dockerfile.
         # pinned from docker/build-push-action@v6.18.0
-        uses: docker/build-push-action@263435318d21b81e6680810a306d55fa191b83f2
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
           context: .
           file: ./apps/server/Dockerfile

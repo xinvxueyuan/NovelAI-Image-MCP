@@ -25,6 +25,21 @@ if TYPE_CHECKING:
     from novelai_image_mcp.nai import NovelAIImage
 
 
+@pytest.fixture(autouse=True)
+def _no_color(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Disable color output so stderr assertions are stable in CI.
+
+    Typer's Rich integration forces terminal color when GITHUB_ACTIONS is
+    set (typer.rich_utils.FORCE_TERMINAL). The OptionHighlighter then wraps
+    ``--option`` tokens in error messages with ANSI codes, breaking
+    substring assertions like ``"emotion tool requires --emotion" in
+    result.stderr``. ``NO_COLOR`` is respected by Rich's Console even when
+    force_terminal is True (see rich.console._render_buffer →
+    Segment.remove_color).
+    """
+    monkeypatch.setenv("NO_COLOR", "1")
+
+
 @pytest.fixture
 def runner() -> CliRunner:
     """A typer CliRunner that captures stdout and stderr separately.
