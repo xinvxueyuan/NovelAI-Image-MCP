@@ -188,8 +188,18 @@ jobs:
         uses: sigstore/cosign-installer@fb28c2b6339dcd94da6e4cbcbc5e888961f6f8c3
 
       - name: 🔏 Sign image (keyless)
+        # The repository name may contain uppercase characters (e.g.
+        # ``NovelAI-Image-MCP``) which are not valid in OCI image
+        # references — cosign rejects them with
+        # ``could not parse reference: ...@sha256:...``. Lowercase the
+        # image name for the cosign call only; the published tags on GHCR
+        # still match the case pushed by the build step (the GHCR registry
+        # normalises internally and ``docker pull`` handles the
+        # case-insensitive lookup the same way).
         run: |
-          cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          image_ref="$(echo "${REGISTRY}/${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]')@${{ steps.build.outputs.digest }}"
+          echo "Signing ${image_ref}"
+          cosign sign --yes "${image_ref}"
 
   github-release:
     name: 🏷️ Create GitHub Release
