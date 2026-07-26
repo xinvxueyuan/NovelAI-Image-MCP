@@ -104,10 +104,16 @@ jobs:
           echo "Searching registry for $server_name..."
           # The registry search API may take a few seconds to index the new
           # entry; retry a few times before declaring failure.
+          #
+          # Response shape (v0):
+          #   {"servers":[{"server":{"name":"...","version":"..."}, "_meta":{...}}]}
+          # The server payload is nested under `.server`, not at the top level
+          # of each entry — filter on `.server.name`.
           max_attempts=5
           attempt=1
           until curl -fsSL "https://registry.modelcontextprotocol.io/v0/servers?search=${server_name}" \
-                | jq -e --arg name "$server_name" '.servers[] | select(.name == $name)' >/dev/null; do
+                | jq -e --arg name "$server_name" \
+                    '.servers[] | select(.server.name == $name)' >/dev/null; do
             if [ "${attempt}" -ge "${max_attempts}" ]; then
               echo "Server $server_name not found in registry after ${attempt} attempts" >&2
               echo "Manual check: curl 'https://registry.modelcontextprotocol.io/v0/servers?search=${server_name}'" >&2
