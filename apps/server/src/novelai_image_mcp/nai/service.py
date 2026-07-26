@@ -26,6 +26,7 @@ class NovelAIConfigLike(Protocol):
     password: str | None
     image_base_url: str
     account_base_url: str
+    legacy_image_base_url: str
     timeout: float
     vibe_cache_entries: int
 
@@ -52,6 +53,7 @@ def create_novelai_client(
         http_client=http_client,
         image_base_url=config.image_base_url,
         account_base_url=config.account_base_url,
+        legacy_image_base_url=config.legacy_image_base_url,
         timeout=config.timeout,
         vibe_cache_entries=config.vibe_cache_entries,
     )

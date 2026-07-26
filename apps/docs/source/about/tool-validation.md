@@ -17,16 +17,18 @@ unreachable (Fix 2). See [Fix history](#fix-history).
 :::{admonition} 2026 endpoint migration
 :class: warning
 
-In **2026**, NovelAI consolidated all third-party API access to
-`https://image.novelai.net`. The host `api.novelai.net` referenced throughout
-the historical sections below now refers to a host that **rejects third-party
-requests** — NovelAI's official front-end is the only intended consumer. The
-current default for `NOVELAI_ACCOUNT_BASE_URL` is `https://image.novelai.net`,
-which serves both `/ai/*` (image generation / tool) endpoints and `/user/*`
-(account / subscription / data) endpoints. As a result, the
-`api.novelai.net` URLs in the per-tool evidence and fix history below should
-be read as historical artifacts of the pre-migration API layout, not as
-currently reachable endpoints.
+In **2026**, NovelAI consolidated most third-party API access to
+`https://image.novelai.net`, which serves the `/ai/generate-image` family,
+`/ai/augment-image`, `/ai/encode-vibe`, `/ai/generate-image/suggest-tags`,
+and `/user/*` (account / subscription / data) endpoints. The host
+`api.novelai.net` (the Primary API) was **not** fully retired: its `/ai/`
+routes remain available for third-party use, and `/ai/upscale` +
+`/ai/annotate-image` were not migrated to `image.novelai.net` (they 404
+there). The Primary API docs (<https://api.novelai.net/docs/>) state that
+third-party users may use its `/ai/` routes. As of 0.1.3,
+`NOVELAI_LEGACY_IMAGE_BASE_URL` (default: `https://api.novelai.net`) routes
+these two endpoints correctly. The `api.novelai.net` URLs in the per-tool
+evidence and fix history below should be read in this context.
 :::
 
 ---

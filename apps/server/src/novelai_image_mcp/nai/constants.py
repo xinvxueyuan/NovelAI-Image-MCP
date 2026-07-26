@@ -4,7 +4,14 @@ from enum import IntEnum, StrEnum
 
 
 class Endpoint(StrEnum):
-    """NovelAI API path constants, all rooted at ``https://image.novelai.net``.
+    """NovelAI API path constants.
+
+    Most paths are rooted at ``https://image.novelai.net`` (the consolidated
+    third-party host). Two exceptions — ``UPSCALE`` and ``ANNOTATE`` — were not
+    migrated to ``image.novelai.net`` and remain on the Primary API at
+    ``https://api.novelai.net``. The Primary API's docs
+    (https://api.novelai.net/docs/) state that third-party users may use its
+    ``/ai/`` routes. See ``NovelAIClient.legacy_image_base_url``.
 
     The ``/ai/generate-image`` family is split by model generation:
 
@@ -13,9 +20,6 @@ class Endpoint(StrEnum):
     * ``IMAGE_STREAM`` (``/ai/generate-image-stream``) — used by V4 / V4.5
       new models. Returns a MessagePack stream (``stream: "msgpack"``) with
       HTTP 200. The selection is driven by ``is_v4_model`` in ``client.py``.
-
-    ``UPSCALE`` and ``ANNOTATE`` are not listed in the public OpenAPI spec
-    but remain available in production.
     """
 
     LOGIN = "/user/login"

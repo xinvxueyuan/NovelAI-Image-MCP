@@ -93,12 +93,14 @@ class NovelAIClient:
         http_client: httpx.AsyncClient | None = None,
         image_base_url: str = "https://image.novelai.net",
         account_base_url: str = "https://image.novelai.net",
+        legacy_image_base_url: str = "https://api.novelai.net",
         timeout: float = 120.0,
         vibe_cache_entries: int = 64,
     ) -> None:
         self.credentials = credentials
         self.image_base_url = image_base_url.rstrip("/")
         self.account_base_url = account_base_url.rstrip("/")
+        self.legacy_image_base_url = legacy_image_base_url.rstrip("/")
         self.timeout = timeout
         self.vibe_cache_entries = vibe_cache_entries
         self._access_token: str | None = credentials.token
@@ -305,7 +307,7 @@ class NovelAIClient:
         parsed = parse_image(image)
         content = await self._request(
             "POST",
-            f"{self.image_base_url}{Endpoint.UPSCALE}",
+            f"{self.legacy_image_base_url}{Endpoint.UPSCALE}",
             json_body={
                 "image": parsed.base64,
                 "width": parsed.width,
@@ -323,7 +325,7 @@ class NovelAIClient:
         parsed = parse_image(image)
         content = await self._request(
             "POST",
-            f"{self.image_base_url}{Endpoint.ANNOTATE}",
+            f"{self.legacy_image_base_url}{Endpoint.ANNOTATE}",
             json_body={"model": model.value, "parameters": {"image": parsed.base64}},
         )
         return _first_image(content, filename=f"{model.value}.png")

@@ -35,8 +35,9 @@ pair. The server raises `RuntimeError` at startup if neither is present
 
 | Variable | Default | Notes |
 |---|---|---|
-| `NOVELAI_IMAGE_BASE_URL` | `https://image.novelai.net` | Image generation / Director / upscale endpoint. |
-| `NOVELAI_ACCOUNT_BASE_URL` | `https://image.novelai.net` | Account / subscription / tag-suggestion endpoint. NovelAI consolidated all third-party API access to `image.novelai.net`, so this now shares the same host as `NOVELAI_IMAGE_BASE_URL`. |
+| `NOVELAI_IMAGE_BASE_URL` | `https://image.novelai.net` | Image generation / Director / encode-vibe / suggest-tags endpoints. NovelAI consolidated most third-party API access to `image.novelai.net`. |
+| `NOVELAI_ACCOUNT_BASE_URL` | `https://image.novelai.net` | Account / subscription / user-data endpoints. Shares the same host as `NOVELAI_IMAGE_BASE_URL`. |
+| `NOVELAI_LEGACY_IMAGE_BASE_URL` | `https://api.novelai.net` | Primary API host for `/ai/upscale` and `/ai/annotate-image`. These two endpoints were not migrated to `image.novelai.net` and 404 there. The Primary API docs (<https://api.novelai.net/docs/>) state that third-party users may use its `/ai/` routes. |
 | `NOVELAI_TIMEOUT` | `120` (seconds) | HTTP timeout for any single NovelAI request. |
 
 :::{tip}

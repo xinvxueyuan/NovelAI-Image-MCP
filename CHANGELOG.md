@@ -24,6 +24,32 @@ per-release section headings. This file is the human-curated companion.
 
 - _Nothing yet._
 
+## [0.1.3] — 2026-07-26
+
+### Fixed
+
+- **Restore `upscale_image` and `annotate_image` functionality**: the 0.1.2
+  endpoint migration incorrectly routed `/ai/upscale` and `/ai/annotate-image`
+  to `image.novelai.net`, which returns 404 for both — these two endpoints
+  were not migrated and remain on the Primary API at `api.novelai.net`. The
+  Primary API's own docs (<https://api.novelai.net/docs/>) state that
+  third-party users may use its `/ai/` routes. Added
+  `NovelAISettings.legacy_image_base_url` (default: `https://api.novelai.net`)
+  and updated `NovelAIClient.upscale()` and `annotate()` to use this base URL.
+  The `NovelAIConfigLike` Protocol and `create_novelai_client()` factory were
+  extended to propagate the new field.
+
+### Changed
+
+- `nai/constants.py` `Endpoint` class docstring rewritten to document the
+  endpoint split: most paths root at `image.novelai.net`, but `UPSCALE` and
+  `ANNOTATE` remain on `api.novelai.net` (the Primary API).
+- `AGENTS.md` hard constraint #2 corrected: `api.novelai.net` does not
+  "explicitly reject third-party requests" — its `/ai/` routes are explicitly
+  for third-party use per the Primary API docs.
+- `tests/test_client.py`: 2 URL mocks updated from `image.novelai.net` to
+  `api.novelai.net` for `upscale` and `annotate`.
+
 ## [0.1.2] — 2026-07-26
 
 ### Fixed
@@ -167,6 +193,8 @@ per-release section headings. This file is the human-curated companion.
   `src/`, `tests/`, and `docker/` — moved under `apps/server/` as part of
   the workspace migration (git history preserved via `git mv`).
 
-[Unreleased]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases/tag/v0.1.3
+[0.1.2]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases/tag/v0.1.2
 [0.1.1]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases/tag/v0.1.1
 [0.1.0]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases/tag/v0.1.0

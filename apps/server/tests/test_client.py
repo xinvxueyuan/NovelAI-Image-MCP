@@ -138,7 +138,7 @@ class TestGenerate:
 class TestUpscaleDirectorAnnotate:
     @respx.mock
     async def test_upscale_returns_image(self, nai_client: NovelAIClient) -> None:
-        respx.post("https://image.novelai.net/ai/upscale").mock(
+        respx.post("https://api.novelai.net/ai/upscale").mock(
             return_value=httpx.Response(200, content=PNG_BYTES)
         )
         result = await nai_client.upscale(PNG_BYTES, factor=4)
@@ -177,7 +177,7 @@ class TestUpscaleDirectorAnnotate:
 
     @respx.mock
     async def test_annotate_returns_image(self, nai_client: NovelAIClient) -> None:
-        respx.post("https://image.novelai.net/ai/annotate-image").mock(
+        respx.post("https://api.novelai.net/ai/annotate-image").mock(
             return_value=httpx.Response(200, content=PNG_BYTES)
         )
         result = await nai_client.annotate(PNG_BYTES, ControlNetModel.PALETTE_SWAP)
