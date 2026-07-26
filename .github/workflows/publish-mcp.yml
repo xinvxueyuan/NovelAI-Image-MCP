@@ -1,0 +1,121 @@
+name: 📋 Publish to MCP Registry
+
+# Publishes server.json to the official MCP Registry
+# (https://registry.modelcontextprotocol.io) on every release tag. The
+# registry is the upstream data source for the GitHub MCP Registry
+# directory (https://github.com/mcp), so listing there is automatic once
+# this workflow succeeds.
+#
+# Trigger chain:
+#   release.yml github-release job → creates vX.Y.Z tag → tag push
+#   event → this workflow.
+#
+# Package ownership verification depends on the just-published PyPI and
+# GHCR artifacts (release.yml's publish-pypi / publish-ghcr jobs), so the
+# tag-push ordering naturally guarantees both are already available when
+# mcp-publisher runs its validation.
+#
+# Authentication: GitHub OIDC — no secrets required. The workflow only
+# needs `id-token: write` to mint the OIDC token that mcp-publisher
+# exchanges for registry credentials under the io.github.xinvxueyuan/*
+# namespace.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish (must match server.json)"
+        required: true
+
+permissions:
+  contents: read
+  id-token: write  # Required for mcp-publisher github-oidc login
+
+concurrency:
+  group: publish-mcp-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: 📋 Publish server.json
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        # pinned from actions/checkout@v6.1.0
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+
+      - name: 🔖 Resolve version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            version="${{ github.event.inputs.version }}"
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          case "$version" in
+            [0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "Invalid version: $version" >&2; exit 1 ;;
+          esac
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: 🔎 Verify server.json version matches tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag_version="${{ steps.version.outputs.version }}"
+          json_version=$(jq -r '.version' server.json)
+          if [ "$json_version" != "$tag_version" ]; then
+            echo "Version mismatch: server.json has '$json_version', tag is '$tag_version'" >&2
+            exit 1
+          fi
+          echo "✓ server.json version ($json_version) matches tag ($tag_version)"
+
+      - name: ⬇️ Install mcp-publisher
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" \
+            | tar xz mcp-publisher
+          chmod +x mcp-publisher
+          ./mcp-publisher --help
+
+      - name: ✅ Validate server.json against schema
+        shell: bash
+        run: ./mcp-publisher validate ./server.json
+
+      - name: 🔑 Login to MCP Registry (GitHub OIDC)
+        shell: bash
+        run: ./mcp-publisher login github-oidc
+
+      - name: 🚀 Publish to MCP Registry
+        shell: bash
+        run: ./mcp-publisher publish
+
+      - name: 🔍 Verify publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          server_name="io.github.xinvxueyuan/novelai-image-mcp"
+          echo "Searching registry for $server_name..."
+          # The registry search API may take a few seconds to index the new
+          # entry; retry a few times before declaring failure.
+          max_attempts=5
+          attempt=1
+          until curl -fsSL "https://registry.modelcontextprotocol.io/v0/servers?search=${server_name}" \
+                | jq -e --arg name "$server_name" '.servers[] | select(.name == $name)' >/dev/null; do
+            if [ "${attempt}" -ge "${max_attempts}" ]; then
+              echo "Server $server_name not found in registry after ${attempt} attempts" >&2
+              echo "Manual check: curl 'https://registry.modelcontextprotocol.io/v0/servers?search=${server_name}'" >&2
+              exit 1
+            fi
+            echo "Not indexed yet (attempt ${attempt}/${max_attempts}), retrying in 15s..." >&2
+            sleep 15
+            attempt=$((attempt + 1))
+          done
+          echo "✓ Server $server_name is now listed in the MCP Registry"
+          echo "  View at: https://github.com/mcp/xinvxueyuan/novelai-image-mcp"

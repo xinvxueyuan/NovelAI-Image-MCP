@@ -63,7 +63,8 @@ LABEL org.opencontainers.image.title="NovelAI Image MCP" \
   org.opencontainers.image.url="https://github.com/xinvxueyuan/NovelAI-Image-MCP" \
   org.opencontainers.image.licenses="MIT" \
   org.opencontainers.image.documentation="https://github.com/xinvxueyuan/NovelAI-Image-MCP#readme" \
-  org.opencontainers.image.created="${CREATED}"
+  org.opencontainers.image.created="${CREATED}" \
+  io.modelcontextprotocol.server.name="io.github.xinvxueyuan/novelai-image-mcp"
 
 ENV TZ=Asia/Shanghai
 ENV PYTHONPATH=/app

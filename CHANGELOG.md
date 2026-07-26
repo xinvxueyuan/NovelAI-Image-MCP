@@ -24,6 +24,28 @@ per-release section headings. This file is the human-curated companion.
 
 - _Nothing yet._
 
+## [0.1.4] — 2026-07-26
+
+### Added
+
+- **Listed on the GitHub MCP Registry** (`github.com/mcp/xinvxueyuan/novelai-image-mcp`):
+  the server is now discoverable and installable via the official MCP Registry
+  (<https://registry.modelcontextprotocol.io>) and the GitHub MCP Registry
+  directory (<https://github.com/mcp>). Added `server.json` metadata manifest
+  declaring both PyPI and GHCR package sources (hybrid deployment), added the
+  `mcp-name: io.github.xinvxueyuan/novelai-image-mcp` marker to README.md for
+  PyPI ownership verification, and added the
+  `io.modelcontextprotocol.server.name` label to the Docker image for OCI
+  ownership verification. A new `publish-mcp.yml` workflow automates registry
+  publication on every release tag via `mcp-publisher` (GitHub OIDC auth, no
+  secrets required).
+- **`LEARN.md` guided learning path**: a progressive 9-module curriculum
+  (prerequisites → MCP fundamentals → architecture → first tool call →
+  NovelAI API layer → adding a new tool → image return path → release
+  engineering → deep dives) with hands-on checkpoints and time estimates.
+  Complements the reference docs by stitching them into a syllabus rather
+  than duplicating them.
+
 ## [0.1.3] — 2026-07-26
 
 ### Fixed

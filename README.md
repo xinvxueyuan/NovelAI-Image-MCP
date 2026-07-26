@@ -272,3 +272,5 @@ MIT — see [LICENSE](LICENSE). Per-file SPDX annotations live in
 [REUSE.toml](REUSE.toml). Contributions are subject to the
 [Developer Certificate of Origin](https://developercertificate.org/) (the
 `commit-msg` hook signs off commits automatically).
+
+<!-- mcp-name: io.github.xinvxueyuan/novelai-image-mcp -->
