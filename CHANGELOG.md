@@ -36,6 +36,19 @@ per-release section headings. This file is the human-curated companion.
   `pypi.org/pypi/novelai-image-mcp/json` and scans the `description` field for
   the marker — which was missing. Added the marker to `apps/server/README.md`
   so the PyPI package metadata includes it.
+- **Drop forbidden `version` field from OCI package entry in `server.json`**:
+  the MCP Registry schema rejects `version` on OCI packages — the version
+  must be embedded in the `identifier` (e.g.
+  `ghcr.io/.../novelai-image-mcp:0.1.5`), not duplicated as a sibling field.
+  PyPI packages keep their `version` field (expected for PyPI); only the OCI
+  entry was wrong.
+- **Correct jq path in `publish-mcp.yml` verify step**: the registry v0
+  search API nests each server payload under `.server`
+  (`{"servers":[{"server":{"name":"..."}, "_meta":{...}}]}`), but the verify
+  step filtered on `.servers[] | select(.name == ...)` — which never matched
+  because `.name` is undefined at that level. The publish step had already
+  succeeded; only the verification gave a false negative. Fixed to
+  `.servers[] | select(.server.name == ...)`.
 
 ## [0.1.4] — 2026-07-26
 

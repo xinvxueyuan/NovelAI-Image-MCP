@@ -96,7 +96,19 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
   根 `README.md`！`apps/server/pyproject.toml` 的 `readme = "README.md"`
   解析为 `apps/server/README.md`，这才是 PyPI 包的 long description）；
   OCI 验证靠 Dockerfile 的 `io.modelcontextprotocol.server.name` 标签。
-  两个标记都不能删，否则 registry 验证失败。
+  两个标记都不能删，否则 registry 验证失败。**三个 `server.json`
+  schema 陷阱**：(1) `description` 字段上限 100 字符；(2) OCI 包条目
+  **不能有 `version` 字段** —— 版本必须嵌在 `identifier` 里
+  （如 `ghcr.io/.../image:1.0.0`），PyPI 包条目则保留 `version` 字段；
+  (3) registry v0 搜索 API 把服务器载荷嵌套在 `.server` 下
+  （`{"servers":[{"server":{"name":"..."}, "_meta":{...}}]}`），
+  verify 步骤的 jq 必须用 `.servers[] | select(.server.name == ...)`。
+  **GITHUB_TOKEN 陷阱**：release.yml 的 `github-release` job 用
+  `GITHUB_TOKEN` 创建 `v*` tag，但 GitHub 安全机制规定用 `GITHUB_TOKEN`
+  创建的 tag **不会触发其他工作流**（防循环触发）。所以 `publish-mcp.yml`
+  的 `on: push: tags: ["v*"]` 实际上不会自动触发 —— 需要在 release.yml
+  完成后手动 `gh workflow run publish-mcp.yml -f version=X.Y.Z`，
+  或者把 publish 步骤内联到 release.yml 里。
 - **回归测试覆盖 SDK 序列化路径**：`TestSerializationRegression` 通过
   `Tool.run(convert_result=True)` 直接调用生产 `server.mcp` 实例，确保
   ImageContent 块能被 `model_dump(mode="json")` 序列化。新增图像返回
