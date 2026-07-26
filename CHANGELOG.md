@@ -24,6 +24,36 @@ per-release section headings. This file is the human-curated companion.
 
 - _Nothing yet._
 
+## [0.1.2] — 2026-07-26
+
+### Fixed
+
+- **NovelAI API endpoint migration to `image.novelai.net`**: NovelAI
+  consolidated all third-party API access to `image.novelai.net`, which now
+  hosts both `/ai/*` (image generation and tools) and `/user/*` (account,
+  subscription, data) endpoints. The legacy `api.novelai.net` is reserved
+  for the official frontend and rejects third-party requests with a 400
+  error (`Please refresh NovelAI.net. If using a third-party tool, update
+  to the image URL.`). The `account_base_url` default in `NovelAISettings`
+  and `NovelAIClient` is now `https://image.novelai.net`; `upscale()` and
+  `annotate()` (both `/ai/*` endpoints) now use `image_base_url` instead of
+  `account_base_url`. Fixes `get_subscription`, `get_user_data`,
+  `upscale_image`, and `annotate_image` in production.
+
+### Changed
+
+- `nai/http.py` module docstring and `nai/constants.py` `Endpoint` class
+  docstring updated to document the old-model vs new-model endpoint split:
+  V3/Furry → `/ai/generate-image` (ZIP, HTTP 201); V4/V4.5 →
+  `/ai/generate-image-stream` (MessagePack stream, HTTP 200). Also notes
+  that `/ai/upscale` and `/ai/annotate-image` are not listed in the public
+  OpenAPI spec but remain available in production.
+- Configuration docs (en/zh/ja), `development/testing.md`,
+  `about/tool-validation.md`, `AGENTS.md`, `.env.example`, and
+  `pyproject.toml` comments synchronized with the endpoint migration.
+- `tests/test_client.py`: 7 URL mocks updated from `api.novelai.net` to
+  `image.novelai.net`.
+
 ## [0.1.1] — 2026-07-26
 
 ### Fixed
