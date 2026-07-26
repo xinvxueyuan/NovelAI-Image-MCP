@@ -4,6 +4,20 @@ from enum import IntEnum, StrEnum
 
 
 class Endpoint(StrEnum):
+    """NovelAI API path constants, all rooted at ``https://image.novelai.net``.
+
+    The ``/ai/generate-image`` family is split by model generation:
+
+    * ``IMAGE`` (``/ai/generate-image``) — used by V3 / Furry legacy models.
+      Returns a ZIP archive (``application/zip``) with HTTP 201.
+    * ``IMAGE_STREAM`` (``/ai/generate-image-stream``) — used by V4 / V4.5
+      new models. Returns a MessagePack stream (``stream: "msgpack"``) with
+      HTTP 200. The selection is driven by ``is_v4_model`` in ``client.py``.
+
+    ``UPSCALE`` and ``ANNOTATE`` are not listed in the public OpenAPI spec
+    but remain available in production.
+    """
+
     LOGIN = "/user/login"
     USER_DATA = "/user/data"
     SUBSCRIPTION = "/user/subscription"

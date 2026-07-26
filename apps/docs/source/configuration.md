@@ -36,7 +36,7 @@ pair. The server raises `RuntimeError` at startup if neither is present
 | Variable | Default | Notes |
 |---|---|---|
 | `NOVELAI_IMAGE_BASE_URL` | `https://image.novelai.net` | Image generation / Director / upscale endpoint. |
-| `NOVELAI_ACCOUNT_BASE_URL` | `https://api.novelai.net` | Account / subscription / tag-suggestion endpoint. |
+| `NOVELAI_ACCOUNT_BASE_URL` | `https://image.novelai.net` | Account / subscription / tag-suggestion endpoint. NovelAI consolidated all third-party API access to `image.novelai.net`, so this now shares the same host as `NOVELAI_IMAGE_BASE_URL`. |
 | `NOVELAI_TIMEOUT` | `120` (seconds) | HTTP timeout for any single NovelAI request. |
 
 :::{tip}

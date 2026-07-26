@@ -39,7 +39,7 @@
 | 変数 | デフォルト | 備考 |
 |---|---|---|
 | `NOVELAI_IMAGE_BASE_URL` | `https://image.novelai.net` | 画像生成 / Director / アップスケール エンドポイント。 |
-| `NOVELAI_ACCOUNT_BASE_URL` | `https://api.novelai.net` | アカウント / サブスクリプション / タグ補完 エンドポイント。 |
+| `NOVELAI_ACCOUNT_BASE_URL` | `https://image.novelai.net` | アカウント / サブスクリプション / タグ補完 エンドポイント。NovelAI はサードパーティ API アクセスを `image.novelai.net` に統合したため、`NOVELAI_IMAGE_BASE_URL` と同じホストを共有します。 |
 | `NOVELAI_TIMEOUT` | `120` (秒) | 単一の NovelAI リクエストに対する HTTP タイムアウト。 |
 
 :::{tip}

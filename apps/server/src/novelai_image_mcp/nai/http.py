@@ -1,8 +1,14 @@
 """HTTP client factory with Chrome TLS + header fingerprint impersonation.
 
-NovelAI's API endpoints (``api.novelai.net`` and ``image.novelai.net``) sit
-behind Cloudflare's bot-management WAF, which fingerprints clients at two
-layers:
+NovelAI's API endpoints sit behind Cloudflare's bot-management WAF, which
+fingerprints clients at two layers. ``image.novelai.net`` is now the sole
+third-party entry point: it hosts every ``/ai/*`` image/tool endpoint and
+every ``/user/*`` account endpoint exposed in the public OpenAPI spec. The
+sibling origin ``api.novelai.net`` is reserved for the official frontend
+and rejects third-party requests with a 400 asking callers to migrate to
+the image URL.
+
+The WAF fingerprints clients at two layers:
 
 1. **TLS fingerprint (JA3/JA4):** Cloudflare inspects the TLS ``ClientHello``
    (cipher order, extensions, ALPN) before any HTTP header is read. Plain
@@ -42,8 +48,11 @@ CHROME_USER_AGENT = (
 )
 
 # Chrome 150 Client Hints. ``Sec-Fetch-Site`` is ``same-site`` (not
-# ``same-origin``) because ``image.novelai.net`` / ``api.novelai.net`` are
-# sibling origins under ``novelai.net``.
+# ``same-origin``) because the browser frontend at ``novelai.net`` makes
+# cross-site requests to ``image.novelai.net``, the sole third-party API
+# host (it serves both ``/ai/*`` and ``/user/*`` endpoints). ``api.novelai.net``
+# is reserved for the official frontend and is not a valid target for this
+# client.
 CHROME_SEC_CH_UA = '"Chromium";v="150", "Google Chrome";v="150", "Not.A/Brand";v="99"'
 
 # Full Chrome 150 browser fingerprint headers. These are set as default

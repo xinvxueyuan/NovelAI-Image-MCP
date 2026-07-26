@@ -48,9 +48,12 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
    `apps/docs/package.json` 的版本号——release workflow 的
    `.github/actions/sync-version` 会自动同步并回写 commit。
 2. **NovelAI HTTP 客户端必须通过 `nai/http.py` 的 `create_http_client()`**
-   构造。不要直接 `httpx.AsyncClient()`——`api.novelai.net` 后的 Cloudflare
-   WAF 会按 JA3/JA4 TLS 指纹识别非浏览器客户端并静默重置连接。
-   `create_http_client()` 用 `httpx_curl_cffi.AsyncCurlTransport
+   构造。不要直接 `httpx.AsyncClient()`——`image.novelai.net` 后的 Cloudflare
+   WAF 会按 JA3/JA4 TLS 指纹识别非浏览器客户端并静默重置连接。自 2026 年起
+   NovelAI 已将所有第三方 API 访问收口到 `image.novelai.net`：它同时承载
+   `/ai/*`（图像生成与工具）与 `/user/*`（账户 / 订阅 / 数据）端点，是第三方
+   工具的唯一可访问主机；旧 `api.novelai.net` 已保留给官方前端并显式拒绝第三方
+   请求。`create_http_client()` 用 `httpx_curl_cffi.AsyncCurlTransport
    (impersonate="chrome")` 复刻 Chrome 的 BoringSSL 指纹 + 完整
    Chrome 150 请求头块（`BROWSER_HEADERS`）。
 3. **MCP 工具返回图像时必须返回 `ImageContent`，不能返回 SDK 的 `Image`

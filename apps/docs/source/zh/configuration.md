@@ -34,7 +34,7 @@
 | 变量 | 默认值 | 说明 |
 |---|---|---|
 | `NOVELAI_IMAGE_BASE_URL` | `https://image.novelai.net` | 图像生成 / Director / 放大端点。 |
-| `NOVELAI_ACCOUNT_BASE_URL` | `https://api.novelai.net` | 账户 / 订阅 / 标签推荐端点。 |
+| `NOVELAI_ACCOUNT_BASE_URL` | `https://image.novelai.net` | 账户 / 订阅 / 标签推荐端点。NovelAI 已将所有第三方 API 访问收口到 `image.novelai.net`，因此该端点与 `NOVELAI_IMAGE_BASE_URL` 共用同一主机。 |
 | `NOVELAI_TIMEOUT` | `120`（秒） | 单次 NovelAI 请求的 HTTP 超时。 |
 
 :::{tip}

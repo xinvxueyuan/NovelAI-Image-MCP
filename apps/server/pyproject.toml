@@ -43,7 +43,7 @@ dependencies = [
     # ``curl_cffi`` wraps ``curl-impersonate`` (BoringSSL) to reproduce Chrome's
     # JA3/JA4 TLS fingerprint; ``httpx-curl-cffi`` provides an ``httpx.BaseTransport``
     # so the existing httpx API (streaming, is_closed, aclose) is unchanged.
-    # Without these, NovelAI's ``api.novelai.net`` resets the TLS connection
+    # Without these, NovelAI's ``image.novelai.net`` resets the TLS connection
     # before any HTTP header is read (surfaces as ``NovelAITransportError``).
     "curl_cffi>=0.15.0",
     "httpx-curl-cffi>=0.1.5",

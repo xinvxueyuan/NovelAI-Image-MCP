@@ -77,7 +77,7 @@ from httpx import Response
 
 @respx.mock
 async def test_get_subscription():
-    respx.get("https://api.novelai.net/user/subscription").mock(
+    respx.get("https://image.novelai.net/user/subscription").mock(
         return_value=Response(200, json={"tier": 3, "active": True})
     )
     sub = await client.get_subscription()

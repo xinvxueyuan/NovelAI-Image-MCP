@@ -86,7 +86,7 @@ class TestLogin:
     async def test_get_access_token_caches_after_login(
         self, login_client: NovelAIClient
     ) -> None:
-        login = respx.post("https://api.novelai.net/user/login").mock(
+        login = respx.post("https://image.novelai.net/user/login").mock(
             return_value=httpx.Response(200, json={"accessToken": "abc"})
         )
         token = await login_client.get_access_token()
@@ -100,7 +100,7 @@ class TestLogin:
     async def test_login_missing_token_raises(
         self, login_client: NovelAIClient
     ) -> None:
-        respx.post("https://api.novelai.net/user/login").mock(
+        respx.post("https://image.novelai.net/user/login").mock(
             return_value=httpx.Response(200, json={})
         )
         with pytest.raises(NovelAIResponseError, match="access token"):
@@ -138,7 +138,7 @@ class TestGenerate:
 class TestUpscaleDirectorAnnotate:
     @respx.mock
     async def test_upscale_returns_image(self, nai_client: NovelAIClient) -> None:
-        respx.post("https://api.novelai.net/ai/upscale").mock(
+        respx.post("https://image.novelai.net/ai/upscale").mock(
             return_value=httpx.Response(200, content=PNG_BYTES)
         )
         result = await nai_client.upscale(PNG_BYTES, factor=4)
@@ -177,7 +177,7 @@ class TestUpscaleDirectorAnnotate:
 
     @respx.mock
     async def test_annotate_returns_image(self, nai_client: NovelAIClient) -> None:
-        respx.post("https://api.novelai.net/ai/annotate-image").mock(
+        respx.post("https://image.novelai.net/ai/annotate-image").mock(
             return_value=httpx.Response(200, content=PNG_BYTES)
         )
         result = await nai_client.annotate(PNG_BYTES, ControlNetModel.PALETTE_SWAP)
@@ -197,14 +197,14 @@ class TestTagsAndAccount:
 
     @respx.mock
     async def test_get_subscription(self, nai_client: NovelAIClient) -> None:
-        respx.get("https://api.novelai.net/user/subscription").mock(
+        respx.get("https://image.novelai.net/user/subscription").mock(
             return_value=httpx.Response(200, json={"tier": 1})
         )
         assert await nai_client.get_subscription() == {"tier": 1}
 
     @respx.mock
     async def test_get_user_data(self, nai_client: NovelAIClient) -> None:
-        respx.get("https://api.novelai.net/user/data").mock(
+        respx.get("https://image.novelai.net/user/data").mock(
             return_value=httpx.Response(200, json={"email": "a@b.com"})
         )
         assert await nai_client.get_user_data() == {"email": "a@b.com"}
@@ -243,7 +243,7 @@ class TestErrorHandling:
         status: int,
         exception: type[Exception],
     ) -> None:
-        respx.get("https://api.novelai.net/user/subscription").mock(
+        respx.get("https://image.novelai.net/user/subscription").mock(
             return_value=httpx.Response(status, json={"detail": "nope"})
         )
         with pytest.raises(exception):

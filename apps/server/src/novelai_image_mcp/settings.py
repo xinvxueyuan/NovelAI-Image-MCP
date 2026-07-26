@@ -39,7 +39,7 @@ class NovelAISettings(BaseSettings):
 
     # ── Endpoints ──
     image_base_url: str = "https://image.novelai.net"
-    account_base_url: str = "https://api.novelai.net"
+    account_base_url: str = "https://image.novelai.net"
     timeout: float = Field(default=120.0, gt=0)
 
     # ── Generation defaults (overridable per tool call) ──
