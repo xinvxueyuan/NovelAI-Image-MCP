@@ -24,6 +24,19 @@ per-release section headings. This file is the human-curated companion.
 
 - _Nothing yet._
 
+## [0.1.5] — 2026-07-26
+
+### Fixed
+
+- **Fix MCP Registry PyPI ownership verification**: the `mcp-name:` marker was
+  added to the repository root `README.md` in 0.1.4, but the PyPI package's
+  long description is sourced from `apps/server/README.md` (per
+  `readme = "README.md"` in `apps/server/pyproject.toml`, resolved relative to
+  that file). The registry's PyPI validation fetches
+  `pypi.org/pypi/novelai-image-mcp/json` and scans the `description` field for
+  the marker — which was missing. Added the marker to `apps/server/README.md`
+  so the PyPI package metadata includes it.
+
 ## [0.1.4] — 2026-07-26
 
 ### Added

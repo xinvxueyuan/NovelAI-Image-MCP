@@ -92,9 +92,11 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
   必须与 `apps/server/pyproject.toml` 同步。修改 `server.json` 后必须
   同步更新 CHANGELOG 与 pyproject 版本。`publish-mcp.yml` 由 `v*` tag
   push 触发，依赖 release.yml 已发布的 PyPI/GHCR 包做所有权验证。
-  PyPI 验证靠 README 的 `mcp-name:` 标记；OCI 验证靠 Dockerfile 的
-  `io.modelcontextprotocol.server.name` 标签。两个标记都不能删，否则
-  registry 验证失败。
+  PyPI 验证靠 `apps/server/README.md` 的 `mcp-name:` 标记（注意：不是
+  根 `README.md`！`apps/server/pyproject.toml` 的 `readme = "README.md"`
+  解析为 `apps/server/README.md`，这才是 PyPI 包的 long description）；
+  OCI 验证靠 Dockerfile 的 `io.modelcontextprotocol.server.name` 标签。
+  两个标记都不能删，否则 registry 验证失败。
 - **回归测试覆盖 SDK 序列化路径**：`TestSerializationRegression` 通过
   `Tool.run(convert_result=True)` 直接调用生产 `server.mcp` 实例，确保
   ImageContent 块能被 `model_dump(mode="json")` 序列化。新增图像返回

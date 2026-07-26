@@ -49,3 +49,5 @@ MCP_TRANSPORT=streamable-http novelai-image-mcp serve
 
 MIT — see [LICENSE](LICENSE). Per-file SPDX annotations live in
 [REUSE.toml](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/REUSE.toml).
+
+<!-- mcp-name: io.github.xinvxueyuan/novelai-image-mcp -->
