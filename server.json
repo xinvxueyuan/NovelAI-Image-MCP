@@ -36,7 +36,6 @@
     {
       "registryType": "oci",
       "identifier": "ghcr.io/xinvxueyuan/novelai-image-mcp:0.1.5",
-      "version": "0.1.5",
       "transport": {
         "type": "stdio"
       },
