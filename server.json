@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
   "name": "io.github.xinvxueyuan/novelai-image-mcp",
   "title": "NovelAI Image MCP",
-  "description": "NovelAI image generation (txt2img, img2img, inpaint, upscale, Director tools, ControlNet) as MCP tools.",
+  "description": "NovelAI image generation as MCP tools: txt2img, img2img, inpaint, upscale, Director, ControlNet.",
   "version": "0.1.4",
   "websiteUrl": "https://xinvxueyuan.github.io/NovelAI-Image-MCP/",
   "packages": [
