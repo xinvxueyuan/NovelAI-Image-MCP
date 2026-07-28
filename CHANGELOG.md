@@ -24,6 +24,20 @@ per-release section headings. This file is the human-curated companion.
 
 - _Nothing yet._
 
+## [0.2.0] — 2026-07-29
+
+### Added
+
+- **Agent skills for skills.sh ecosystem**: three modular agent skills
+  (`novelai-cli`, `novelai-mcp-tools`, `novelai-workflows`) installable
+  via `npx skills add xinvxueyuan/NovelAI-Image-MCP`. Each follows the
+  official skills.sh scaffold (frontmatter with `name` + `description`,
+  `## When to use` → `## Instructions` body) and distributes guidance
+  on demand: CLI usage for shell scripting, MCP tool reference for
+  interactive agent sessions, and multi-step workflow recipes for
+  creative pipelines. Wired up in `skills.sh.json` under CLI / MCP
+  Tools / Workflows groupings. README badges advertise the skills.
+
 ## [0.1.5] — 2026-07-26
 
 ### Fixed
@@ -241,7 +255,10 @@ per-release section headings. This file is the human-curated companion.
   `src/`, `tests/`, and `docker/` — moved under `apps/server/` as part of
   the workspace migration (git history preserved via `git mv`).
 
-[Unreleased]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases/tag/v0.2.0
+[0.1.5]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases/tag/v0.1.5
+[0.1.4]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases/tag/v0.1.4
 [0.1.3]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases/tag/v0.1.3
 [0.1.2]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases/tag/v0.1.2
 [0.1.1]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases/tag/v0.1.1
