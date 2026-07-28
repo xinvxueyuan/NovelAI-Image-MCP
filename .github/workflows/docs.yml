@@ -39,11 +39,11 @@ jobs:
     steps:
       - name: 📥 Checkout
         # pinned from actions/checkout@v6.1.0
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: ⚡ Setup uv
         # pinned from astral-sh/setup-uv@v8.3.2
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
         with:
           python-version: "3.13"
           enable-cache: true
@@ -80,7 +80,7 @@ jobs:
 
       - name: 📦 Upload language artifact
         # pinned from actions/upload-artifact@v4.6.2
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: docs-${{ matrix.language }}
           path: apps/docs/_build/html/
@@ -94,13 +94,13 @@ jobs:
       - name: 📥 Configure GitHub Pages
         # pinned from actions/configure-pages@v5.0.0
         id: pages
-        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d
         with:
           enablement: false  # we don't try to enable Pages on the repo from CI
 
       - name: 📥 Download all language artifacts
         # pinned from actions/download-artifact@v4.3.0
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           path: artifacts
           pattern: docs-*
@@ -133,7 +133,7 @@ jobs:
 
       - name: 📤 Upload Pages artifact
         # pinned from actions/upload-pages-artifact@v3.0.1
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9
         with:
           path: staging
 
@@ -151,4 +151,4 @@ jobs:
       - name: 🚀 Deploy to GitHub Pages
         id: deployment
         # pinned from actions/deploy-pages@v4.0.1
-        uses: actions/deploy-pages@d8af841ac341d06640cbe393899ae55e59e77c00
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128
