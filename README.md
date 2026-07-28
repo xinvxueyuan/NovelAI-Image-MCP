@@ -7,6 +7,7 @@
 [![uv](https://img.shields.io/badge/uv-managed-261230.svg)](https://docs.astral.sh/uv/)
 [![REUSE status](https://api.reuse.software/badge/github.com/xinvxueyuan/NovelAI-Image-MCP)](https://api.reuse.software/info/github.com/xinvxueyuan/NovelAI-Image-MCP)
 [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/xinvxueyuan/NovelAI-Image-MCP)
+[![skills.sh](https://skills.sh/b/xinvxueyuan/NovelAI-Image-MCP)](https://skills.sh/xinvxueyuan/NovelAI-Image-MCP)
 
 <a href="https://www.producthunt.com/products/novelai-image-mcp?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-novelai-image-mcp" target="_blank" rel="noopener noreferrer"><img alt="NovelAI Image MCP - MCP server for integrating NovelAI Image generation into AI | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1206099&theme=light&t=1784973837616"></a>
 

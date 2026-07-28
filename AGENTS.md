@@ -122,6 +122,24 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
 - **Windows Proactor 事件循环**：本项目主要在 Windows 开发，curl_cffi
   与之兼容（见上条 warning），httpx 也兼容。不要为"跨平台一致性"切到
   Selector 事件循环——会破坏 curl_cffi 的 IOCP 路径。
+- **Agent Skills（skills.sh）**：仓库根 `skills/` 目录包含可被
+  `npx skills add xinvxueyuan/NovelAI-Image-MCP` 安装的 agent 技能。
+  每个 skill 是一个子目录（`skills/<name>/SKILL.md`），遵循 skills.sh
+  格式。`skills.sh.json` 在仓库根，按 section 分组技能
+  （CLI / MCP Tools / Workflows）。**SKILL.md scaffold 规范**：
+  (a) frontmatter 只含 `name` + `description`（不写 `metadata` 块）；
+  `description` 不加引号（除非含 YAML 特殊字符），单行，< 200 字符，
+  同时说明"做什么"和"何时调用"；
+  (b) H1 = skill name（如 `# novelai-cli`），不用描述性标题；
+  (c) 正文骨架：H1 后一行 intro → `## When to use`（小写 "use"）→
+  `## Instructions`（编号步骤 + `###` 子段落）；现有详细内容作为
+  `## Instructions` 下的 `###` 子段落，不丢弃。新增 skill 时：
+  (1) 先运行 `npx skills init <name>` 生成骨架（或手动按 scaffold 模板
+  创建），再填充内容，确保结构与官方 scaffold 一致；
+  (2) 在 `skills.sh.json` 的 `groupings` 里加入对应 section；
+  (3) 不要在 skill 里重复其他 skill 的主要内容——按需分发，不要都塞到
+  一个文件里；(4) REUSE.toml 的 `**/*.md` glob 已覆盖 `skills/` 目录，
+  无需手动加 SPDX 头。
 
 ## 发布流程
 
@@ -159,3 +177,6 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
   `@<full-sha>`，与官方 tag commit 对应）
 - ❌ 在翻译页面的 toctree 里链接未翻译的章节（用户会撞到 404）
 - ❌ 为翻译页面创建"翻译中"占位 stub —— 要么完整翻译，要么不创建
+- ❌ 在 SKILL.md frontmatter 中写 `metadata` 块（官方 scaffold 只有
+  `name` + `description`）
+- ❌ SKILL.md 的 H1 用描述性标题而非 skill name

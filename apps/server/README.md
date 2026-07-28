@@ -1,5 +1,7 @@
 # NovelAI Image MCP
 
+[![skills.sh](https://skills.sh/b/xinvxueyuan/NovelAI-Image-MCP)](https://skills.sh/xinvxueyuan/NovelAI-Image-MCP)
+
 An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that
 exposes **NovelAI image generation** as tools for AI agents (Claude Desktop,
 Cline, custom agents, remote clients).

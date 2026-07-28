@@ -1,0 +1,27 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "CLI",
+      "description": "Command-line usage for NovelAI image generation — install, configure, and run generate/upscale/director/annotate/info commands.",
+      "skills": [
+        "novelai-cli"
+      ]
+    },
+    {
+      "title": "MCP Tools",
+      "description": "Reference and guidance for the 11 MCP tools — model selection, parameter tuning, image return format, Anlas cost awareness.",
+      "skills": [
+        "novelai-mcp-tools"
+      ]
+    },
+    {
+      "title": "Workflows",
+      "description": "End-to-end creative workflows chaining multiple tools — txt2img→upscale, ControlNet pipelines, Director editing, and more.",
+      "skills": [
+        "novelai-workflows"
+      ]
+    }
+  ]
+}
