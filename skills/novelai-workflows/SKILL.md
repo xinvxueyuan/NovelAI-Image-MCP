@@ -1,6 +1,6 @@
 ---
 name: novelai-workflows
-description: Chain NovelAI tools into creative pipelines: txt2img to upscale, annotate to img2img, Director edits, full production. Use when asked to build multi-step image workflow recipes or pipelines.
+description: "Chain NovelAI tools into creative pipelines: txt2img to upscale, annotate to img2img, Director edits, full production. Use when asked to build multi-step image workflow recipes or pipelines."
 ---
 
 # novelai-workflows
