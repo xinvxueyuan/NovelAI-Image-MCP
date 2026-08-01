@@ -88,10 +88,14 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
   函数 → 在 `tools/__init__.py` 接线 → 在 `tests/test_tools.py` 扩展参数化
   测试 → 在 `apps/docs/source/tools/<name>.md` 写文档 → 在 README/README-zh
   工具表加行。
-- **MCP Registry 发布**：`server.json` 是 registry 元数据唯一源，版本号
-  必须与 `apps/server/pyproject.toml` 同步。修改 `server.json` 后必须
-  同步更新 CHANGELOG 与 pyproject 版本。`publish-mcp.yml` 由 `v*` tag
-  push 触发，依赖 release.yml 已发布的 PyPI/GHCR 包做所有权验证。
+- **MCP Registry 发布**：`server.json` 是 registry 元数据唯一源。
+  发布时由 `.github/actions/sync-version` 自动同步三处版本（顶层
+  `.version`、PyPI 包条目的 `version`、OCI 包条目的 `identifier` 的
+  `:X.Y.Z` 后缀）并断言一致 —— 人只需要改
+  `apps/server/pyproject.toml`。手动编辑 server.json（如新增包条目）后
+  仍需自行保证版本与 pyproject 一致。自动发布内联在 release.yml 的
+  `publish-mcp` job（见下文 GITHUB_TOKEN 陷阱），依赖已发布的 PyPI/GHCR
+  包做所有权验证。
   PyPI 验证靠 `apps/server/README.md` 的 `mcp-name:` 标记（注意：不是
   根 `README.md`！`apps/server/pyproject.toml` 的 `readme = "README.md"`
   解析为 `apps/server/README.md`，这才是 PyPI 包的 long description）；
@@ -103,12 +107,13 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
   (3) registry v0 搜索 API 把服务器载荷嵌套在 `.server` 下
   （`{"servers":[{"server":{"name":"..."}, "_meta":{...}}]}`），
   verify 步骤的 jq 必须用 `.servers[] | select(.server.name == ...)`。
-  **GITHUB_TOKEN 陷阱**：release.yml 的 `github-release` job 用
-  `GITHUB_TOKEN` 创建 `v*` tag，但 GitHub 安全机制规定用 `GITHUB_TOKEN`
-  创建的 tag **不会触发其他工作流**（防循环触发）。所以 `publish-mcp.yml`
-  的 `on: push: tags: ["v*"]` 实际上不会自动触发 —— 需要在 release.yml
-  完成后手动 `gh workflow run publish-mcp.yml -f version=X.Y.Z`，
-  或者把 publish 步骤内联到 release.yml 里。
+  **GITHUB_TOKEN 陷阱（已内联解决）**：release.yml 的 `github-release`
+  job 用 `GITHUB_TOKEN` 创建 `v*` tag，而 GitHub 安全机制规定用
+  `GITHUB_TOKEN` 创建的 tag **不会触发其他工作流**（防循环触发）。
+  因此 MCP Registry 发布**内联在 release.yml 的 `publish-mcp` job** 中
+  （`needs: [validate, publish-pypi, publish-ghcr]`），每次发布自动执行。
+  独立的 `publish-mcp.yml` 仅保留 `workflow_dispatch`，作为手动重跑工具
+  （修复 server.json 后补发用）——不要给它加回 `on: push: tags` 触发。
 - **回归测试覆盖 SDK 序列化路径**：`TestSerializationRegression` 通过
   `Tool.run(convert_result=True)` 直接调用生产 `server.mcp` 实例，确保
   ImageContent 块能被 `model_dump(mode="json")` 序列化。新增图像返回

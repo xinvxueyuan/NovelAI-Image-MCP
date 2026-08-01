@@ -1,19 +1,18 @@
-name: 📋 Publish to MCP Registry
+name: 📋 Publish to MCP Registry (manual re-run)
 
 # Publishes server.json to the official MCP Registry
-# (https://registry.modelcontextprotocol.io) on every release tag. The
-# registry is the upstream data source for the GitHub MCP Registry
-# directory (https://github.com/mcp), so listing there is automatic once
-# this workflow succeeds.
+# (https://registry.modelcontextprotocol.io) on demand. The registry is the
+# upstream data source for the GitHub MCP Registry directory
+# (https://github.com/mcp), so listing there is automatic once this workflow
+# succeeds.
 #
-# Trigger chain:
-#   release.yml github-release job → creates vX.Y.Z tag → tag push
-#   event → this workflow.
-#
-# Package ownership verification depends on the just-published PyPI and
-# GHCR artifacts (release.yml's publish-pypi / publish-ghcr jobs), so the
-# tag-push ordering naturally guarantees both are already available when
-# mcp-publisher runs its validation.
+# NOTE: automatic registry publishing now runs inside release.yml
+# (the `publish-mcp` job, after publish-pypi / publish-ghcr). The v* tag
+# created by release.yml's github-release job uses GITHUB_TOKEN, which GitHub
+# does not re-dispatch as a tag-push event, so this tag-triggered workflow
+# previously never fired on its own — see the inlined job in release.yml.
+# This workflow is kept ONLY for manual re-runs after fixing a failed
+# publish, or to re-publish a corrected server.json.
 #
 # Authentication: GitHub OIDC — no secrets required. The workflow only
 # needs `id-token: write` to mint the OIDC token that mcp-publisher
@@ -21,9 +20,6 @@ name: 📋 Publish to MCP Registry
 # namespace.
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
     inputs:
       version:

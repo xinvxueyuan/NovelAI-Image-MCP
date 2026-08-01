@@ -38,14 +38,17 @@ runs the `.github/actions/sync-version` composite action as part of the
 
 1. Re-reads `apps/server/pyproject.toml` to confirm the canonical version
    matches the release input.
-2. Updates every Node `package.json` to that version with `jq`.
+2. Updates every Node `package.json` to that version with `jq`, and syncs
+   the MCP registry manifest `server.json` (top-level `.version`, the PyPI
+   package entry's `version`, and the OCI entry's `identifier` `:X.Y.Z`
+   suffix).
 3. Asserts that every version-bearing file agrees. The release fails fast
    if anything has drifted.
 
-For branch-based releases (`releases/X.Y.Z`), the synced `package.json`
-edits are pushed back to the same branch as a `🔧 chore(release): sync
-package.json versions to X.Y.Z` commit, so the workspace tree stays
-consistent after the run.
+For branch-based releases (`releases/X.Y.Z`), the synced
+`package.json`/`server.json` edits are pushed back to the same branch as a
+`🔧 chore(release): sync manifest versions to X.Y.Z` commit, so the
+workspace tree stays consistent after the run.
 
 :::{note}
 Tutorials and changelogs that mention historical versions (e.g. "v0.1.0
@@ -107,6 +110,8 @@ graph TD
     B --> D[publish-ghcr]
     C --> E[github-release]
     D --> E
+    C --> F[publish-mcp]
+    D --> F
 ```
 
 ### 1. Validate
@@ -140,6 +145,19 @@ graph TD
 - Generates release notes via `gh api .../generate-notes` (configured by
   `.github/release.yml`).
 - Creates a GitHub Release with the wheel + sdist attached.
+
+### 6. Publish to MCP Registry
+
+- Runs in parallel with the GitHub Release, after PyPI and GHCR are live
+  (`needs: [validate, publish-pypi, publish-ghcr]`).
+- Installs `mcp-publisher`, validates `server.json` against the registry
+  schema, logs in via GitHub OIDC, publishes, then verifies the server is
+  listed at `registry.modelcontextprotocol.io`.
+- Inlined into `release.yml` because the `v*` tag created by the
+  `github-release` job uses `GITHUB_TOKEN`, which GitHub does not
+  re-dispatch as a tag-push event — a separate tag-triggered workflow would
+  never fire. The standalone `publish-mcp.yml` remains available for manual
+  re-runs (`gh workflow run publish-mcp.yml -f version=X.Y.Z`).
 
 ## Cutting a release
 
@@ -185,6 +203,8 @@ gh run watch
 - Verify the package on PyPI: <https://pypi.org/project/novelai-image-mcp/>
 - Verify the image on GHCR: `docker pull ghcr.io/<owner>/<repo>:0.2.0`
 - Verify the GitHub Release: <https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases>
+- Verify the MCP Registry listing (automatic via the `publish-mcp` job):
+  <https://github.com/mcp/xinvxueyuan/novelai-image-mcp>
 - Announce in the project's discussion / chat.
 
 ## Rollback

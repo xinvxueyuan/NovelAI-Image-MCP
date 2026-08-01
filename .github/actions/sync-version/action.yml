@@ -31,6 +31,14 @@ inputs:
       sync fails if it disagrees with ``inputs.version``.
     required: false
     default: apps/server/pyproject.toml
+  server-json-path:
+    description: >-
+      Path to the MCP registry manifest (``server.json``). Its top-level
+      ``version``, the PyPI package entry's ``version``, and the OCI package
+      entry's ``identifier`` (``ghcr.io/<owner>/<repo>:X.Y.Z``) are synced to
+      the release version and asserted to agree.
+    required: false
+    default: server.json
 
 runs:
   using: composite
@@ -66,6 +74,45 @@ runs:
           echo "✅ $f: $previous → $version"
         done <<< "${{ inputs.package-json-paths }}"
 
+    - name: 📦 Update server.json registry manifest
+      shell: bash
+      run: |
+        set -euo pipefail
+        version="${{ inputs.version }}"
+        f="${{ inputs.server-json-path }}"
+
+        if [ ! -f "$f" ]; then
+          echo "❌ Registry manifest not found: $f" >&2
+          exit 1
+        fi
+        if ! command -v jq >/dev/null 2>&1; then
+          echo "❌ jq is required to sync server.json versions" >&2
+          exit 1
+        fi
+
+        top_before=$(jq -r '.version' "$f")
+        pypi_before=$(jq -r '.packages[] | select(.registryType == "pypi") | .version' "$f")
+        oci_before=$(jq -r '.packages[] | select(.registryType == "oci") | .identifier' "$f")
+
+        tmp=$(mktemp)
+        # Top-level version + PyPI package version: plain field assignment.
+        # OCI entry has NO `version` field (registry schema) — the version is
+        # embedded in the identifier as `ghcr.io/<owner>/<repo>:X.Y.Z`; the
+        # trailing `:X.Y.Z` suffix is replaced via `sub`.
+        jq --arg v "$version" '
+          .version = $v
+          | (.packages[] | select(.registryType == "pypi") | .version) = $v
+          | (.packages[] | select(.registryType == "oci") | .identifier) |= sub(":[^:]+$"; ":" + $v)
+        ' "$f" > "$tmp"
+        mv "$tmp" "$f"
+
+        top_after=$(jq -r '.version' "$f")
+        pypi_after=$(jq -r '.packages[] | select(.registryType == "pypi") | .version' "$f")
+        oci_after=$(jq -r '.packages[] | select(.registryType == "oci") | .identifier' "$f")
+        echo "✅ $f: .version $top_before → $top_after"
+        echo "✅ $f: pypi .version $pypi_before → $pypi_after"
+        echo "✅ $f: oci .identifier $oci_before → $oci_after"
+
     - name: 🔎 Verify every version-bearing location agrees
       shell: bash
       run: |
@@ -100,6 +147,32 @@ runs:
           fi
           echo "✅ $f: $actual"
         done <<< "${{ inputs.package-json-paths }}"
+
+        # MCP registry manifest — three locations must agree:
+        #   .version, pypi package .version, oci identifier ":X.Y.Z" suffix.
+        sj="${{ inputs.server-json-path }}"
+        if [ ! -f "$sj" ]; then
+          echo "❌ Registry manifest not found: $sj" >&2
+          exit 1
+        fi
+        sj_top=$(jq -r '.version' "$sj")
+        sj_pypi=$(jq -r '.packages[] | select(.registryType == "pypi") | .version' "$sj")
+        sj_oci=$(jq -r '.packages[] | select(.registryType == "oci") | .identifier' "$sj")
+        if [ "$sj_top" != "$version" ]; then
+          echo "❌ $sj .version reports '$sj_top', expected '$version'" >&2
+          exit 1
+        fi
+        if [ "$sj_pypi" != "$version" ]; then
+          echo "❌ $sj pypi package .version reports '$sj_pypi', expected '$version'" >&2
+          exit 1
+        fi
+        if [ "$sj_oci" != "ghcr.io/xinvxueyuan/novelai-image-mcp:$version" ]; then
+          echo "❌ $sj oci identifier reports '$sj_oci', expected 'ghcr.io/xinvxueyuan/novelai-image-mcp:$version'" >&2
+          exit 1
+        fi
+        echo "✅ $sj: .version $sj_top"
+        echo "✅ $sj: pypi .version $sj_pypi"
+        echo "✅ $sj: oci identifier $sj_oci"
 
         echo
         echo "🎯 All version locations agree on $version"

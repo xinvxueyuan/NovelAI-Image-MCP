@@ -66,32 +66,34 @@ jobs:
           fi
 
       - name: 🔄 Sync version to all manifests
-        # Propagate the validated version into every Node package.json so a
-        # single edit (apps/server/pyproject.toml) is enough to bump the
-        # whole workspace. The composite action also re-asserts that every
+        # Propagate the validated version into every Node package.json and
+        # the MCP registry manifest (server.json) so a single edit
+        # (apps/server/pyproject.toml) is enough to bump the whole
+        # workspace. The composite action also re-asserts that every
         # version-bearing file agrees before downstream jobs see the tree.
         uses: ./.github/actions/sync-version
         with:
           version: ${{ steps.version.outputs.version }}
 
       - name: 📤 Commit synced manifests back to the release branch
-        # The sync step above edits the package.json manifests in the job
-        # workspace. To make the bump stick in the repo (so future clones
-        # and the post-release git tree show consistent versions) we push
-        # the edits back to the triggering branch. workflow_dispatch
-        # triggered against a tag has no writable ref, so we only commit
-        # when the run is anchored to a branch (the release-branch flow).
+        # The sync step above edits the package.json manifests and
+        # server.json in the job workspace. To make the bump stick in the
+        # repo (so future clones and the post-release git tree show
+        # consistent versions) we push the edits back to the triggering
+        # branch. workflow_dispatch triggered against a tag has no writable
+        # ref, so we only commit when the run is anchored to a branch (the
+        # release-branch flow).
         if: startsWith(github.ref, 'refs/heads/releases/')
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json apps/server/package.json apps/docs/package.json
+          git add package.json apps/server/package.json apps/docs/package.json server.json
           if git diff --cached --quiet; then
-            echo "No version drift in package.json — already in sync."
+            echo "No version drift in manifests — already in sync."
           else
-            git commit -m "🔧 chore(release): sync package.json versions to ${{ steps.version.outputs.version }}"
+            git commit -m "🔧 chore(release): sync manifest versions to ${{ steps.version.outputs.version }}"
             git push
           fi
 
@@ -330,3 +332,94 @@ jobs:
               --target ${{ github.sha }} \
               dist/*
           fi
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Publish to the official MCP Registry (registry.modelcontextprotocol.io).
+  #
+  # Inlined from the former publish-mcp.yml tag-triggered workflow: the v* tag
+  # created by the github-release job uses GITHUB_TOKEN, which GitHub does not
+  # re-dispatch as a tag-push event, so a separate on-push-tags workflow never
+  # fired. Running the publish here (after PyPI + GHCR are live) makes the
+  # registry update automatic on every release. Ownership validation by
+  # mcp-publisher needs the just-published PyPI / GHCR artifacts, hence the
+  # `needs` list below.
+  #
+  # Authentication: GitHub OIDC — no secrets required. Only `id-token: write`
+  # is needed to mint the OIDC token that mcp-publisher exchanges for registry
+  # credentials under the io.github.xinvxueyuan/* namespace.
+  publish-mcp:
+    name: 📋 Publish to MCP Registry
+    needs: [validate, publish-pypi, publish-ghcr]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # Required for mcp-publisher github-oidc login
+    env:
+      VERSION: ${{ needs.validate.outputs.version }}
+    steps:
+      - name: 📥 Checkout
+        # pinned from actions/checkout@v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: 🔎 Verify server.json version matches release
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ env.VERSION }}"
+          json_version=$(jq -r '.version' server.json)
+          if [ "$json_version" != "$version" ]; then
+            echo "Version mismatch: server.json has '$json_version', release is '$version'" >&2
+            exit 1
+          fi
+          echo "✓ server.json version ($json_version) matches release ($version)"
+
+      - name: ⬇️ Install mcp-publisher
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" \
+            | tar xz mcp-publisher
+          chmod +x mcp-publisher
+          ./mcp-publisher --help
+
+      - name: ✅ Validate server.json against schema
+        shell: bash
+        run: ./mcp-publisher validate ./server.json
+
+      - name: 🔑 Login to MCP Registry (GitHub OIDC)
+        shell: bash
+        run: ./mcp-publisher login github-oidc
+
+      - name: 🚀 Publish to MCP Registry
+        shell: bash
+        run: ./mcp-publisher publish
+
+      - name: 🔍 Verify publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          server_name="io.github.xinvxueyuan/novelai-image-mcp"
+          echo "Searching registry for $server_name..."
+          # The registry search API may take a few seconds to index the new
+          # entry; retry a few times before declaring failure.
+          #
+          # Response shape (v0):
+          #   {"servers":[{"server":{"name":"...","version":"..."}, "_meta":{...}}]}
+          # The server payload is nested under `.server`, not at the top level
+          # of each entry — filter on `.server.name`.
+          max_attempts=5
+          attempt=1
+          until curl -fsSL "https://registry.modelcontextprotocol.io/v0/servers?search=${server_name}" \
+                | jq -e --arg name "$server_name" \
+                    '.servers[] | select(.server.name == $name)' >/dev/null; do
+            if [ "${attempt}" -ge "${max_attempts}" ]; then
+              echo "Server $server_name not found in registry after ${attempt} attempts" >&2
+              echo "Manual check: curl 'https://registry.modelcontextprotocol.io/v0/servers?search=${server_name}'" >&2
+              exit 1
+            fi
+            echo "Not indexed yet (attempt ${attempt}/${max_attempts}), retrying in 15s..." >&2
+            sleep 15
+            attempt=$((attempt + 1))
+          done
+          echo "✓ Server $server_name is now listed in the MCP Registry"
+          echo "  View at: https://github.com/mcp/xinvxueyuan/novelai-image-mcp"
