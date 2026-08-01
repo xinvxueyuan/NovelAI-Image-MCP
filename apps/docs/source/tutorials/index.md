@@ -27,6 +27,13 @@ vibe-transfer
 | [ControlNet workflow](controlnet.md) | `annotate_image` + `generate_image` | 5 min | ~10 |
 | [Vibe transfer](vibe-transfer.md) | `encode_vibe` + `generate_image` | 4 min | ~8 |
 
+:::{tip}
+The **`novelai-workflows`** agent skill packages these multi-tool pipelines
+into a portable format your AI agent can read at runtime. Install it with
+`npx skills add xinvxueyuan/NovelAI-Image-MCP` — see
+[Agent skills](../skills.md) for details.
+:::
+
 ## Prerequisites
 
 - A configured NovelAI account (see [Installation](../installation.md))

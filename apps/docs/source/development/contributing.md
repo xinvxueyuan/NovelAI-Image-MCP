@@ -143,6 +143,25 @@ To preview docs locally:
 uv run --package novelai-image-mcp-docs sphinx-autobuild apps/docs/source apps/docs/_build/html --open-browser
 ```
 
+### Contributing skills
+
+Agent skills live under `skills/<name>/SKILL.md` and are registered in
+`skills.sh.json` at the repository root. To add a new skill:
+
+1. Run `npx skills init <name>` to scaffold the `SKILL.md` frontmatter
+   (`name` + `description` only, no `metadata` block) and the
+   `## When to use` → `## Instructions` body structure.
+2. Fill in the content — distribute guidance on demand, don't duplicate
+   what other skills already cover.
+3. Add the skill to `skills.sh.json` under the appropriate grouping
+   (CLI / MCP Tools / Workflows).
+4. Update the [Agent skills](../skills.md) docs page and the README skills
+   table if the skill is user-facing.
+
+See `AGENTS.md` → "Agent Skills (skills.sh)" for the full scaffold
+conventions (frontmatter rules, H1 = skill name, description < 200 chars,
+quoting rules for YAML special characters).
+
 ## Translating docs
 
 The docs site supports multiple languages via per-language source trees.

@@ -192,6 +192,27 @@ uv run python -m novelai_image_mcp info          # subscription / Anlas balance
 uv run python -m novelai_image_mcp --help
 ```
 
+## Skills (portable agent instructions)
+
+The project ships three [skills.sh](https://skills.sh) packages that teach AI
+agents (Claude Code, Codex, GitHub Copilot, Cursor, …) how to drive the CLI
+and MCP tools without you pasting docs:
+
+```bash
+npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP
+```
+
+| Skill | What it teaches |
+|---|---|
+| `novelai-cli` | Typer CLI commands (serve, generate, upscale, director, annotate, info) for shell scripting |
+| `novelai-mcp-tools` | The 11 MCP tools — model selection, parameters, return shape, Anlas cost |
+| `novelai-workflows` | Multi-step creative pipelines (txt2img→upscale, annotate→img2img, Director edits) |
+
+Skills and the CLI/MCP tools are complementary — install all three and your
+agent picks the right mode based on context. See the
+[Agent skills docs](https://xinvxueyuan.github.io/NovelAI-Image-MCP/skills.html)
+for details.
+
 ## Tools
 
 | Tool | Description |

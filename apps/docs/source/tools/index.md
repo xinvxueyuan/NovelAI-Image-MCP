@@ -77,5 +77,6 @@ account
 ## See also
 
 - [Tutorials](../tutorials/index.md) — end-to-end workflows combining tools
+- [Agent skills](../skills.md) — the `novelai-mcp-tools` skill packages this reference for AI agents
 - [API reference](../api/index.md) — autodoc for the underlying `NovelAIClient`
 - [Configuration](../configuration.md) — defaults applied when a parameter is omitted

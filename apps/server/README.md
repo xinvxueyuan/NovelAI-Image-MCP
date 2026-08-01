@@ -47,6 +47,16 @@ MCP_TRANSPORT=streamable-http novelai-image-mcp serve
 #   → http://127.0.0.1:8000/mcp
 ```
 
+## Agent skills
+
+Three [skills.sh](https://skills.sh) packages (`novelai-cli`,
+`novelai-mcp-tools`, `novelai-workflows`) teach AI agents how to drive the
+CLI and MCP tools:
+
+```bash
+npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP
+```
+
 ## License
 
 MIT — see [LICENSE](LICENSE). Per-file SPDX annotations live in

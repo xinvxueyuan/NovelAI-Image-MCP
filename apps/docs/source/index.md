@@ -27,6 +27,9 @@ standard MCP tool interface.
 - **Dual return shape**: base64 `Image` content blocks (the agent *sees* the image)
   **and** PNG saved to disk (path returned as text).
 - **Async + sync**: async tool handlers + a `typer` CLI for direct invocation.
+- **Agent skills**: three [skills.sh](https://skills.sh) packages (`novelai-cli`,
+  `novelai-mcp-tools`, `novelai-workflows`) that teach AI agents how to drive
+  the CLI and MCP tools.
 - **uv-managed monorepo**, MIT-licensed, Docker-ready, GitHub Pages docs.
 
 ---
@@ -69,6 +72,14 @@ transports/index
 
 ```{toctree}
 :maxdepth: 1
+:caption: Skills
+:hidden:
+
+skills
+```
+
+```{toctree}
+:maxdepth: 1
 :caption: Development
 :hidden:
 
@@ -100,6 +111,7 @@ about/tool-validation
 - ⚡ [Quick start](quickstart.md) — install, configure, and generate your first image
 - 🛠️ [Tools reference](tools/index.md) — every MCP tool, parameter, and example
 - 🚀 [Transports](transports/index.md) — stdio vs streamable-http
+- 🧠 [Agent skills](skills.md) — skills.sh packages that teach AI agents the CLI + MCP tools
 - 🔌 [Agent host setup](transports/agent-hosts.md) — Claude Desktop, Cline, Cursor, Continue, Windsurf, Codex CLI
 - 🧩 [API reference](api/index.md) — autodoc-generated Python API
 - 🤝 [Contributing](development/contributing.md) — how to hack on the server

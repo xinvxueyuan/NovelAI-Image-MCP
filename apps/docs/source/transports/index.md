@@ -16,7 +16,14 @@ graph TD
     Q -->|Local agent on the same machine| A[stdio]
     Q -->|Remote / multi-client / production| B[streamable-http]
     Q -->|Scripting — direct CLI use| C[CLI: novelai-image-mcp generate<br/>uv run python -m ...]
+    Q -->|Portable agent instructions| D[Agent skills<br/>npx skills add …]
 ```
+
+Skills are not a transport — they are [skills.sh](https://skills.sh) packages
+that teach an AI agent *how* to use the CLI or MCP tools. Install them when
+you want your coding agent (Claude Code, Codex, Copilot, …) to know the
+project's commands and parameters without manual prompting. See
+[Agent skills](../skills.md) for details.
 
 ## Transport-agnostic design
 

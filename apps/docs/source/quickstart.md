@@ -42,6 +42,13 @@ outputs/generate-YYYYMMDD-HHMMSS-NNN.png
 
 Open the file — you should see your generated cat.
 
+:::{tip}
+**Prefer an AI agent to drive the CLI?** Install the [agent skills](skills.md)
+with `npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP` — your
+coding agent (Claude Code, Codex, Copilot, …) will then know the CLI commands
+and MCP tool parameters without you pasting docs.
+:::
+
 ## 3. Generate via HTTP
 
 To expose the server to remote clients over HTTP:
@@ -157,6 +164,7 @@ Or call the `get_subscription` MCP tool from your agent.
 
 - 📚 Read the [Tools reference](tools/index.md) for every parameter
 - 🎨 Try [tutorials](tutorials/index.md) — img2img, inpaint, upscale, ControlNet
+- 🧠 Install [agent skills](skills.md) — teach your AI agent the CLI + MCP tools
 - 🔧 Tune [generation defaults](configuration.md) via env vars
 - 🐳 [Dockerize](transports/http.md) for production
 
