@@ -57,7 +57,7 @@ test, inline a literal token (`"pst-..."`) instead.
   "mcpServers": {
     "novelai-image": {
       "command": "uvx",
-      "args": ["--prerelease=allow", "novelai-image-mcp", "serve"],
+      "args": ["novelai-image-mcp", "serve"],
       "env": { "NOVELAI_TOKEN": "pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" }
     }
   }

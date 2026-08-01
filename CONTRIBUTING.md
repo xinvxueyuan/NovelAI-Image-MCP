@@ -141,7 +141,7 @@ Commits MUST follow [gitmoji](https://gitmoji.dev/) +
 🐛 fix(generate): handle zero-seed randomization
 ♻️ refactor(client)!: rename generate() to generate_image()
 📝 docs: document the lifespan AppContext contract
-🔧 build(deps): bump mcp from 2.0.0b2 to 2.0.0b3
+🔧 build(deps): bump mcp from 2.0.0 to 2.0.1
 ```
 
 ## Pre-commit hooks

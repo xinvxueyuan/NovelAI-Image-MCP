@@ -32,12 +32,8 @@ authors = [{ name = "NovelAI Image MCP contributors" }]
 maintainers = [{ name = "NovelAI Image MCP contributors" }]
 dependencies = [
     # MCP SDK v2: FastMCP renamed to MCPServer (from mcp.server import MCPServer, Image).
-    # 2.0.0b2 is the latest beta; the spec auto-enables pre-releases via the
-    # explicit beta reference, and `[tool.uv] prerelease = "allow"` propagates
-    # to the transitive `mcp-types==2.0.0b2` constraint.
-    "mcp>=2.0.0b2",
-    # httpx is pinned below 1.0 because respx (test dep) doesn't yet support
-    # httpx 1.x and the 1.0.dev pre-release leaks in via `prerelease = "allow"`.
+    "mcp>=2.0.0",
+    # httpx is pinned below 1.0 because respx (test dep) doesn't yet support httpx 1.x.
     "httpx>=0.28.0,<1.0.0",
     # Browser TLS + header fingerprint impersonation for Cloudflare's bot WAF.
     # ``curl_cffi`` wraps ``curl-impersonate`` (BoringSSL) to reproduce Chrome's
@@ -91,8 +87,6 @@ module-root = "src"
 
 [tool.uv]
 package = true
-# `prerelease = "allow"` is set workspace-wide at the repository root
-# (root pyproject.toml). It is not repeated here to avoid divergence.
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Ruff

@@ -12,10 +12,6 @@
 [tool.uv]
 # Root is a virtual workspace, not an installable project.
 package = false
-# mcp 2.x is currently in beta; allow pre-releases workspace-wide so the
-# transitive `mcp-types==2.0.0bN` constraint resolves without --prerelease.
-# Drop this once mcp 2.0.0 stable is released.
-prerelease = "allow"
 
 [tool.uv.workspace]
 members = ["apps/server", "apps/docs"]

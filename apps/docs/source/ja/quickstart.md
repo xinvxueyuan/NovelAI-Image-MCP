@@ -94,7 +94,7 @@ PyPI からインストールした場合、以下の省略記法が使えます
   "mcpServers": {
     "novelai-image": {
       "command": "uvx",
-      "args": ["--prerelease=allow", "novelai-image-mcp", "serve"],
+      "args": ["novelai-image-mcp", "serve"],
       "env": { "NOVELAI_TOKEN": "pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" }
     }
   }

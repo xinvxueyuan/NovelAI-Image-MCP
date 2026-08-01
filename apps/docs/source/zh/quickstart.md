@@ -91,7 +91,7 @@ secrets UI（Claude Desktop、Cline 等）。如果只是做一次性测试，�
   "mcpServers": {
     "novelai-image": {
       "command": "uvx",
-      "args": ["--prerelease=allow", "novelai-image-mcp", "serve"],
+      "args": ["novelai-image-mcp", "serve"],
       "env": { "NOVELAI_TOKEN": "pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" }
     }
   }

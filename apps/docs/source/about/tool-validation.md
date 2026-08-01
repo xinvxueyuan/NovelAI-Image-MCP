@@ -63,7 +63,7 @@ The MCP server was launched with this config (token redacted):
   "mcpServers": {
     "novelai-image-mcp": {
       "command": "uvx",
-      "args": ["--prerelease=allow", "novelai-image-mcp", "serve"],
+      "args": ["novelai-image-mcp", "serve"],
       "env": { "NOVELAI_TOKEN": "pst-..." }
     }
   }

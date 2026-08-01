@@ -38,7 +38,7 @@ which creates the file if absent.
   "mcpServers": {
     "novelai-image": {
       "command": "uvx",
-      "args": ["--prerelease=allow", "novelai-image-mcp", "serve"],
+      "args": ["novelai-image-mcp", "serve"],
       "env": { "NOVELAI_TOKEN": "${input:novelai_token}" }
     }
   }
@@ -88,7 +88,7 @@ the current extension version still writes there.
   "mcpServers": {
     "novelai-image": {
       "command": "uvx",
-      "args": ["--prerelease=allow", "novelai-image-mcp", "serve"],
+      "args": ["novelai-image-mcp", "serve"],
       "env": { "NOVELAI_TOKEN": "pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" },
       "disabled": false,
       "autoApprove": []
@@ -136,7 +136,7 @@ semantics against official docs).
   "mcpServers": {
     "novelai-image": {
       "command": "uvx",
-      "args": ["--prerelease=allow", "novelai-image-mcp", "serve"],
+      "args": ["novelai-image-mcp", "serve"],
       "env": { "NOVELAI_TOKEN": "pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" }
     }
   }
@@ -181,7 +181,6 @@ mcpServers:
   - name: novelai-image
     command: uvx
     args:
-      - "--prerelease=allow"
       - "novelai-image-mcp"
       - "serve"
     env:
@@ -245,7 +244,7 @@ global-only; there is no per-project file.
   "mcpServers": {
     "novelai-image": {
       "command": "uvx",
-      "args": ["--prerelease=allow", "novelai-image-mcp", "serve"],
+      "args": ["novelai-image-mcp", "serve"],
       "env": { "NOVELAI_TOKEN": "${env:NOVELAI_TOKEN}" }
     }
   }
@@ -295,7 +294,7 @@ without restarting Cascade is the most common silent failure.
 ```toml
 [mcp_servers.novelai-image]
 command = "uvx"
-args = ["--prerelease=allow", "novelai-image-mcp", "serve"]
+args = ["novelai-image-mcp", "serve"]
 env_vars = ["NOVELAI_TOKEN"]
 startup_timeout_sec = 10.0
 
@@ -363,7 +362,7 @@ Host-specific — see the per-host sections.
   "mcpServers": {
     "novelai-image": {
       "command": "uvx",
-      "args": ["--prerelease=allow", "novelai-image-mcp", "serve"],
+      "args": ["novelai-image-mcp", "serve"],
       "env": { "NOVELAI_TOKEN": "pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" }
     }
   }

@@ -143,7 +143,7 @@ MCP 服务端在 `mcpServers` 下支持两种传输（stdio + http）：
   "mcpServers": {
     "novelai-image": {
       "command": "uvx",
-      "args": ["--prerelease=allow", "novelai-image-mcp", "serve"],
+      "args": ["novelai-image-mcp", "serve"],
       "env": { "NOVELAI_TOKEN": "pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" }
     }
   }

@@ -7,7 +7,7 @@
 
 ## 项目是什么
 
-NovelAI Image MCP —— 一个基于 MCP v2 SDK（`mcp>=2.0.0b2`，`MCPServer`）
+NovelAI Image MCP —— 一个基于 MCP v2 SDK（`mcp>=2.0.0`，`MCPServer`）
 的模型上下文协议服务器，把 NovelAI 图像生成 API 暴露为 11 个 MCP 工具，
 供 Claude Desktop / Cline / 自研 agent 调用。Python 3.13，MIT 协议。
 
