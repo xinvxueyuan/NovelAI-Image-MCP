@@ -24,6 +24,24 @@ per-release section headings. This file is the human-curated companion.
 
 - _Nothing yet._
 
+## [0.3.0] — 2026-08-01
+
+### Added
+
+- **Agent skills documentation**: dedicated docs page for the three
+  skills.sh packages (`novelai-cli`, `novelai-mcp-tools`,
+  `novelai-workflows`), plus README / quickstart links and a contributing
+  guide section for authoring new skills.
+
+### Changed
+
+- **Dependency stabilization**: require MCP SDK v2 `mcp>=2.0.0` (stable),
+  replacing the `2.0.0b2` beta pin and dropping the workspace-wide
+  `prerelease = "allow"` uv setting. `curl-cffi` now resolves to the stable
+  `0.15.0` release instead of a pre-release beta. All `uvx` install
+  snippets no longer need `--prerelease=allow` (README, docs, and
+  agent-host config examples updated).
+
 ## [0.2.0] — 2026-07-29
 
 ### Added
