@@ -1,16 +1,16 @@
 # NovelAI Image MCP
 
-[![CI](https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/ci.yml)
-[![Docs](https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/docs.yml/badge.svg)](https://xinvxueyuan.github.io/NovelAI-Image-MCP/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
-[![uv](https://img.shields.io/badge/uv-managed-261230.svg)](https://docs.astral.sh/uv/)
-[![REUSE status](https://api.reuse.software/badge/github.com/xinvxueyuan/NovelAI-Image-MCP)](https://api.reuse.software/info/github.com/xinvxueyuan/NovelAI-Image-MCP)
-[![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/xinvxueyuan/NovelAI-Image-MCP)
+[![CI][ci-badge]][ci-workflow]
+[![Docs][docs-badge]][docs]
+[![License: MIT][mit-badge]][license]
+[![Python 3.13+][python-badge]][python]
+[![uv][uv-badge]][uv]
+[![REUSE status][reuse-badge]][reuse]
+[![DeepWiki][deepwiki-badge]][deepwiki]
 
-<a href="https://www.producthunt.com/products/novelai-image-mcp?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-novelai-image-mcp" target="_blank" rel="noopener noreferrer"><img alt="NovelAI Image MCP - MCP server for integrating NovelAI Image generation into AI | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1206099&theme=light&t=1784973837616"></a>
+[![NovelAI Image MCP - MCP server for integrating NovelAI Image generation into AI | Product Hunt][product-hunt-badge]][product-hunt] [![Featured on Lifto][lifto-badge]][lifto]
 
-一个 [MCP（模型上下文协议）](https://modelcontextprotocol.io/) 服务端，将 **NovelAI
+一个 [MCP（模型上下文协议）][mcp] 服务端，将 **NovelAI
 图像生成** 能力以工具形式暴露给 AI 智能体（Claude Desktop、Cline、自定义 Agent、
 远程客户端）。
 
@@ -18,7 +18,7 @@
 生图（文生图 / 图生图 / 局部重绘）、放大、Director 工具（线稿、表情、去背景……）、
 ControlNet 标注、标签建议、Vibe 编码以及账户订阅查询。
 
-> 📖 **在线文档**：<https://xinvxueyuan.github.io/NovelAI-Image-MCP/>
+> 📖 **在线文档**：[xinvxueyuan.github.io/NovelAI-Image-MCP][docs]
 
 ## 特性
 
@@ -57,8 +57,8 @@ NovelAI-Image-MCP/
 └── docker-compose.yml           # 本地容器编排
 ```
 
-完整开发指南见 [`CONTRIBUTING.md`](CONTRIBUTING.md)，文档源码见
-[`apps/docs/source/`](apps/docs/source/)。
+完整开发指南见 [`CONTRIBUTING.md`][contributing]，文档源码见
+[`apps/docs/source/`][docs-source]。
 
 ## 快速开始
 
@@ -202,7 +202,7 @@ uv run python -m novelai_image_mcp --help
 | `estimate_anlas_cost` | 估算生图 Anlas 消耗（不调用 API） |
 
 工具参数与示例见文档站
-[工具参考](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tools/index.html)。
+[工具参考][tools-docs]。
 
 ## 配置
 
@@ -216,12 +216,12 @@ uv run python -m novelai_image_mcp --help
 | `MCP_TRANSPORT` | `stdio` | `stdio` 或 `streamable-http` |
 | `MCP_HOST` / `MCP_PORT` | `127.0.0.1` / `8000` | streamable-http 用 |
 
-NovelAI API 文档：<https://image.novelai.net/docs/index.html>
+NovelAI API 文档：[image.novelai.net/docs][nai-docs]
 
 ## 开发
 
 本项目为 uv + pnpm 单体仓库，由 Turbo 编排。完整设置见
-[`CONTRIBUTING.md`](CONTRIBUTING.md)，简版如下：
+[`CONTRIBUTING.md`][contributing]，简版如下：
 
 ```bash
 uv sync                              # Python workspace（server + docs + dev）
@@ -247,22 +247,53 @@ uv run --directory apps/server -m pytest               # 测试
 docker compose up --build      # 构建并运行服务端（HTTP 传输）
 ```
 
-Dockerfile 位于 [`apps/server/Dockerfile`](apps/server/Dockerfile)，但构建上下文为
+Dockerfile 位于 [`apps/server/Dockerfile`][dockerfile]，但构建上下文为
 仓库根目录（这样 uv 能解析 workspace 图）。详见
-[`docker-compose.yml`](docker-compose.yml)。
+[`docker-compose.yml`][docker-compose]。
 
 ## 文档
 
 Sphinx 文档站点使用 Furo + MyST Markdown 构建，每次推送到 `main` 时自动部署到
 GitHub Pages：
 
-- **在线站点**：<https://xinvxueyuan.github.io/NovelAI-Image-MCP/>
-- **源码**：[`apps/docs/source/`](apps/docs/source/)
+- **在线站点**：[xinvxueyuan.github.io/NovelAI-Image-MCP][docs]
+- **源码**：[`apps/docs/source/`][docs-source]
 - **本地构建**：`pnpm docs:serve`
 
 ## 许可证
 
-MIT —— 见 [LICENSE](LICENSE)。逐文件 SPDX 标注见
-[REUSE.toml](REUSE.toml)。提交即表示你同意
-[Developer Certificate of Origin](https://developercertificate.org/)（`commit-msg`
+MIT —— 见 [LICENSE][license]。逐文件 SPDX 标注见
+[REUSE.toml][reuse-toml]。提交即表示你同意
+[Developer Certificate of Origin][dco]（`commit-msg`
 钩子会自动添加 `Signed-off-by`）。
+
+## Links
+
+[ci-badge]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/ci.yml/badge.svg
+[ci-workflow]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/ci.yml
+[docs-badge]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/docs.yml/badge.svg
+[mit-badge]: https://img.shields.io/badge/License-MIT-blue.svg
+[python-badge]: https://img.shields.io/badge/python-3.13+-blue.svg
+[uv-badge]: https://img.shields.io/badge/uv-managed-261230.svg
+[reuse-badge]: https://api.reuse.software/badge/github.com/xinvxueyuan/NovelAI-Image-MCP
+[deepwiki-badge]: https://deepwiki.com/badge.svg
+[product-hunt-badge]: https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1206099&theme=light&t=1784973837616
+[lifto-badge]: https://liftoapp.com/badges/featured-light.svg
+
+[docs]: https://xinvxueyuan.github.io/NovelAI-Image-MCP/
+[reuse]: https://api.reuse.software/info/github.com/xinvxueyuan/NovelAI-Image-MCP
+[python]: https://www.python.org/downloads/
+[uv]: https://docs.astral.sh/uv/
+[deepwiki]: https://deepwiki.com/xinvxueyuan/NovelAI-Image-MCP
+[product-hunt]: https://www.producthunt.com/products/novelai-image-mcp?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-novelai-image-mcp
+[lifto]: https://liftoapp.com/product/novelai-image-mcp
+[mcp]: https://modelcontextprotocol.io/
+[contributing]: CONTRIBUTING.md
+[docs-source]: apps/docs/source/
+[tools-docs]: https://xinvxueyuan.github.io/NovelAI-Image-MCP/tools/index.html
+[nai-docs]: https://image.novelai.net/docs/index.html
+[dockerfile]: apps/server/Dockerfile
+[docker-compose]: docker-compose.yml
+[license]: LICENSE
+[reuse-toml]: REUSE.toml
+[dco]: https://developercertificate.org/

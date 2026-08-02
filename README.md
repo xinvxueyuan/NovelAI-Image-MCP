@@ -1,17 +1,17 @@
 # NovelAI Image MCP
 
-[![CI](https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/ci.yml)
-[![Docs](https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/docs.yml/badge.svg)](https://xinvxueyuan.github.io/NovelAI-Image-MCP/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
-[![uv](https://img.shields.io/badge/uv-managed-261230.svg)](https://docs.astral.sh/uv/)
-[![REUSE status](https://api.reuse.software/badge/github.com/xinvxueyuan/NovelAI-Image-MCP)](https://api.reuse.software/info/github.com/xinvxueyuan/NovelAI-Image-MCP)
-[![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/xinvxueyuan/NovelAI-Image-MCP)
-[![skills.sh](https://skills.sh/b/xinvxueyuan/NovelAI-Image-MCP)](https://skills.sh/xinvxueyuan/NovelAI-Image-MCP)
+[![CI][ci-badge]][ci-workflow]
+[![Docs][docs-badge]][docs]
+[![License: MIT][mit-badge]][license]
+[![Python 3.13+][python-badge]][python]
+[![uv][uv-badge]][uv]
+[![REUSE status][reuse-badge]][reuse]
+[![DeepWiki][deepwiki-badge]][deepwiki]
+[![skills.sh][skills-badge]][skills-sh]
 
-<a href="https://www.producthunt.com/products/novelai-image-mcp?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-novelai-image-mcp" target="_blank" rel="noopener noreferrer"><img alt="NovelAI Image MCP - MCP server for integrating NovelAI Image generation into AI | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1206099&theme=light&t=1784973837616"></a>
+[![NovelAI Image MCP - MCP server for integrating NovelAI Image generation into AI | Product Hunt][product-hunt-badge]][product-hunt] [![Featured on Lifto][lifto-badge]][lifto]
 
-An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that
+An [MCP (Model Context Protocol)][mcp] server that
 exposes **NovelAI image generation** as tools for AI agents (Claude Desktop,
 Cline, custom agents, remote clients).
 
@@ -21,7 +21,7 @@ emotion, background removal, …), annotate with ControlNet, suggest tags, encod
 vibes, and query account subscription — all through the standard MCP tool
 interface.
 
-> 📖 **Documentation**: <https://xinvxueyuan.github.io/NovelAI-Image-MCP/>
+> 📖 **Documentation**: [xinvxueyuan.github.io/NovelAI-Image-MCP][docs]
 
 ## Features
 
@@ -60,8 +60,8 @@ NovelAI-Image-MCP/
 └── docker-compose.yml           # local container orchestration
 ```
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the developer guide and
-[`apps/docs/source/`](apps/docs/source/) for the full documentation source.
+See [`CONTRIBUTING.md`][contributing] for the developer guide and
+[`apps/docs/source/`][docs-source] for the full documentation source.
 
 ## Quick start
 
@@ -194,7 +194,7 @@ uv run python -m novelai_image_mcp --help
 
 ## Skills (portable agent instructions)
 
-The project ships three [skills.sh](https://skills.sh) packages that teach AI
+The project ships three [skills.sh][skills-site] packages that teach AI
 agents (Claude Code, Codex, GitHub Copilot, Cursor, …) how to drive the CLI
 and MCP tools without you pasting docs:
 
@@ -210,7 +210,7 @@ npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP
 
 Skills and the CLI/MCP tools are complementary — install all three and your
 agent picks the right mode based on context. See the
-[Agent skills docs](https://xinvxueyuan.github.io/NovelAI-Image-MCP/skills.html)
+[Agent skills docs][skills-docs]
 for details.
 
 ## Tools
@@ -229,7 +229,7 @@ for details.
 | `get_user_data` | Account user data |
 | `estimate_anlas_cost` | Estimate Anlas cost for a generation (no API call) |
 
-See the [tools reference](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tools/index.html)
+See the [tools reference][tools-docs]
 on the docs site for parameters and examples.
 
 ## Configuration
@@ -244,12 +244,12 @@ All settings are environment variables (see `.env.example`). Key ones:
 | `MCP_TRANSPORT` | `stdio` | `stdio` or `streamable-http` |
 | `MCP_HOST` / `MCP_PORT` | `127.0.0.1` / `8000` | For streamable-http |
 
-NovelAI API reference: <https://image.novelai.net/docs/index.html>
+NovelAI API reference: [image.novelai.net/docs][nai-docs]
 
 ## Development
 
 The project is a uv + pnpm monorepo orchestrated by Turbo. See
-[`CONTRIBUTING.md`](CONTRIBUTING.md) for the full setup; the short version:
+[`CONTRIBUTING.md`][contributing] for the full setup; the short version:
 
 ```bash
 uv sync                              # Python workspace (server + docs + dev)
@@ -275,24 +275,59 @@ uv run --directory apps/server -m pytest               # tests
 docker compose up --build      # builds and runs the server (HTTP transport)
 ```
 
-The Dockerfile lives at [`apps/server/Dockerfile`](apps/server/Dockerfile) but
+The Dockerfile lives at [`apps/server/Dockerfile`][dockerfile] but
 the build context is the repository root (so uv can resolve the workspace
-graph). See [`docker-compose.yml`](docker-compose.yml).
+graph). See [`docker-compose.yml`][docker-compose].
 
 ## Documentation
 
 The Sphinx documentation site is built with Furo + MyST Markdown and
 auto-deploys to GitHub Pages on every push to `main`:
 
-- **Live site**: <https://xinvxueyuan.github.io/NovelAI-Image-MCP/>
-- **Source**: [`apps/docs/source/`](apps/docs/source/)
+- **Live site**: [xinvxueyuan.github.io/NovelAI-Image-MCP][docs]
+- **Source**: [`apps/docs/source/`][docs-source]
 - **Build locally**: `pnpm docs:serve`
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Per-file SPDX annotations live in
-[REUSE.toml](REUSE.toml). Contributions are subject to the
-[Developer Certificate of Origin](https://developercertificate.org/) (the
-`commit-msg` hook signs off commits automatically).
+MIT — see [LICENSE][license]. Per-file SPDX annotations live in
+[REUSE.toml][reuse-toml]. Contributions are subject to the
+[Developer Certificate of Origin][dco] (the `commit-msg` hook signs off
+commits automatically).
+
+## Links
+
+[ci-badge]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/ci.yml/badge.svg
+[ci-workflow]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/ci.yml
+[docs-badge]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/docs.yml/badge.svg
+[mit-badge]: https://img.shields.io/badge/License-MIT-blue.svg
+[python-badge]: https://img.shields.io/badge/python-3.13+-blue.svg
+[uv-badge]: https://img.shields.io/badge/uv-managed-261230.svg
+[reuse-badge]: https://api.reuse.software/badge/github.com/xinvxueyuan/NovelAI-Image-MCP
+[deepwiki-badge]: https://deepwiki.com/badge.svg
+[skills-badge]: https://skills.sh/b/xinvxueyuan/NovelAI-Image-MCP
+[product-hunt-badge]: https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1206099&theme=light&t=1784973837616
+[lifto-badge]: https://liftoapp.com/badges/featured-light.svg
+
+[docs]: https://xinvxueyuan.github.io/NovelAI-Image-MCP/
+[reuse]: https://api.reuse.software/info/github.com/xinvxueyuan/NovelAI-Image-MCP
+[python]: https://www.python.org/downloads/
+[uv]: https://docs.astral.sh/uv/
+[deepwiki]: https://deepwiki.com/xinvxueyuan/NovelAI-Image-MCP
+[skills-sh]: https://skills.sh/xinvxueyuan/NovelAI-Image-MCP
+[product-hunt]: https://www.producthunt.com/products/novelai-image-mcp?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-novelai-image-mcp
+[lifto]: https://liftoapp.com/product/novelai-image-mcp
+[mcp]: https://modelcontextprotocol.io/
+[contributing]: CONTRIBUTING.md
+[docs-source]: apps/docs/source/
+[skills-site]: https://skills.sh
+[skills-docs]: https://xinvxueyuan.github.io/NovelAI-Image-MCP/skills.html
+[tools-docs]: https://xinvxueyuan.github.io/NovelAI-Image-MCP/tools/index.html
+[nai-docs]: https://image.novelai.net/docs/index.html
+[dockerfile]: apps/server/Dockerfile
+[docker-compose]: docker-compose.yml
+[license]: LICENSE
+[reuse-toml]: REUSE.toml
+[dco]: https://developercertificate.org/
 
 <!-- mcp-name: io.github.xinvxueyuan/novelai-image-mcp -->
