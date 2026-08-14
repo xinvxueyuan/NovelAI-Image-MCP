@@ -89,7 +89,7 @@ jobs:
         with:
           node-version: 24
       - name: Setup pnpm
-        # pinned from pnpm/action-setup@v6.0.9
+        # pinned from pnpm/action-setup@v6.0.10
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
       - name: Install Node dependencies (markdownlint only)
         run: pnpm install --frozen-lockfile
@@ -250,7 +250,7 @@ jobs:
         with:
           node-version: 24
       - name: Setup pnpm
-        # pinned from pnpm/action-setup@v6.0.9
+        # pinned from pnpm/action-setup@v6.0.10
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile

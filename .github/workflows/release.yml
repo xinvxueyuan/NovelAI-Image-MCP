@@ -148,7 +148,7 @@ jobs:
           path: dist/
 
       - name: 🚀 Publish to PyPI (trusted publisher)
-        # pinned from pypa/gh-action-pypi-publish@v1.13.0
+        # pinned from pypa/gh-action-pypi-publish@v1.14.2
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33
 
   publish-ghcr:
@@ -167,7 +167,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: 🔑 Log in to GHCR
-        # pinned from docker/login-action@v3.5.0
+        # pinned from docker/login-action@v4.6.0
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
         with:
           registry: ${{ env.REGISTRY }}
