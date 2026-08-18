@@ -261,14 +261,23 @@ return [
 ]
 ```
 
+:::{note}
+**Superseded by the fastmcp migration.** Since the server now runs on
+[fastmcp 4](../development/architecture.md), the `_save_and_return` helper
+returns the fastmcp `Image` helper **directly** and lets fastmcp convert it
+to `ImageContent` (fastmcp auto-converts `Image`/`str` returned from a tool).
+The manual `.to_image_content()` step is gone — see
+[Fix 1 update](#fix-1-update-image-content-block-now-serialized-by-fastmcp).
+:::
+
 **Verification after fix:**
 
-1. **Unit test (real SDK path):** `TestSerializationRegression::test_generate_image_serializes_through_real_sdk`
+1. **Unit test (real fastmcp path):** `TestSerializationRegression::test_generate_image_serializes_through_real_path`
    in [`tests/test_tools.py`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/server/tests/test_tools.py)
-   calls `Tool.run(..., convert_result=True)` against the production
-   `server.mcp` instance and asserts the result is a `CallToolResult`
-   containing an `ImageContent` block, a `TextContent` block, and a
-   non-null `structured_content` (which is what failed before the fix).
+   calls `server.mcp.call_tool("generate_image", ...)` — fastmcp's full
+   execution pipeline — and asserts the returned `ToolResult.content`
+   contains an `ImageContent` block and a `TextContent` block, each of which
+   `model_dump(mode="json")`s (which is what failed before the fix).
 2. **`mcp dev` Inspector:** the server was loaded via
    `apps/server/dev_server.py` and the `generate_image` tool was invoked
    through the Inspector UI; the call returned an `ImageContent` block
@@ -302,7 +311,7 @@ Uses `_save_and_return` in
 `https://api.novelai.net/user/ai-upscale-image` (account endpoint), which was
 blocked by Cloudflare's TLS fingerprinting — now fixed by Chrome TLS
 impersonation (Fix 2). Serialization path is verified by
-`TestSerializationRegression::test_upscale_image_serializes_through_real_sdk`.
+`TestSerializationRegression::test_upscale_image_serializes_through_real_path`.
 
 ---
 
@@ -415,10 +424,10 @@ return [Image(data=..., format="png").to_image_content(), f"Saved ..."]
 
 1. `TestSerializationRegression` in
    [`tests/test_tools.py`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/server/tests/test_tools.py)
-   invokes the real `Tool.run(..., convert_result=True)` against the
+   invokes the real fastmcp pipeline (`server.mcp.call_tool(...)`) against the
    production `server.mcp` for `generate_image` and `upscale_image`,
-   asserting the result is a `CallToolResult` with `ImageContent` +
-   `TextContent` blocks and a non-null `structured_content`. These tests
+   asserting the returned `ToolResult.content` holds an `ImageContent` +
+   `TextContent` block, each of which `model_dump(mode="json")`s. These tests
    fail on the pre-fix code and pass on the post-fix code.
 2. `mcp dev` Inspector was used to load the server via
    `apps/server/dev_server.py` (a non-relative-import entry point that
@@ -426,7 +435,22 @@ return [Image(data=..., format="png").to_image_content(), f"Saved ..."]
    interactively — the tool returned an `ImageContent` block with the
    base64 PNG and a `TextContent` block with the saved path, with no
    serialization error.
-3. The full test suite passes: `126 passed in 34.85s` (79.31% coverage).
+3. The full test suite passes (`126 passed`, 79% coverage).
+
+### Fix 1 update: `Image` content block now serialized by fastmcp
+
+The fastmcp migration makes the manual `to_image_content()` in Fix 1
+unnecessary. `_save_and_return` now returns the fastmcp `Image` helper
+directly and fastmcp converts it to `ImageContent` during result processing:
+
+```python
+# After fastmcp migration (fixed — fastmcp auto-converts):
+return [Image(data=..., format="png"), f"Saved ..."]
+```
+
+`TestSerializationRegression` reads `server.mcp.call_tool(...)` (fastmcp's
+full execution pipeline) instead of the SDK's `Tool.run(convert_result=True)`.
+The historical root-cause narrative above is preserved for context.
 
 ---
 

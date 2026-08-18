@@ -9,7 +9,7 @@
 一个 [MCP（模型上下文协议）][mcp] 服务器，把 **NovelAI 图像生成** 暴露为 AI
 智能体可调用的工具 —— Claude Desktop、Cline、自定义智能体以及远程客户端均可接入。
 
-它基于官方 MCP Python SDK v2（`MCPServer`）构建，让智能体能够通过标准的
+它基于 FastMCP 4（MCP SDK v2 `mcp>=2.0.0` 之上的 fastmcp 框架）构建，让智能体能够通过标准的
 MCP 工具接口生成图像（txt2img / img2img / inpaint）、放大、运行 Director
 工具（线稿、表情、背景移除等）、使用 ControlNet 标注、推荐标签、编码 vibe、
 查询账户订阅信息等。

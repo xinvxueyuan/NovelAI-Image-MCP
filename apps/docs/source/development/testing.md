@@ -36,7 +36,7 @@ apps/server/tests/
 ├── test_models.py          # Pydantic models
 ├── test_output.py          # save_image
 ├── test_payload.py         # build_generation_payload
-├── test_server.py          # MCPServer lifespan + tool registration
+├── test_server.py          # FastMCP lifespan + tool registration
 └── test_tools.py           # Each MCP tool's happy path + error cases
 ```
 
@@ -51,7 +51,7 @@ apps/server/tests/
 | `nai_image` | `NovelAIImage` | Canned image returned by mocked client methods. |
 | `settings` | `NovelAISettings` | Settings with a token + tmp output dir. |
 | `fake_client` | `AsyncMock` | Mocked `NovelAIClient` that returns canned images by default. |
-| `fake_ctx` | `SimpleNamespace` | Minimal Context stand-in for `ctx.request_context.lifespan_context`. |
+| `fake_ctx` | `SimpleNamespace` | Minimal Context stand-in for `ctx.lifespan_context`. |
 | `recording_mcp` | `RecordingMCPServer` | Stub that captures `@mcp.tool()` registrations. |
 
 Override any `return_value` / `side_effect` on `fake_client`'s methods to
@@ -59,7 +59,7 @@ customize per-test behavior:
 
 ```python
 async def test_generate_image_handles_provider_error(fake_ctx):
-    fake_ctx.request_context.lifespan_context.client.generate.side_effect = (
+    fake_ctx.lifespan_context.client.generate.side_effect = (
         NovelAIProviderError("rate limited")
     )
     with pytest.raises(NovelAIProviderError):
@@ -133,7 +133,7 @@ async def test_generate_image_with_v4_model(fake_ctx, fake_client):
     )
 
     assert len(result) == 2
-    assert result[0].format == "png"
+    assert result[0].data == PNG_BYTES  # fastmcp Image helper holds raw bytes
     assert "Saved 1 image" in result[1]
 ```
 

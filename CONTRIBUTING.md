@@ -173,7 +173,7 @@ PRs targeting `main`.
 ## Adding a new MCP tool
 
 1. Create `apps/server/src/novelai_image_mcp/tools/<name>.py` with a
-   `register(mcp: MCPServer) -> None` function.
+   `register(mcp: FastMCP) -> None` function.
 2. Wire it into `apps/server/src/novelai_image_mcp/tools/__init__.py`.
 3. Add tests at `apps/server/tests/test_tools.py` (extend the existing
    parametrized cases).

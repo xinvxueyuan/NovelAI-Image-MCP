@@ -1,10 +1,11 @@
-"""MCP server: lifespan owns the shared httpx session + NovelAIClient.
+"""MCP server (fastmcp): lifespan owns the shared httpx session + NovelAIClient.
 
-The server is a thin composition root over ``nai.NovelAIClient``. The lifespan
-creates one long-lived ``httpx.AsyncClient`` (connection pooling, with Chrome
-TLS + header fingerprint impersonation via ``create_http_client``) and one
-``NovelAIClient``; every tool reads them from
-``ctx.request_context.lifespan_context`` (the MCP v2 ``Context`` API). Transport
+The server is a thin composition root over ``nai.NovelAIClient``, built on the
+fastmcp 4 framework (which itself runs on the MCP SDK v2). The lifespan creates
+one long-lived ``httpx.AsyncClient`` (connection pooling, with Chrome TLS +
+header fingerprint impersonation via ``create_http_client``) and one
+``NovelAIClient``; every tool reads them from ``ctx.lifespan_context`` (the
+fastmcp ``Context`` property that exposes the lifespan yield value). Transport
 is selected at runtime from ``MCP_TRANSPORT`` (stdio by default,
 streamable-http for remote deployments).
 """
@@ -15,7 +16,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
-from ._mcp import MCPServer
+from ._mcp import FastMCP
 from .nai import NovelAIClient, create_http_client, create_novelai_client
 from .settings import (
     NovelAISettings,
@@ -34,7 +35,7 @@ class AppContext:
 
 
 @asynccontextmanager
-async def lifespan(_server: MCPServer) -> AsyncIterator[AppContext]:
+async def lifespan(_server: FastMCP) -> AsyncIterator[AppContext]:
     """Build the NovelAI client from settings; tear down on shutdown."""
     settings = get_novelai_settings()
     if not settings.has_credentials():
@@ -59,7 +60,7 @@ async def lifespan(_server: MCPServer) -> AsyncIterator[AppContext]:
                 await http_client.aclose()
 
 
-mcp = MCPServer("novelai-image", lifespan=lifespan)
+mcp = FastMCP(name="novelai-image", lifespan=lifespan)
 
 # Register all MCP tools against the server instance.
 register_all(mcp)

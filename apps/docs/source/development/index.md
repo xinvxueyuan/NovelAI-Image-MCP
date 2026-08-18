@@ -37,7 +37,7 @@ NovelAI-Image-MCP/
 ├── apps/
 │   ├── server/                     # ← MCP server (Python package)
 │   │   ├── src/novelai_image_mcp/
-│   │   │   ├── server.py           # MCPServer + lifespan
+│   │   │   ├── server.py           # FastMCP server + lifespan
 │   │   │   ├── settings.py         # pydantic-settings env config
 │   │   │   ├── cli.py / __main__.py  # typer sync CLI
 │   │   │   ├── output.py           # save-image helper

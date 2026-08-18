@@ -99,7 +99,7 @@ exposes by reading the [tools table in the README](README.md#tools).
                                 │ JSON-RPC over stdio or HTTP
                                 ▼
             ┌─────────────────────────────────────────────┐
-            │  MCPServer  (server.py)                      │
+            │  FastMCP  (server.py)                       │
             │    └── lifespan → AppContext                 │
             │          ├── NovelAISettings                 │
             │          └── NovelAIClient                   │
@@ -131,7 +131,7 @@ exposes by reading the [tools table in the README](README.md#tools).
 
 | File | Responsibility |
 |---|---|
-| `apps/server/src/novelai_image_mcp/server.py` | `MCPServer` instance + `lifespan` that builds `AppContext` |
+| `apps/server/src/novelai_image_mcp/server.py` | `FastMCP` instance + `lifespan` that builds `AppContext` |
 | `apps/server/src/novelai_image_mcp/cli.py` | `typer` CLI — `serve` / `serve-http` entry points |
 | `apps/server/src/novelai_image_mcp/tools/*.py` | Tool registration functions, one file per domain |
 | `apps/server/src/novelai_image_mcp/nai/client.py` | `NovelAIClient` — high-level NovelAI API methods |
@@ -148,10 +148,11 @@ Without looking, answer:
    via JA3/JA4; OpenSSL's fingerprint doesn't match any browser, so the
    connection is silently reset. curl_cffi impersonates Chrome's BoringSSL
    fingerprint.)_
-2. Why does `tools/generate.py` call `Image(...).to_image_content()`
-   instead of returning the `Image` helper directly? _(Answer: MCP v2 SDK's
-   structured-content serialization path calls `model_dump(mode="json")`,
-   which fails on the plain `Image` class with `PydanticSerializationError`.)_
+2. Why does `tools/generate.py` return the fastmcp `Image` helper directly
+   instead of manual content blocks? _(Answer: fastmcp auto-converts its
+   `Image` helper (and `str`) into the matching `ImageContent`/`TextContent`
+   blocks when returned from a tool, so no manual `.to_image_content()`
+   step is needed — the old `PydanticSerializationError` is gone.)_
 3. Which two endpoints still live on `api.novelai.net` rather than
    `image.novelai.net`? _(`/ai/upscale` and `/ai/annotate-image` — they
    weren't migrated. Use `legacy_image_base_url`.)_
@@ -199,7 +200,7 @@ Without looking, answer:
 ### Why `dev_server.py` and not `server.py`?
 
 `mcp dev` loads the entry point by file path, which breaks Python's relative
-import machinery (`from ._mcp import MCPServer`). `dev_server.py` is a thin
+import machinery (`from ._mcp import FastMCP`). `dev_server.py` is a thin
 shim that imports the package absolutely. This is a hard constraint — see
 AGENTS.md rule #4.
 
@@ -287,7 +288,7 @@ conventions.
    from ..nai import NovelAIClient  # or whatever you need
    from ._ctx import app_context as _app
 
-   def register(mcp: MCPServer) -> None:
+   def register(mcp: FastMCP) -> None:
        @mcp.tool()
        async def my_new_tool(ctx: Context, /* args */) -> list[Any]:
            """One-line summary.
@@ -312,8 +313,8 @@ conventions.
 3. **Test** in `tests/test_tools.py` — it's parameterized; add your tool's
    name + sample args to the `ToolCallCase` list. The
    `TestSerializationRegression` class is a must-extend if your tool returns
-   images — it runs `Tool.run(convert_result=True)` against the production
-   `server.mcp` to catch `PydanticSerializationError`.
+   images — it drives the production `server.mcp` through `call_tool` to
+   confirm the fastmcp `Image` helper serializes to `ImageContent`.
 
 4. **Document** in `apps/docs/source/tools/<name>.md`.
 
@@ -322,9 +323,9 @@ conventions.
 
 ### Hard rules to remember
 
-- ❌ Don't return the `Image` helper directly — always
-  `Image(...).to_image_content()`. Use the `_save_and_return` helper in
-  `tools/generate.py` / `tools/enhance.py` as a template.
+- ❌ Don't return raw bytes or hand-assemble `ImageContent` — return fastmcp's
+  `Image` helper and let fastmcp convert it. Use the `_save_and_return`
+  helper in `tools/generate.py` / `tools/enhance.py` as a template.
 - ❌ Don't construct `httpx.AsyncClient()` directly — go through
   `app.client` (which was built by `create_novelai_client()` using
   `create_http_client()`).
@@ -343,28 +344,20 @@ tool from the Inspector.
 
 ## Module 6 — Image Return Path
 
-**Objectives**: Understand why image tools need special handling and how to
-do it correctly.
+**Objectives**: Understand how image tools return binary content to the
+client.
 
 ### Read
 
-1. AGENTS.md → hard constraint #3 (ImageContent vs Image helper)
+1. AGENTS.md → hard constraint #3 (fastmcp `Image` helper → `ImageContent`)
 2. `tools/generate.py:_save_and_return` — read the full docstring
-
-### The problem
-
-MCP v2 SDK's structured-content path serializes tool return values via
-`model_dump(mode="json")`. The SDK ships an `Image` helper class as a
-convenience — but it's a plain Python class, not a pydantic model, so
-`model_dump` blows up with:
-
-```text
-PydanticSerializationError: Unable to serialize unknown type: Image
-```
 
 ### The solution
 
-Convert to `ImageContent` (a pydantic `ContentBlock`) before returning:
+fastmcp auto-converts its `Image` helper (and `str`) into the matching MCP
+content blocks when they are returned directly — or as part of a list — from
+a tool. So `_save_and_return` returns the helper as-is and fastmcp produces
+the `ImageContent` during result processing:
 
 ```python
 from .._mcp import Image
@@ -373,21 +366,29 @@ from ..output import save_image
 def _save_and_return(image: NovelAIImage, *, name: str, output_dir: str) -> list[Any]:
     path = save_image(image.data, name=name, output_dir=output_dir)
     return [
-        Image(data=image.data, format="png").to_image_content(),  # ← key call
+        Image(data=image.data, format="png"),  # fastmcp → ImageContent
         f"Saved image: {path}",
     ]
 ```
 
-Returning a `list` of mixed `ImageContent` + `TextContent` blocks is the
-canonical pattern — the client renders both (shows the image, then the path
-as a caption).
+Returning a `list` of mixed `Image` + `str` is the canonical pattern — the
+client renders both (shows the image, then the path as a caption).
+
+::: {note}
+This used to be different. Under the raw MCP v2 SDK the tools called
+`Image(...).to_image_content()` manually because the SDK could not serialize
+the plain `Image` helper (the `PydanticSerializationError`). fastmcp handles
+that conversion for you, so the manual step is gone.
+:::
 
 ### Checkpoint
 
-In `tests/test_server.py`, find `TestSerializationRegression`. Read what it
-does. Add a hypothetical tool that returns an `Image` directly (without
-`to_image_content()`) and watch the test fail with the exact error above.
-Revert.
+In `tests/test_tools.py`, find `TestSerializationRegression`. Read what it
+does: it drives the production `server.mcp` through `mcp.call_tool(...)` and
+asserts the resulting `ToolResult.content` contains an `ImageContent` block
+that JSON-serializes. Run it and confirm it passes; then temporarily make
+`_save_and_return` return the `Image` without fastmcp's conversion (or return
+raw bytes) and watch the test fail. Revert.
 
 ⏱️ _1 hour_
 
@@ -492,7 +493,7 @@ Understand:
 
 ### 8.4 — Hybrid Transports (stdio + HTTP)
 
-Read `transports/http.md` and `cli.py`. The same `MCPServer` instance can
+Read `transports/http.md` and `cli.py`. The same `FastMCP` instance can
 run in either stdio or streamable-HTTP mode based on CLI subcommand. The
 HTTP mode is useful for self-hosting a shared server behind a reverse proxy.
 
@@ -525,8 +526,9 @@ English. Never link to a not-yet-translated page from a translated toctree.
   the Inspector — it shows the exact JSON-RPC traffic.
 - **Cloudflare resetting connections?** You bypassed
   `create_http_client()`. Go through `app.client`.
-- **`PydanticSerializationError`?** You returned `Image` instead of
-  `ImageContent`. Call `.to_image_content()`.
+- **Image not coming through / serialization error?** You returned raw bytes
+  or hand-built `ImageContent` instead of fastmcp's `Image` helper. Return
+  `Image(data=..., format="png")` and let fastmcp convert it.
 - **404 on upscale/annotate?** The endpoint was routed to
   `image.novelai.net` by mistake. Use `legacy_image_base_url`.
 - **CI failing on `uv lock`?** You edited `pyproject.toml` without running

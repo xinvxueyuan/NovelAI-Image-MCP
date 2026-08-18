@@ -18,7 +18,17 @@ per-release section headings. This file is the human-curated companion.
 
 ### Changed
 
-- _Nothing yet._
+- **Server framework → FastMCP 4**: the MCP server layer (`server.py`,
+  `tools/*`, `_ctx.py`, `_mcp.py`) now runs on [PrefectHQ/fastmcp]
+  `fastmcp==4.0.0b3` (which itself targets the MCP SDK v2 `mcp>=2.0.0`),
+  replacing the raw SDK `MCPServer` composition. The 11 tools, the typer
+  CLI, and the `MCP_TRANSPORT`-selected stdio / streamable-http transports
+  are unchanged. Image tools now return the fastmcp `Image` helper and let
+  fastmcp convert it to `ImageContent`, removing the manual
+  `to_image_content()` step (and the historical `PydanticSerializationError`
+  workaround). Because fastmcp 4 is a prerelease, it is pinned exactly
+  (`==4.0.0b3`) with `fastmcp-slim==4.0.0b3`, and `pydantic>=2.12` is now the
+  floor — relax the pin when fastmcp 4 ships stable.
 
 ### Fixed
 

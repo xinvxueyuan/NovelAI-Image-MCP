@@ -15,7 +15,7 @@ An [MCP (Model Context Protocol)][mcp] server that
 exposes **NovelAI image generation** as tools for AI agents (Claude Desktop,
 Cline, custom agents, remote clients).
 
-Built on the official MCP Python SDK v2 (`MCPServer`), it lets an agent generate
+Built on FastMCP 4 (the fastmcp framework over the MCP SDK v2 `mcp>=2.0.0`), it lets an agent generate
 images (txt2img / img2img / inpaint), upscale, run Director tools (line art,
 emotion, background removal, …), annotate with ControlNet, suggest tags, encode
 vibes, and query account subscription — all through the standard MCP tool

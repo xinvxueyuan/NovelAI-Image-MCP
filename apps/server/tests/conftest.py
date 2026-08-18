@@ -84,16 +84,14 @@ def fake_client(nai_image: NovelAIImage) -> Any:
 
 @pytest.fixture
 def fake_ctx(fake_client: Any, settings: NovelAISettings) -> Any:
-    """A minimal Context stand-in exposing ``request_context.lifespan_context``.
+    """A minimal Context stand-in exposing ``lifespan_context``.
 
-    Tools access the lifespan context via ``ctx.request_context.lifespan_context``
-    (MCP v2 API), so the stand-in mirrors that nested shape rather than exposing
-    ``lifespan_context`` on the top-level namespace.
+    Tools read the lifespan value via ``ctx.lifespan_context`` (the fastmcp
+    ``Context`` convenience property), so the stand-in exposes that attribute
+    directly rather than the MCP v2 ``request_context.lifespan_context`` shape.
     """
     return SimpleNamespace(
-        request_context=SimpleNamespace(
-            lifespan_context=SimpleNamespace(client=fake_client, settings=settings),
-        ),
+        lifespan_context=SimpleNamespace(client=fake_client, settings=settings),
     )
 
 

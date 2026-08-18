@@ -1,19 +1,16 @@
-"""Shared helper for pulling ``AppContext`` off an MCP v2 ``Context``.
+"""Shared helper for pulling ``AppContext`` off a fastmcp ``Context``.
 
-In MCP v2 the lifespan state lives on the per-request ``ServerRequestContext``
-dataclass (``ctx.request_context.lifespan_context``), not on the top-level
-``Context`` BaseModel. Centralising the lookup here keeps every tool group
-consistent and gives the test-suite one shape to mirror.
-
-The ``Context`` is parameterised as ``Context[Any, Any]`` because the SDK
-infers ``dict[str, Any]`` for the lifespan type at the ``@mcp.tool`` boundary
-(there is no way to thread ``AppContext`` through the decorator). Returning
-``Any`` here lets each tool site narrow via attribute access without a cast.
+In fastmcp, a tool declares its request context with a ``ctx: Context``
+parameter and reads the lifespan yield value from ``ctx.lifespan_context``
+(fastmcp's convenience property; the same object the lifespan ``yield``ed).
+Centralising the lookup here keeps every tool group consistent and gives the
+test-suite one shape to mirror. Returning the typed ``AppContext`` lets each
+tool site access ``client`` / ``settings`` without a cast.
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, cast
 
 from .._mcp import Context
 
@@ -21,9 +18,11 @@ if TYPE_CHECKING:
     from ..server import AppContext
 
 
-def app_context(ctx: Context[Any, Any]) -> AppContext:
+def app_context(ctx: Context) -> AppContext:
     """Return the lifespan ``AppContext`` for the current request."""
-    return ctx.request_context.lifespan_context
+    # fastmcp types ``Context.lifespan_context`` as ``dict[str, Any]`` even
+    # though the lifespan ``yield``s an ``AppContext``; recover the type here.
+    return cast("AppContext", ctx.lifespan_context)
 
 
 __all__ = ["app_context"]

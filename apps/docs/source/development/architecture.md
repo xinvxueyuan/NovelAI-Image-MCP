@@ -7,7 +7,7 @@ walks through the layers and how they fit together.
 
 ```{mermaid}
 graph TD
-    A[Agent / MCP host] -->|JSON-RPC over stdio / HTTP| B[MCPServer]
+    A[Agent / MCP host] -->|JSON-RPC over stdio / HTTP| B[FastMCP]
     B -->|lifespan| C[AppContext: NovelAIClient + NovelAISettings]
     B -->|tool calls| D[tools/*]
     D -->|calls| E[NovelAIClient nai/]
@@ -15,7 +15,7 @@ graph TD
     D -->|saves| G[output.py → outputs/]
 ```
 
-## `MCPServer` composition root
+## `FastMCP` composition root
 
 [`novelai_image_mcp.server`](../api/server.md) is the composition root. It:
 
@@ -29,7 +29,7 @@ graph TD
 
 ```python
 @asynccontextmanager
-async def lifespan(_server: MCPServer) -> AsyncIterator[AppContext]:
+async def lifespan(_server: FastMCP) -> AsyncIterator[AppContext]:
     settings = get_novelai_settings()
     if not settings.has_credentials():
         raise RuntimeError("NovelAI credentials are not configured...")
@@ -45,10 +45,10 @@ async def lifespan(_server: MCPServer) -> AsyncIterator[AppContext]:
                 await http_client.aclose()
 ```
 
-Every tool reads the client + settings from the MCP request context:
+Every tool reads the client + settings from the fastmcp request context:
 
 ```python
-app = _app(ctx)  # extracts AppContext from ctx.request_context.lifespan_context
+app = _app(ctx)  # extracts AppContext from ctx.lifespan_context
 settings = app.settings
 client = app.client
 ```
@@ -71,7 +71,7 @@ MCP — it can be used standalone from any async Python code.
 
 ## Tools layer
 
-`novelai_image_mcp.tools` is a thin adapter between the MCP `MCPServer`
+`novelai_image_mcp.tools` is a thin adapter between the fastmcp `FastMCP`
 tool decorator and `NovelAIClient`. Each tool:
 
 1. Extracts `AppContext` from the MCP context (`tools/_ctx.py`).
@@ -135,7 +135,7 @@ separate image (via the `SMOKE_TEST=true` build-arg) and verifies:
 
 - The package imports cleanly.
 - Settings instantiate from env (with `NOVELAI_TOKEN=pst-smoke-test`).
-- Every tool registers against a recording MCPServer stub.
+- Every tool registers against a recording FastMCP stub.
 - The typer CLI constructs without runtime errors.
 
 ## See also

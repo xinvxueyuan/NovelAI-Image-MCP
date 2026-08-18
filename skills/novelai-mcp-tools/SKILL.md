@@ -308,10 +308,10 @@ missing). Filenames are timestamped with the operation name
 > chaining tools, pass the saved PNG's path forward by re-reading the file
 > and base64-encoding it for the next tool's `image` parameter.
 
-Internally the helper converts the SDK's `Image` to `ImageContent` via
-`to_image_content()` — returning the raw `Image` would raise
-`PydanticSerializationError`. You do not need to worry about this when
-*calling* tools; it only matters if you extend the server.
+Internally the helper returns fastmcp's `Image` helper, which fastmcp
+auto-converts to an `ImageContent` block — you do not need to construct
+content blocks yourself when *calling* tools; this only matters if you
+extend the server.
 
 ### Transport options
 

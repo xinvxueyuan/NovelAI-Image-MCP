@@ -14,7 +14,7 @@
 图像生成** 能力以工具形式暴露给 AI 智能体（Claude Desktop、Cline、自定义 Agent、
 远程客户端）。
 
-基于官方 MCP Python SDK v2（`MCPServer`）构建。智能体可通过标准 MCP 工具接口完成
+基于 FastMCP 4（MCP SDK v2 `mcp>=2.0.0` 之上的 fastmcp 框架）构建。智能体可通过标准 MCP 工具接口完成
 生图（文生图 / 图生图 / 局部重绘）、放大、Director 工具（线稿、表情、去背景……）、
 ControlNet 标注、标签建议、Vibe 编码以及账户订阅查询。
 

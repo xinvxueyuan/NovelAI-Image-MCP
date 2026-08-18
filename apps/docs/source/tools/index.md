@@ -1,6 +1,6 @@
 # Tools reference
 
-The server registers **11 MCP tools** against the [`MCPServer`](../api/server.md)
+The server registers **11 MCP tools** against the [`FastMCP`](../api/server.md)
 instance. Every tool is `async` and reads its dependencies (the
 `NovelAIClient` and `NovelAISettings`) from the MCP request context's
 lifespan state.

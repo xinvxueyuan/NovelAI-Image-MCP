@@ -9,10 +9,10 @@ from ..nai import Action, GenerationRequest, Model
 from ._ctx import app_context as _app
 
 if TYPE_CHECKING:
-    from .._mcp import MCPServer
+    from .._mcp import FastMCP
 
 
-def register(mcp: MCPServer) -> None:
+def register(mcp: FastMCP) -> None:
     """Register the account and cost-estimation tools."""
 
     @mcp.tool()

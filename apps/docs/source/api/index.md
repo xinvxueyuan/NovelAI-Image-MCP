@@ -19,7 +19,7 @@ client
 
 | Module | Description |
 |---|---|
-| [`server`](server.md) | `MCPServer` composition root + lifespan |
+| [`server`](server.md) | FastMCP composition root + lifespan |
 | [`settings`](settings.md) | `NovelAISettings` + `MCPServerSettings` |
 | [`tools`](tools.md) | The 11 MCP tool functions |
 | [`nai` client](client.md) | The NovelAI HTTP client (`NovelAIClient` + enums + models) |

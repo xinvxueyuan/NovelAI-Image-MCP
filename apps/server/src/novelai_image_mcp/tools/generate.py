@@ -10,7 +10,7 @@ from ..output import save_image
 from ._ctx import app_context as _app
 
 if TYPE_CHECKING:
-    from .._mcp import MCPServer
+    from .._mcp import FastMCP
 
 
 def _character(cp: dict[str, Any]) -> CharacterPrompt:
@@ -32,21 +32,19 @@ def _save_and_return(
 ) -> list[Any]:
     """Persist every image, return the first as an ImageContent block plus all paths.
 
-    The ``Image`` helper is converted to an ``ImageContent`` (a pydantic
-    ``ContentBlock``) via ``to_image_content()`` so the MCP v2 SDK's
-    structured-content ``model_dump(mode="json")`` path can serialize it.
-    Returning the raw ``Image`` helper triggers
-    ``PydanticSerializationError: Unable to serialize unknown type: Image``
-    because the helper is a plain Python class, not a pydantic model.
+    fastmcp auto-converts its ``Image`` helper (and ``str``) into the
+    corresponding MCP content blocks when they are returned from a tool, so
+    returning ``Image(...)`` here becomes an ``ImageContent`` block on the wire
+    without any manual ``to_image_content()`` step.
     """
     paths = [save_image(img.data, name=name, output_dir=output_dir) for img in images]
     return [
-        Image(data=images[0].data, format="png").to_image_content(),
+        Image(data=images[0].data, format="png"),
         f"Saved {len(images)} image(s): {[str(p) for p in paths]}",
     ]
 
 
-def register(mcp: MCPServer) -> None:
+def register(mcp: FastMCP) -> None:
     """Register the generation tools."""
 
     @mcp.tool()

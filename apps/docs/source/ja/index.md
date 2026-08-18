@@ -10,7 +10,7 @@
 AI エージェント向けツールとして公開するものです — Claude Desktop、Cline、
 自作エージェント、リモートクライアントなどで利用できます。
 
-公式の MCP Python SDK v2 (`MCPServer`) 上に構築され、エージェントは
+FastMCP 4 (MCP SDK v2 `mcp>=2.0.0` 上の fastmcp フレームワーク) 上に構築され、エージェントは
 標準の MCP ツールインターフェースを通じて、画像生成 (txt2img / img2img /
 inpaint)、アップスケール、Director ツールの実行 (ラインアート、エモーション、
 背景除去など)、ControlNet によるアノテーション、タグ補完、vibe のエンコード、

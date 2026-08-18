@@ -7,7 +7,7 @@ the transport at startup.
 :::{admonition} See also
 :class: tip
 
-[Architecture → `MCPServer` composition root](../development/architecture.md#mcpserver-composition-root)
+[Architecture → FastMCP composition root](../development/architecture.md#fastmcp-composition-root)
 for a narrative walkthrough of how the lifespan + tools wire together.
 :::
 

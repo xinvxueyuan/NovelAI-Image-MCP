@@ -194,11 +194,12 @@ nitpick_ignore: list[tuple[str, str]] = [
     ("py:class", "CliSettingsSource"),
     ("py:class", "PathType"),
     ("py:class", "PydanticBaseSettingsSource"),
-    # mcp v2 is a beta SDK; ``MCPServer`` is the public alias but the
-    # inventory only carries the underlying ``mcp.server.lowlevel.server.Server``.
-    ("py:class", "MCPServer"),
-    ("py:class", "mcp.server.lowlevel.server.Server"),
-    ("py:class", "mcp.server.mcpserver.server.MCPServer"),
+    # fastmcp (the server framework) is documented with Mintlify (no
+    # objects.inv), so its public classes surfaced by autodoc are not in any
+    # intersphinx inventory. Suppress the ones that appear on the API pages.
+    ("py:class", "FastMCP"),
+    ("py:class", "fastmcp.FastMCP"),
+    ("py:class", "fastmcp.server.server.FastMCP"),
     # httpx is documented with MkDocs (no objects.inv); the public alias
     # ``httpx.AsyncClient`` resolves to ``httpx._client.AsyncClient`` in
     # the stubs but autodoc emits the public name. Suppress both forms.
@@ -206,16 +207,13 @@ nitpick_ignore: list[tuple[str, str]] = [
     ("py:class", "httpx.Client"),
     ("py:class", "httpx._client.AsyncClient"),
     ("py:class", "httpx._client.Client"),
-    # ``mcp.server.fastmcp.tools.tool.Tool`` is a private SDK type surfaced
-    # by ``@mcp.tool`` decorators; the inventory does not expose it.
-    ("py:class", "mcp.server.fastmcp.tools.tool.Tool"),
-    ("py:class", "Tool"),
-    # MCP ``Context`` and ``Image`` types — the SDK ships minimal type
-    # information and intersphinx does not cover them.
+    # fastmcp ``Context`` and ``Image`` helpers — intersphinx does not cover
+    # the fastmcp package, so these bare names from tool signatures unroll.
     ("py:class", "Context"),
-    ("py:class", "mcp.server.fastmcp.Context"),
+    ("py:class", "fastmcp.server.context.Context"),
     ("py:class", "Image"),
-    ("py:class", "mcp.types.Image"),
+    ("py:class", "fastmcp.utilities.types.Image"),
+    ("py:class", "Tool"),
     ("py:class", "mcp.shared.exceptions.McpError"),
 ]
 nitpick_ignore_regex: list[tuple[str, str]] = []

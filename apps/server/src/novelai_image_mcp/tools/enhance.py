@@ -17,7 +17,7 @@ from ..output import save_image
 from ._ctx import app_context as _app
 
 if TYPE_CHECKING:
-    from .._mcp import MCPServer
+    from .._mcp import FastMCP
 
 
 def _save_and_return(
@@ -28,21 +28,18 @@ def _save_and_return(
 ) -> list[Any]:
     """Persist a single image and return ImageContent block + saved path.
 
-    The ``Image`` helper is converted to an ``ImageContent`` (a pydantic
-    ``ContentBlock``) via ``to_image_content()`` so the MCP v2 SDK's
-    structured-content ``model_dump(mode="json")`` path can serialize it.
-    Returning the raw ``Image`` helper triggers
-    ``PydanticSerializationError: Unable to serialize unknown type: Image``
-    because the helper is a plain Python class, not a pydantic model.
+    fastmcp auto-converts its ``Image`` helper into an ``ImageContent`` block
+    when returned from a tool, so returning ``Image(...)`` needs no manual
+    ``to_image_content()`` step.
     """
     path = save_image(image.data, name=name, output_dir=output_dir)
     return [
-        Image(data=image.data, format="png").to_image_content(),
+        Image(data=image.data, format="png"),
         f"Saved image: {path}",
     ]
 
 
-def register(mcp: MCPServer) -> None:
+def register(mcp: FastMCP) -> None:
     """Register the image-enhancement tools."""
 
     @mcp.tool()

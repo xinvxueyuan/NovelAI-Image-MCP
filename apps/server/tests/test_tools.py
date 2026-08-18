@@ -14,7 +14,7 @@ import pytest
 from novelai_image_mcp.tools import account, enhance, generate, tags
 
 if TYPE_CHECKING:
-    from novelai_image_mcp._mcp import MCPServer
+    from novelai_image_mcp._mcp import FastMCP
     from novelai_image_mcp.nai import NovelAIImage
 
 
@@ -25,9 +25,9 @@ def _b64(data: bytes = PNG_BYTES) -> str:
 
 def _register_all(mcp: RecordingMCPServer) -> None:
     # ``RecordingMCPServer`` is a structural test double that exposes the same
-    # ``tool()`` decorator contract as the SDK's ``MCPServer``; cast to satisfy
-    # the production-typed ``register(mcp: MCPServer)`` signatures.
-    server = cast("MCPServer", mcp)
+    # ``tool()`` decorator contract as fastmcp's ``FastMCP``; cast to satisfy
+    # the production-typed ``register(mcp: FastMCP)`` signatures.
+    server = cast("FastMCP", mcp)
     generate.register(server)
     enhance.register(server)
     tags.register(server)
@@ -48,15 +48,16 @@ def ctx(fake_ctx: Any) -> Any:
 
 
 def _assert_image_block(result: list[Any]) -> bytes:
-    """Pull the bytes out of the returned ImageContent content block.
+    """Pull the raw bytes out of the returned image item.
 
-    Tools return ``ImageContent`` (a pydantic ``ContentBlock`` from
-    ``mcp_types``) whose ``data`` is a base64-encoded ASCII string. The
-    helper decodes it back to raw bytes so assertions can compare against
-    the original ``NovelAIImage.data`` bytes.
+    Tools returned the fastmcp ``Image`` helper (whose ``.data`` is the raw PNG
+    bytes) because fastmcp converts it to ``ImageContent`` only when it passes
+    through the real server pipeline; direct (recording-stub) invocation hands
+    back the helper as-is. The helper decodes nothing — ``.data`` is already the
+    original ``NovelAIImage.data`` bytes.
     """
     image_block = next(item for item in result if hasattr(item, "data"))
-    return base64.b64decode(image_block.data)
+    return image_block.data
 
 
 def _assert_path_str(result: list[Any]) -> str:
@@ -277,44 +278,47 @@ class TestRegistration:
 
 
 class TestSerializationRegression:
-    """Verify tools serialize correctly through the real SDK path.
+    """Verify image returns serialize correctly through fastmcp's real path.
 
-    ``RecordingMCPServer`` bypasses ``Tool.run`` → ``convert_result`` →
-    ``model_dump``, which is where the Image-serialization bug lived (the
-    SDK's structured-content path could not ``model_dump`` the plain
-    ``Image`` helper class). These tests close that gap by invoking the
-    real ``Tool.run`` with ``convert_result=True`` against the production
-    ``server.mcp`` instance.
+    ``RecordingMCPServer`` bypasses fastmcp's result conversion, so these tests
+    close that gap by invoking the production ``server.mcp`` through
+    ``call_tool`` — fastmcp's full execution pipeline, which converts the
+    returned ``Image`` helper into an ``ImageContent`` block. They assert the
+    resulting content blocks are the MIME-typed MCP content blocks and that
+    each JSON-serializes (the historical ``PydanticSerializationError`` lived
+    in the SDK's structured-content ``model_dump(mode="json")`` path).
     """
 
     @staticmethod
-    def _make_ctx(client: Any, settings: Any) -> Any:
-        """Build a minimal context mirroring conftest's ``fake_ctx`` shape."""
-        return SimpleNamespace(
-            request_context=SimpleNamespace(
-                lifespan_context=SimpleNamespace(client=client, settings=settings),
-            ),
-        )
+    def _seed_lifespan(client: Any, settings: Any) -> None:
+        """Give the shared server a lifespan value so tools see AppContext.
 
-    async def test_generate_image_serializes_through_real_sdk(
+        fastmcp's ``Context.lifespan_context`` reads the server's
+        ``_lifespan_result`` (the value the lifespan yielded). Seeding it here
+        lets ``call_tool`` run the tool body without a live session.
+        """
+        from novelai_image_mcp.server import mcp
+
+        mcp._lifespan_result = SimpleNamespace(client=client, settings=settings)
+
+    async def test_generate_image_serializes_through_real_path(
         self,
         settings: Any,
         fake_client: AsyncMock,
         nai_image: NovelAIImage,
         tmp_path: Path,
     ) -> None:
-        """``generate_image`` returns a ``CallToolResult`` with ImageContent."""
-        from mcp_types import CallToolResult, ImageContent, TextContent
+        """``generate_image`` yields a ``ToolResult`` with ``ImageContent``."""
+        from mcp_types import ImageContent, TextContent
 
         from novelai_image_mcp.server import mcp
 
         fake_client.generate.return_value = (nai_image,)
         settings.output_dir = str(tmp_path)
-        ctx = self._make_ctx(fake_client, settings)
+        self._seed_lifespan(fake_client, settings)
 
-        tool = mcp._tool_manager.get_tool("generate_image")
-        assert tool is not None, "generate_image tool must be registered"
-        result = await tool.run(
+        result = await mcp.call_tool(
+            "generate_image",
             {
                 "prompt": "test",
                 "seed": 42,
@@ -324,40 +328,34 @@ class TestSerializationRegression:
                 "n_samples": 1,
                 "quality": False,
             },
-            ctx,
-            convert_result=True,
         )
 
-        assert isinstance(result, CallToolResult)
         assert any(isinstance(b, ImageContent) for b in result.content)
         assert any(isinstance(b, TextContent) for b in result.content)
-        # The bug was here: structured_content must be JSON-serializable.
-        assert result.structured_content is not None
+        # The historical bug was here: content must JSON-serialize.
+        for block in result.content:
+            assert block.model_dump(mode="json") is not None
+        image_block = next(b for b in result.content if isinstance(b, ImageContent))
+        assert base64.b64decode(image_block.data) == nai_image.data
 
-    async def test_upscale_image_serializes_through_real_sdk(
+    async def test_upscale_image_serializes_through_real_path(
         self,
         settings: Any,
         fake_client: AsyncMock,
         nai_image: NovelAIImage,
         tmp_path: Path,
     ) -> None:
-        """``upscale_image`` returns a ``CallToolResult`` with ImageContent."""
-        from mcp_types import CallToolResult, ImageContent
+        """``upscale_image`` yields a ``ToolResult`` with ``ImageContent``."""
+        from mcp_types import ImageContent
 
         from novelai_image_mcp.server import mcp
 
         fake_client.upscale.return_value = nai_image
         settings.output_dir = str(tmp_path)
-        ctx = self._make_ctx(fake_client, settings)
+        self._seed_lifespan(fake_client, settings)
 
-        tool = mcp._tool_manager.get_tool("upscale_image")
-        assert tool is not None, "upscale_image tool must be registered"
-        result = await tool.run(
-            {"image": _b64(), "factor": 2},
-            ctx,
-            convert_result=True,
-        )
+        result = await mcp.call_tool("upscale_image", {"image": _b64(), "factor": 2})
 
-        assert isinstance(result, CallToolResult)
         assert any(isinstance(b, ImageContent) for b in result.content)
-        assert result.structured_content is not None
+        for block in result.content:
+            assert block.model_dump(mode="json") is not None

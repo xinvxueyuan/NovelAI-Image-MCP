@@ -1,16 +1,21 @@
-"""Centralized MCP SDK v2 imports.
+"""Centralized fastmcp imports.
 
-The v2 SDK renamed ``FastMCP`` to ``MCPServer`` and re-exports ``Context`` /
-``Image`` / ``MCPServer`` from ``mcp.server.mcpserver`` (the v2 module path used
-by the official quickstart). This shim imports once so the rest of the package
-is insulated from SDK layout variations between beta and stable v2 releases.
+The server framework is fastmcp 4 (PrefectHQ/fastmcp), which builds on the MCP
+SDK v2 (``mcp>=2.0.0``). This shim imports once so the rest of the package is
+insulated from where fastmcp re-exports each symbol. ``FastMCP`` is the server
+class replacing the SDK's v2 ``MCPServer``; ``Context`` is the request context
+injected into tools; ``Image`` is fastmcp's media helper, which fastmcp
+automatically converts to an ``ImageContent`` block when returned from a tool.
 """
 
 from __future__ import annotations
 
 try:
-    from mcp.server.mcpserver import Context, Image, MCPServer
-except ImportError:  # pragma: no cover - fallback for alternate v2 layouts
-    from mcp.server import Context, Image, MCPServer  # type: ignore[no-redef]
+    from fastmcp import Context, FastMCP
+    from fastmcp.utilities.types import Image
+except ImportError:  # pragma: no cover - fallback for alternate fastmcp layouts
+    from fastmcp.server.context import Context  # type: ignore[no-redef]
+    from fastmcp.server.fastmcp import FastMCP  # type: ignore[no-redef]
+    from fastmcp.utilities.types import Image  # type: ignore[no-redef]
 
-__all__ = ["Context", "Image", "MCPServer"]
+__all__ = ["Context", "FastMCP", "Image"]
