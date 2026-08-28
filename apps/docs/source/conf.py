@@ -20,6 +20,7 @@ Run::
 from __future__ import annotations
 
 import importlib.metadata
+import re
 from pathlib import Path
 from typing import Any
 
@@ -480,6 +481,41 @@ linkcheck_retries = 2
 # Skip building source documents that import optional dependencies that aren't
 # present in the docs environment (none currently, but the hook is in place).
 
+_MERMAID_MODULE_RE = re.compile(
+    r'<script type="module">import mermaid from .*?</script>', re.DOTALL
+)
+
+
+def _strip_mermaid_without_diagrams(app: Any, exception: Any) -> None:
+    """Remove the sphinxcontrib-mermaid runtime from pages without diagrams.
+
+    The extension appends a module script (CDN import + ``mermaid.initialize``
+    + ``mermaid.run``) plus its fullscreen-button CSS to EVERY rendered page,
+    so a ~1 MB third-party bundle is parsed on pages that contain no diagram
+    at all. Only the 2 pages with real ``<pre class="mermaid">`` markup need
+    it. Runs at ``build-finished`` so sphinx-build output is lean without
+    touching the source.
+    """
+    if exception is not None:
+        return
+    outdir = Path(app.outdir)
+    for html in outdir.rglob("*.html"):
+        if "_static" in html.parts or "_sources" in html.parts:
+            continue
+        text = html.read_text(encoding="utf-8")
+        if "mermaid" not in text:
+            continue
+        # A real diagram is emitted by sphinxcontrib-mermaid as
+        # ``<pre  class="mermaid">``. NOTE: do not also match ``<div
+        # class="mermaid...">`` — the injected runtime script itself contains
+        # such a string inside a JS template literal, which would mark every
+        # page as "has a diagram" and defeat the strip entirely.
+        if re.search(r'<pre[^>]*class="mermaid"', text):
+            continue
+        stripped = _MERMAID_MODULE_RE.sub("", text)
+        if stripped != text:
+            html.write_text(stripped, encoding="utf-8")
+
 
 def _on_config_inited(app: Any, config: Any) -> None:
     """Refresh language-dependent config after ``-D`` overrides are applied.
@@ -518,6 +554,7 @@ def setup(app: Any) -> dict[str, Any]:  # pragma: no cover - Sphinx hook
     static_dir = Path(__file__).parent / "_static"
     static_dir.mkdir(exist_ok=True)
     app.connect("config-inited", _on_config_inited)
+    app.connect("build-finished", _strip_mermaid_without_diagrams)
     return {
         "version": str(release),
         "parallel_read_safe": True,
