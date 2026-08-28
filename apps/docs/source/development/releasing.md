@@ -204,7 +204,7 @@ gh run watch
 - Verify the image on GHCR: `docker pull ghcr.io/<owner>/<repo>:0.2.0`
 - Verify the GitHub Release: <https://github.com/xinvxueyuan/NovelAI-Image-MCP/releases>
 - Verify the MCP Registry listing (automatic via the `publish-mcp` job):
-  <https://github.com/mcp/xinvxueyuan/novelai-image-mcp>
+  <https://registry.modelcontextprotocol.io/>
 - Announce in the project's discussion / chat.
 
 ## Rollback

@@ -47,7 +47,7 @@
 インテグレーションテスト中は `NOVELAI_IMAGE_BASE_URL` を上書きして
 ローカルモック (例: `http://localhost:9000`) を向くようにできます。
 `apps/server/tests/` のテストは代わりに
-[`respx`](https://github.com/transportapp/respx) を使用するため、この設定は不要です。
+[`respx`](https://github.com/lundberg/respx) を使用するため、この設定は不要です。
 :::
 
 ## 生成デフォルト

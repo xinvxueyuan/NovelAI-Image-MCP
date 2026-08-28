@@ -466,7 +466,14 @@ linkcheck_ignore = [
     r"https://novelai\.net/.*",  # behind auth, may 403 HEAD
     r"https://image\.novelai\.net/.*",  # API endpoint, requires auth
     r"https://api\.novelai\.net/.*",
+    # docs.novelai.net was heavily restructured: the root responds but every
+    # legacy /image/*.html subpath now 404s.
+    r"https://docs\.novelai\.net/.*",
     r"https://github\.com/xinvxueyuan/NovelAI-Image-MCP/(pull|issues)/\d+",
+    # Example endpoints in the docs (localhost server, local mock) are never
+    # reachable during a CI linkcheck.
+    r"http://127\.0\.0\.1(?::\d+)?(?:/.*)?",
+    r"http://localhost(?::\d+)?(?:/.*)?",
     r"^mailto:",
 ]
 linkcheck_timeout = 10

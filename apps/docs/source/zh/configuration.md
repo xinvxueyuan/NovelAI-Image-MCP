@@ -41,7 +41,7 @@
 :::{tip}
 在集成测试期间，可以覆盖 `NOVELAI_IMAGE_BASE_URL` 指向本地 mock（例如
 `http://localhost:9000`）。`apps/server/tests/` 中的测试使用
-[`respx`](https://github.com/transportapp/respx) 替代，不需要这样做。
+[`respx`](https://github.com/lundberg/respx) 替代，不需要这样做。
 :::
 
 ## 生成默认值

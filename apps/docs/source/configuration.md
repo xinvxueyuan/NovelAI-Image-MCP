@@ -43,7 +43,7 @@ pair. The server raises `RuntimeError` at startup if neither is present
 :::{tip}
 Override `NOVELAI_IMAGE_BASE_URL` to point at a local mock (e.g.
 `http://localhost:9000`) during integration testing. The tests in
-`apps/server/tests/` use [`respx`](https://github.com/transportapp/respx)
+`apps/server/tests/` use [`respx`](https://github.com/lundberg/respx)
 instead and don't need this.
 :::
 
