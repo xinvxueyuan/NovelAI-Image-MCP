@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import importlib.metadata
 import re
+import time
 from pathlib import Path
 from typing import Any
 
@@ -485,36 +486,152 @@ _MERMAID_MODULE_RE = re.compile(
     r'<script type="module">import mermaid from .*?</script>', re.DOTALL
 )
 
+_BASE_URL = "https://xinvxueyuan.github.io/NovelAI-Image-MCP"
+_META_DESCRIPTIONS = {
+    "en": (
+        "NovelAI Image MCP — an MCP server exposing NovelAI image generation "
+        "as 11 tools for AI agents: txt2img, img2img, inpaint, upscale, "
+        "ControlNet, vibes, tags, and account."
+    ),
+    "zh": (
+        "NovelAI Image MCP —— 把 NovelAI 图像生成暴露为 11 个 MCP 工具供 AI "
+        "智能体调用：文生图、图生图、局部重绘、放大、ControlNet、vibe、标签与账户。"
+    ),
+    "ja": (
+        "NovelAI Image MCP — NovelAI 画像生成を 11 個の MCP ツールとして AI "
+        "エージェントに公開するサーバー: txt2img、img2img、inpaint、"
+        "アップスケール、ControlNet、vibe、タグ、アカウント。"
+    ),
+}
 
-def _strip_mermaid_without_diagrams(app: Any, exception: Any) -> None:
-    """Remove the sphinxcontrib-mermaid runtime from pages without diagrams.
 
-    The extension appends a module script (CDN import + ``mermaid.initialize``
-    + ``mermaid.run``) plus its fullscreen-button CSS to EVERY rendered page,
-    so a ~1 MB third-party bundle is parsed on pages that contain no diagram
-    at all. Only the 2 pages with real ``<pre class="mermaid">`` markup need
-    it. Runs at ``build-finished`` so sphinx-build output is lean without
-    touching the source.
+def _page_url(base_path: str, rel: Path) -> str:
+    """Absolute URL of a built page under the deployed subpath."""
+    path = rel.as_posix()
+    return f"{_BASE_URL}/{base_path}/{path}" if base_path else f"{_BASE_URL}/{path}"
+
+
+def _postprocess_site(app: Any, exception: Any) -> None:
+    """Build-finished post-processing.
+
+    * Strip the sphinxcontrib-mermaid runtime from pages without diagrams.
+      The extension appends a module script (CDN import + initialize + run,
+      ~19 KB inline) to EVERY rendered page, so a ~1 MB third-party bundle is
+      parsed on pages with no diagram at all; only pages with real
+      ``<pre class="mermaid">`` markup need it.
+    * Inject per-page meta description, canonical URL and Open Graph tags
+      (Sphinx emits none of these by default).
+    * Write a per-language ``sitemap.xml`` (the site serves three language
+      subtrees, so each build lists its own URLs).
+    * For the English build, also write ``robots.txt`` (referencing all three
+      sitemaps) and a custom ``404.html`` for GitHub Pages.
     """
     if exception is not None:
         return
+    lang = app.config.language
+    base_path = app.config.html_context.get("current_base_path", "")
+    description = _META_DESCRIPTIONS.get(lang, _META_DESCRIPTIONS["en"])
     outdir = Path(app.outdir)
+
     for html in outdir.rglob("*.html"):
         if "_static" in html.parts or "_sources" in html.parts:
             continue
         text = html.read_text(encoding="utf-8")
-        if "mermaid" not in text:
+        if "mermaid" in text:
+            # A real diagram is emitted as ``<pre  class="mermaid">``. Do NOT
+            # also match `<div class="mermaid...">` — the injected runtime
+            # script itself contains such a string inside a JS template
+            # literal, which would mark every page as "has a diagram".
+            if not re.search(r'<pre[^>]*class="mermaid"', text):
+                text = _MERMAID_MODULE_RE.sub("", text)
+        rel = html.relative_to(outdir)
+        url = _page_url(base_path, rel)
+        if 'name="description"' not in text:
+            text = text.replace(
+                "</head>",
+                f'<meta name="description" content="{description}">\n</head>',
+            )
+        if 'rel="canonical"' not in text:
+            text = text.replace(
+                "</head>",
+                f'<link rel="canonical" href="{url}">\n</head>',
+            )
+        if 'property="og:url"' not in text:
+            text = text.replace(
+                "</head>",
+                f'<meta property="og:url" content="{url}">\n'
+                f'<meta property="og:type" content="website">\n'
+                f'<meta property="og:title" content="{app.config.html_title}">\n'
+                f'<meta property="og:description" content="{description}">\n'
+                f'<meta property="og:site_name" content="{app.config.project}">\n'
+                "</head>",
+            )
+        html.write_text(text, encoding="utf-8")
+
+    # ── sitemap.xml (per language) ─────────────────────────────────────────
+    urls = []
+    for html in outdir.rglob("*.html"):
+        if "_static" in html.parts or "_sources" in html.parts:
             continue
-        # A real diagram is emitted by sphinxcontrib-mermaid as
-        # ``<pre  class="mermaid">``. NOTE: do not also match ``<div
-        # class="mermaid...">`` — the injected runtime script itself contains
-        # such a string inside a JS template literal, which would mark every
-        # page as "has a diagram" and defeat the strip entirely.
-        if re.search(r'<pre[^>]*class="mermaid"', text):
+        name = html.name
+        if name in {"genindex.html", "py-modindex.html", "search.html"}:
             continue
-        stripped = _MERMAID_MODULE_RE.sub("", text)
-        if stripped != text:
-            html.write_text(stripped, encoding="utf-8")
+        if "_modules" in html.parts:
+            continue
+        rel = html.relative_to(outdir)
+        urls.append((_page_url(base_path, rel), html.stat().st_mtime))
+    urls.sort()
+    urls_xml = "\n".join(
+        f"  <url>\n    <loc>{u}</loc>\n"
+        f"    <lastmod>{time.strftime('%Y-%m-%d', time.localtime(m))}</lastmod>\n"
+        "  </url>"
+        for u, m in urls
+    )
+    sitemap = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"{urls_xml}\n"
+        "</urlset>\n"
+    )
+    (outdir / "sitemap.xml").write_text(sitemap, encoding="utf-8")
+
+    if lang != "en":
+        return
+
+    # ── robots.txt (English build only) ────────────────────────────────────
+    (outdir / "robots.txt").write_text(
+        "User-agent: *\n"
+        "Allow: /\n"
+        "\n"
+        "Sitemap: "
+        f"{_BASE_URL}/sitemap.xml\n"
+        f"Sitemap: {_BASE_URL}/zh/sitemap.xml\n"
+        f"Sitemap: {_BASE_URL}/ja/sitemap.xml\n",
+        encoding="utf-8",
+    )
+
+    # ── custom 404 page (GitHub Pages serves the root 404.html) ────────────
+    (outdir / "404.html").write_text(
+        "<!DOCTYPE html>\n"
+        '<html lang="en">\n<head>\n<meta charset="utf-8">\n'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+        "<title>404 — page not found · NovelAI Image MCP</title>\n"
+        "<style>\n"
+        "body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;"
+        "background:#fff;color:#1f2933;margin:0;display:flex;align-items:center;"
+        "min-height:100vh}\n"
+        "main{max-width:560px;margin:0 auto;padding:2rem}\n"
+        "h1{font-size:1.6rem;color:#6d28d9}\n"
+        "a{color:#7c3aed;text-decoration:underline}"
+        "</style>\n</head>\n<body>\n<main>\n"
+        "<h1>404 — page not found</h1>\n"
+        "<p>The page you requested does not exist or has been moved.</p>\n"
+        '<p><a href="/NovelAI-Image-MCP/">English home</a> · '
+        '<a href="/NovelAI-Image-MCP/zh/">中文首页</a> · '
+        '<a href="/NovelAI-Image-MCP/ja/">日本語ホーム</a></p>\n'
+        "</main>\n</body>\n</html>\n",
+        encoding="utf-8",
+    )
 
 
 def _on_config_inited(app: Any, config: Any) -> None:
@@ -554,7 +671,7 @@ def setup(app: Any) -> dict[str, Any]:  # pragma: no cover - Sphinx hook
     static_dir = Path(__file__).parent / "_static"
     static_dir.mkdir(exist_ok=True)
     app.connect("config-inited", _on_config_inited)
-    app.connect("build-finished", _strip_mermaid_without_diagrams)
+    app.connect("build-finished", _postprocess_site)
     return {
         "version": str(release),
         "parallel_read_safe": True,
