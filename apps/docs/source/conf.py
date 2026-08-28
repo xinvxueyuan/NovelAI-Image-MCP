@@ -504,6 +504,66 @@ _META_DESCRIPTIONS = {
     ),
 }
 
+# English-only breadcrumb sections that have a landing ``index.html``.
+_BREADCRUMB_SECTIONS: dict[str, str] = {
+    "tools": "Tools",
+    "tutorials": "Tutorials",
+    "transports": "Transports",
+    "development": "Development",
+    "api": "API reference",
+}
+
+_BREADCRUMB_CSS = (
+    "<style>\n"
+    ".crumbs{font-size:.85rem;color:var(--color-foreground-muted);"
+    "margin-bottom:.35rem}\n"
+    ".crumbs a{color:var(--color-link);text-decoration:none}\n"
+    ".crumbs a:hover{text-decoration:underline}\n"
+    ".crumbs .sep{opacity:.6}\n"
+    "</style>\n"
+)
+
+
+def _page_title(text: str) -> str:
+    """Extract the page title from ``<title>`` (before the site suffix)."""
+    m = re.search(r"<title>([^<]+)</title>", text)
+    if not m:
+        return ""
+    return m.group(1).split(" - ")[0].strip()
+
+
+def _inject_breadcrumbs(text: str, rel: Path) -> str:
+    """Insert a Home › Section › Page trail above the article's first ``<h1>``.
+
+    Furo ships no breadcrumbs; deep pages under ``tools/``, ``tutorials/``,
+    ``transports/``, ``development/`` and ``api/`` otherwise rely on the
+    sidebar alone for orientation. English build only — the translations
+    have a flat four-page tree and need no trail.
+    """
+    parts = rel.parts
+    if len(parts) < 2:
+        return text
+    section_name = _BREADCRUMB_SECTIONS.get(parts[0])
+    if section_name is None:
+        return text
+    up = "../" * len(parts)  # e.g. "../../" from tools/generate.html
+    title = _page_title(text)
+    crumbs = (
+        '<nav class="crumbs" aria-label="Breadcrumb">'
+        f'<a href="{up}index.html">Home</a>'
+        f'<span class="sep" aria-hidden="true"> › </span>'
+        f'<a href="{up}{parts[0]}/index.html">{section_name}</a>'
+    )
+    if title and title != section_name:
+        crumbs += (
+            '<span class="sep" aria-hidden="true"> › </span>'
+            f'<span aria-current="page">{title}</span>'
+        )
+    crumbs += "</nav>"
+    if _BREADCRUMB_CSS not in text:
+        text = text.replace("</head>", f"{_BREADCRUMB_CSS}</head>")
+    return re.sub(r"<h1", crumbs + "\n<h1", text, count=1)
+
 
 def _page_url(base_path: str, rel: Path) -> str:
     """Absolute URL of a built page under the deployed subpath."""
@@ -566,6 +626,8 @@ def _postprocess_site(app: Any, exception: Any) -> None:
                 f'<meta property="og:site_name" content="{app.config.project}">\n'
                 "</head>",
             )
+        if lang == "en":
+            text = _inject_breadcrumbs(text, rel)
         html.write_text(text, encoding="utf-8")
 
     # ── sitemap.xml (per language) ─────────────────────────────────────────
