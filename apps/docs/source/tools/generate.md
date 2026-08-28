@@ -58,7 +58,10 @@ await ctx.session.call_tool("generate_image", {
 })
 ```
 
-### Multi-character composition (V4+ / V5)
+### Multi-character composition (V4+)
+
+V5 supports the same multi-character mechanism (upstream tested up to 22
+characters), so the behavior below applies to V4 / V4.5 / V5.
 
 ```python
 await ctx.session.call_tool("generate_image", {

@@ -98,6 +98,18 @@ Domain exception hierarchy:
    :show-inheritance:
 ```
 
+### `novelai_image_mcp.nai.errors`
+
+Error-body parsing and official error-code explanations: `ErrorInfo`,
+`OFFICIAL_CODE_EXPLANATIONS`, `explain`, `parse_error_body`.
+
+```{eval-rst}
+.. automodule:: novelai_image_mcp.nai.errors
+   :members:
+   :undoc-members:
+   :show-inheritance:
+```
+
 ### `novelai_image_mcp.nai.service`
 
 `create_novelai_client` factory + `NovelAIConfigLike` protocol. The factory
