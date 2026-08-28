@@ -64,6 +64,23 @@ extensions = [
 # raises a ConfigError if listed in extensions because it does not work with
 # non-HTML builders).
 
+# ─── sphinx-copybutton ───────────────────────────────────────────────────────
+# Explicitly set every copybutton_* option. sphinx-copybutton 0.5.2 (the
+# current PyPI release) renders its generated JS with empty slots for unset
+# options, producing an INVALID script:
+#
+#     return formatCopyText(text, Undefined, , , , , Undefined, Undefined)
+#            ^^^^ SyntaxError: Unexpected token ','
+#
+# The whole _static/copybutton.js then fails to parse on every page and the
+# copy buttons never attach. Setting the options (even to their defaults)
+# emits valid boolean literals.
+copybutton_prompt_text = ""
+copybutton_prompt_is_regexp = False
+copybutton_only_copy_prompt_lines = False
+copybutton_remove_prompts = False
+copybutton_copy_empty_lines = True
+
 # MyST Markdown — https://myst-parser.readthedocs.io/en/latest/configuration.html
 source_suffix = {".md": "markdown", ".rst": "restructuredtext"}
 myst_enable_extensions = [
@@ -160,19 +177,50 @@ def _base_path_for(code: str) -> str:
     return ""
 
 
-# Page names that have translations in EVERY non-English language. The
-# language switcher uses this to decide whether to link to the same page
-# in the target language or fall back to the target language's index page
-# (per the spec: "falling back to the language's index page if the
+# Localised label for the language-switcher sidebar block (the template reads
+# ``switcher_label`` from ``html_context``; it used to be hardcoded English).
+_SWITCHER_LABELS: dict[str, str] = {
+    "en": "Language",
+    "zh": "语言",
+    "ja": "言語",
+}
+
+
+def _switcher_label_for(code: str) -> str:
+    return _SWITCHER_LABELS.get(code, _SWITCHER_LABELS["en"])
+
+
+def _translated_pages() -> set[str]:
+    """Derive which page basenames exist in the English root AND every
+    non-English language tree.
+
+    Previously a hardcoded set; forgetting to update it silently degraded the
+    language switcher (linking to a language's index instead of the newly
+    translated page). ``conf.py`` always lives in ``apps/docs/source`` even
+    when a per-language build points ``srcdir`` at ``apps/docs/source/<code>``,
+    so ``Path(__file__).parent`` resolves the English root for every build.
+    """
+    root = Path(__file__).parent
+
+    def page_names(d: Path) -> set[str]:
+        return {p.stem for p in d.glob("*.md")} if d.is_dir() else set()
+
+    translated = page_names(root)
+    for code, _, base_path in AVAILABLE_LANGUAGES:
+        if base_path:  # non-English languages
+            translated &= page_names(root / base_path)
+    return translated
+
+
+# Page basenames that have translations in EVERY non-English language —
+# derived from the filesystem at build time (see ``_translated_pages()``).
+# The language switcher uses this set to decide whether to link to the same
+# page in the target language or fall back to the target language's index
+# page (per the spec: "falling back to the language's index page if the
 # translated page does not exist"). English has all pages, so the fallback
 # only applies when linking TO a non-English language from an English-only
 # page (e.g., clicking "中文" on ``/tools/generate`` → ``/zh/``).
-TRANSLATED_PAGES: set[str] = {
-    "index",
-    "installation",
-    "quickstart",
-    "configuration",
-}
+TRANSLATED_PAGES: set[str] = _translated_pages()
 nitpicky = True
 nitpick_ignore: list[tuple[str, str]] = [
     # pydantic internals surface cross-reference misses for typing generics.
@@ -343,6 +391,7 @@ html_context = {
     "current_language": current_language,
     "current_base_path": _base_path_for(current_language),
     "translated_pages": TRANSLATED_PAGES,
+    "switcher_label": _switcher_label_for(current_language),
 }
 
 # ``html_sidebars`` reproduces Furo's default sidebar section list (see
@@ -445,12 +494,21 @@ def _on_config_inited(app: Any, config: Any) -> None:
     """
     lang = config.language
     config.html_title = _HTML_TITLES.get(lang, _HTML_TITLES["en"])
-    config.html_context = {
-        "available_languages": AVAILABLE_LANGUAGES,
-        "current_language": lang,
-        "current_base_path": _base_path_for(lang),
-        "translated_pages": TRANSLATED_PAGES,
-    }
+    # UPDATE (not replace) html_context: extensions such as sphinx-copybutton
+    # inject their own keys here during ``config-inited`` (e.g.
+    # ``copybutton_prompt_text``, rendered into the generated copybutton.js).
+    # Assigning a fresh dict would wipe those keys and sphinx-copybutton's
+    # template would render undefined values, producing INVALID JS
+    # (``formatCopyText(text, Undefined, , , , , Undefined, Undefined)``).
+    config.html_context.update(
+        {
+            "available_languages": AVAILABLE_LANGUAGES,
+            "current_language": lang,
+            "current_base_path": _base_path_for(lang),
+            "translated_pages": TRANSLATED_PAGES,
+            "switcher_label": _switcher_label_for(lang),
+        }
+    )
 
 
 def setup(app: Any) -> dict[str, Any]:  # pragma: no cover - Sphinx hook

@@ -29,6 +29,12 @@ dependencies = [
     "furo>=2024.8.6",
     # MyST optional extra: linkify (auto-converts bare URLs to clickable links)
     "linkify-it-py>=2.0.0",
+    # CJK full-text search: sphinx.search.zh.SearchChinese segments Chinese
+    # body text with jieba. Without it the zh searchindex.js contains ZERO
+    # Chinese terms (the fallback cut_for_search yields nothing), so Chinese
+    # searches silently match nothing except titles. jieba is MIT-licensed.
+    # Japanese uses the built-in TinySegmenter (pure Python) — no extra dep.
+    "jieba>=0.42.1",
     # Extensions
     "sphinx-autobuild>=2024.10.4",
     "sphinx-copybutton>=0.5.2",

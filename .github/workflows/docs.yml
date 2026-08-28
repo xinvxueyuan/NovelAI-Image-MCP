@@ -78,6 +78,38 @@ jobs:
                 -W --keep-going
           fi
 
+      - name: 🔍 Syntax-check generated JS
+        # sphinx-copybutton (and friends) can emit syntactically invalid
+        # JavaScript when config values are missing — the deployed site's
+        # copy buttons silently stopped working this way before. Fail the
+        # build if any generated _static/*.js does not parse.
+        run: |
+          errors=0
+          for f in apps/docs/_build/html/_static/*.js; do
+            if ! node --check "$f" >/dev/null 2>&1; then
+              echo "::error::Invalid JS: $f"
+              errors=1
+              break
+            fi
+          done
+          exit $errors
+
+      - name: 🔗 Link-check (${{ matrix.language }})
+        # Report broken links per language without failing the build
+        # (external sites are occasionally flaky); the node --check gate
+        # above is the hard gate.
+        if: always()
+        run: |
+          if [ "${{ matrix.language }}" = "en" ]; then
+            uv run --package novelai-image-mcp-docs \
+              sphinx-build -b linkcheck apps/docs/source apps/docs/_build/linkcheck -q
+          else
+            uv run --package novelai-image-mcp-docs \
+              sphinx-build -b linkcheck apps/docs/source/${{ matrix.language }} \
+                apps/docs/_build/linkcheck -c apps/docs/source \
+                -D language=${{ matrix.language }} -q
+          fi
+
       - name: 📦 Upload language artifact
         # pinned from actions/upload-artifact@v4.6.2
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
