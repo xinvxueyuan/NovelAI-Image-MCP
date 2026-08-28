@@ -83,6 +83,6 @@ better detail.
 
 ## What's next?
 
-- [`upscale_image` reference](../tools/enhance.md)
+- [`upscale_image` reference](../tools/upscale.md)
 - [Account balance](../tools/account.md#get_subscription) — check Anlas first
 - [Cost estimation](../tools/account.md#estimate_anlas_cost) — preview the bill

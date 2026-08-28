@@ -37,8 +37,8 @@ evidence and fix history below should be read in this context.
 
 | # | Tool | Status | Notes |
 |---|---|---|---|
-| 1 | `estimate_anolas_cost` | ✅ pass | Pure local calculation, no API call. Returns `{"anlas": 2, "opus_free_sample": false}` for a 512×512 / 1-step / 1-sample request. |
-| 2 | `suggest_tags` | ✅ pass | API call to `image.novelai.net` succeeded. Returned 10 tag descriptors with `tag` / `count` / `confidence` fields. |
+| 1 | `estimate_anlas_cost` | ✅ pass | Pure local calculation, no API call. Returns `{"anlas": 2, "opus_free_sample": false}` for a 512×512 / 1-step / 1-sample request. |
+| 2 | `suggest_tags` | ✅ pass | API call to `image.novelai.net` succeeded. Returned 10 tag descriptors with `description` / `text` / `count` fields. |
 | 3 | `get_subscription` | ✅ pass (code fix 2) | Was unreachable (`NovelAITransportError`) because Cloudflare blocked the non-browser TLS fingerprint. Fixed by [Chrome TLS impersonation](#fix-2-browser-tls--header-fingerprint-impersonation-2026-07-25). |
 | 4 | `get_user_data` | ✅ pass (code fix 2) | Same root cause and fix as `get_subscription`. |
 | 5 | `generate_image` | ✅ pass (code fix 1) | API call succeeded, PNG saved, and the `ImageContent` block now serializes through the MCP v2 SDK after [Fix 1](#fix-1-image-content-block-now-serializable-by-mcp-v2-sdk-2026-07-25). |
@@ -106,7 +106,7 @@ for the per-host equivalent.
 
 ## Per-tool evidence
 
-### `estimate_anolas_cost` — ✅ pass
+### `estimate_anlas_cost` — ✅ pass
 
 **Call:**
 

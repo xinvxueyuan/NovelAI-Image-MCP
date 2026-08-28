@@ -85,22 +85,30 @@ result = await ctx.session.call_tool("inpaint", {
 
 For scripting without an MCP host, call the underlying client directly:
 
+:::{note}
+The direct-API examples use `create_http_client()` — do **not** hand-roll
+`httpx.AsyncClient()`. NovelAI's Cloudflare WAF fingerprints the TLS stack
+(JA3/JA4) and silently resets non-browser connections;
+`create_http_client()` impersonates Chrome and is the only supported
+transport for `image.novelai.net`.
+:::
+
 ```python
 import asyncio
 import base64
 from pathlib import Path
 
-import httpx
 from novelai_image_mcp.nai import (
     Action, GenerationRequest, Model, create_novelai_client,
 )
+from novelai_image_mcp.nai.http import create_http_client
 from novelai_image_mcp.settings import NovelAISettings
 
 async def main():
     settings = NovelAISettings(token="pst-...")
     image_b64 = base64.b64encode(Path("input.png").read_bytes()).decode("ascii")
     mask_b64 = base64.b64encode(Path("mask.png").read_bytes()).decode("ascii")
-    async with httpx.AsyncClient(timeout=settings.timeout) as http_client:
+    async with create_http_client(timeout=settings.timeout) as http_client:
         client = create_novelai_client(settings, http_client=http_client)
         try:
             request = GenerationRequest(
