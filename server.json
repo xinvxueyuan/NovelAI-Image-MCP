@@ -3,13 +3,13 @@
   "name": "io.github.xinvxueyuan/novelai-image-mcp",
   "title": "NovelAI Image MCP",
   "description": "NovelAI image generation as MCP tools: txt2img, img2img, inpaint, upscale, Director, ControlNet.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "websiteUrl": "https://xinvxueyuan.github.io/NovelAI-Image-MCP/",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "novelai-image-mcp",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "transport": {
         "type": "stdio"
       },
@@ -35,7 +35,7 @@
     },
     {
       "registryType": "oci",
-      "identifier": "ghcr.io/xinvxueyuan/novelai-image-mcp:0.3.0",
+      "identifier": "ghcr.io/xinvxueyuan/novelai-image-mcp:0.4.0",
       "transport": {
         "type": "stdio"
       },

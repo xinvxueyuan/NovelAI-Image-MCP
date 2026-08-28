@@ -116,6 +116,17 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
   （`needs: [validate, publish-pypi, publish-ghcr]`），每次发布自动执行。
   独立的 `publish-mcp.yml` 仅保留 `workflow_dispatch`，作为手动重跑工具
   （修复 server.json 后补发用）——不要给它加回 `on: push: tags` 触发。
+  **sync-version 回写不可见陷阱（0.4.0 实测）**：release.yml 的 `validate`
+  job 内由 sync-version 回写 `server.json`/`package.json` 的提交
+  （`🔧 chore(release): sync manifest versions to X.Y.Z`）**对下游 job 不可见**
+  ——同一 workflow run 的后续 job（含内联 `publish-mcp`）按触发时的固定 commit
+  检出，读到的仍是同步前的 `server.json`（0.4.0 实测：核对步骤报
+  `server.json has '0.3.0', release is '0.4.0'`）。因此内联 publish-mcp
+  **首次执行大概率失败**，这不是异常；合规补发流程：在 `main` 上手动把
+  `server.json` 三处版本（顶层 `version`、PyPI 条目 `version`、OCI 条目
+  `identifier` 的 `:X.Y.Z` 后缀）与 pyproject 同步并提交，然后
+  `gh workflow run publish-mcp.yml -f version=X.Y.Z` 补发（schema 校验与
+  发布照常执行）。
 - **回归测试覆盖 fastmcp 序列化路径**：`TestSerializationRegression` 通过
   `mcp.call_tool(...)` 直接调用生产 `server.mcp` 实例（fastmcp 完整执行管线，
   自动把 `Image` 转为 `ImageContent`），确保返回的 content 块能被
