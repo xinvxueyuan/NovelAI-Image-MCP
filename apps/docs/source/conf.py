@@ -688,9 +688,12 @@ def _postprocess_site(app: Any, exception: Any) -> None:
         "</style>\n</head>\n<body>\n<main>\n"
         "<h1>404 — page not found</h1>\n"
         "<p>The page you requested does not exist or has been moved.</p>\n"
-        '<p><a href="/NovelAI-Image-MCP/">English home</a> · '
-        '<a href="/NovelAI-Image-MCP/zh/">中文首页</a> · '
-        '<a href="/NovelAI-Image-MCP/ja/">日本語ホーム</a></p>\n'
+        # Root-relative hrefs on purpose: the CI ``combine`` step rewrites
+        # ``href="/`` to the Pages base path (``/NovelAI-Image-MCP/``).
+        # Hardcoding the full base URL here would get DOUBLE-prefixed.
+        '<p><a href="/index.html">English home</a> · '
+        '<a href="/zh/">中文首页</a> · '
+        '<a href="/ja/">日本語ホーム</a></p>\n'
         "</main>\n</body>\n</html>\n",
         encoding="utf-8",
     )
