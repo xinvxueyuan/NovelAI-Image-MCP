@@ -10,7 +10,7 @@ GitHub's auto-generated release notes (see
 fold the per-commit gitmoji + Conventional Commit messages into the
 per-release section headings. This file is the human-curated companion.
 
-## [Unreleased]
+## [0.4.0] — 2026-08-28
 
 ### Added
 
@@ -37,6 +37,20 @@ per-release section headings. This file is the human-curated companion.
   workaround). Because fastmcp 4 is a prerelease, it is pinned exactly
   (`==4.0.0b3`) with `fastmcp-slim==4.0.0b3`, and `pydantic>=2.12` is now the
   floor — relax the pin when fastmcp 4 ships stable.
+
+### Fixed
+
+- _Nothing yet._
+
+## [Unreleased]
+
+### Added
+
+- _Nothing yet._
+
+### Changed
+
+- _Nothing yet._
 
 ### Fixed
 
