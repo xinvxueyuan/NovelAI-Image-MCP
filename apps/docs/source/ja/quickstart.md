@@ -158,10 +158,10 @@ uv run python -m novelai_image_mcp info
 
 ## 次のよくあるステップ
 
-- 📚 各パラメータの詳細は [ツールリファレンス](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tools/index.html) (英語版) を参照
-- 🎨 [チュートリアル](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tutorials/index.html) (英語版) を試す — img2img、inpaint、アップスケール、ControlNet
-- 🔧 環境変数で [生成デフォルト](configuration.md) を調整する
-- 🐳 本番運用向けに [Docker 化](https://xinvxueyuan.github.io/NovelAI-Image-MCP/transports/http.html) する (英語版)
+- 各パラメータの詳細は [ツールリファレンス](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tools/index.html) (英語版) を参照
+- [チュートリアル](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tutorials/index.html) (英語版) を試す — img2img、inpaint、アップスケール、ControlNet
+- 環境変数で [生成デフォルト](configuration.md) を調整する
+- 本番運用向けに [Docker 化](https://xinvxueyuan.github.io/NovelAI-Image-MCP/transports/http.html) する (英語版)
 
 ## トラブルシューティング
 

@@ -162,11 +162,11 @@ Or call the `get_subscription` MCP tool from your agent.
 
 ## Common next steps
 
-- 📚 Read the [Tools reference](tools/index.md) for every parameter
-- 🎨 Try [tutorials](tutorials/index.md) — img2img, inpaint, upscale, ControlNet
-- 🧠 Install [agent skills](skills.md) — teach your AI agent the CLI + MCP tools
-- 🔧 Tune [generation defaults](configuration.md) via env vars
-- 🐳 [Dockerize](transports/http.md) for production
+- Read the [Tools reference](tools/index.md) for every parameter
+- Try [tutorials](tutorials/index.md) — img2img, inpaint, upscale, ControlNet
+- Install [agent skills](skills.md) — teach your AI agent the CLI + MCP tools
+- Tune [generation defaults](configuration.md) via env vars
+- [Dockerize](transports/http.md) for production
 
 ## Troubleshooting
 

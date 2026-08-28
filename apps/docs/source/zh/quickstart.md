@@ -152,7 +152,7 @@ uv run python -m novelai_image_mcp info
 
 ## 常见的后续步骤
 
-- 🔧 通过环境变量调整 [生成默认值](configuration.md)
+- 通过环境变量调整 [生成默认值](configuration.md)
 - 工具参考、教程、传输方式等章节暂仅提供英文版本，可通过页面左下角的语言切换器切换到 English 查看。
 
 ## 故障排查

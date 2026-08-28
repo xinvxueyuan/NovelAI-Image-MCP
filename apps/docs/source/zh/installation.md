@@ -130,4 +130,4 @@ docker compose up --build
 
 ## 后续步骤
 
-- ⚡ [快速开始](quickstart.md) —— 生成你的第一张图像
+- [快速开始](quickstart.md) —— 生成你的第一张图像

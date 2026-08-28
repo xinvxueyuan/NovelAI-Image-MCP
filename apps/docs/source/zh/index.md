@@ -45,9 +45,9 @@ configuration
 
 ## 快速链接
 
-- ⚡ [快速开始](quickstart.md) —— 安装、配置并生成你的第一张图像
-- 📦 [安装指南](installation.md) —— 从克隆仓库到验证凭据
-- 🔧 [配置参考](configuration.md) —— 环境变量与默认值
+- [快速开始](quickstart.md) —— 安装、配置并生成你的第一张图像
+- [安装指南](installation.md) —— 从克隆仓库到验证凭据
+- [配置参考](configuration.md) —— 环境变量与默认值
 
 ---
 

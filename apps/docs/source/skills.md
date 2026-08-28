@@ -96,8 +96,8 @@ duplicate each other's core content.
 
 ## See also
 
-- 🛠️ [Tools reference](tools/index.md) — the 11 MCP tools, parameters, examples
-- 🎨 [Tutorials](tutorials/index.md) — end-to-end workflows
-- 🚀 [Transports](transports/index.md) — stdio vs streamable-http
-- 📦 [skills.sh page](https://skills.sh/xinvxueyuan/NovelAI-Image-MCP) — install / security assessment
-- 🔌 [Agent host setup](transports/agent-hosts.md) — Claude Desktop, Cline, Cursor, …
+- [Tools reference](tools/index.md) — the 11 MCP tools, parameters, examples
+- [Tutorials](tutorials/index.md) — end-to-end workflows
+- [Transports](transports/index.md) — stdio vs streamable-http
+- [skills.sh page](https://skills.sh/xinvxueyuan/NovelAI-Image-MCP) — install / security assessment
+- [Agent host setup](transports/agent-hosts.md) — Claude Desktop, Cline, Cursor, …

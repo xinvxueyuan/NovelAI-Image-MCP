@@ -136,6 +136,6 @@ docker compose up --build
 
 ## 次のステップ
 
-- ⚡ [クイックスタート](quickstart.md) — 最初の画像を生成する
-- 🔧 [設定](configuration.md) — 環境変数による生成デフォルトの調整
-- 🐳 [Docker での運用](https://xinvxueyuan.github.io/NovelAI-Image-MCP/transports/index.html) — stdio と streamable-http の比較 (英語版)
+- [クイックスタート](quickstart.md) — 最初の画像を生成する
+- [設定](configuration.md) — 環境変数による生成デフォルトの調整
+- [Docker での運用](https://xinvxueyuan.github.io/NovelAI-Image-MCP/transports/index.html) — stdio と streamable-http の比較 (英語版)

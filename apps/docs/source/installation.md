@@ -134,6 +134,6 @@ and exposes the streamable-http transport on port `8000` by default. See
 
 ## Next steps
 
-- ⚡ [Quick start](quickstart.md) — generate your first image
-- 🛠️ [Tools reference](tools/index.md) — every MCP tool
-- 🔌 [Transports](transports/index.md) — stdio vs streamable-http
+- [Quick start](quickstart.md) — generate your first image
+- [Tools reference](tools/index.md) — every MCP tool
+- [Transports](transports/index.md) — stdio vs streamable-http

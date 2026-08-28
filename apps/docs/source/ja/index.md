@@ -46,9 +46,9 @@ configuration
 
 ## クイックリンク
 
-- ⚡ [クイックスタート](quickstart.md) — インストール、設定、最初の 1 枚を生成するまで
-- 🔧 [設定](configuration.md) — 環境変数による生成デフォルトの調整
-- 🐳 [Docker での運用](installation.md) — 自己完結型の再現性あるデプロイ
+- [クイックスタート](quickstart.md) — インストール、設定、最初の 1 枚を生成するまで
+- [設定](configuration.md) — 環境変数による生成デフォルトの調整
+- [Docker での運用](installation.md) — 自己完結型の再現性あるデプロイ
 
 ---
 
