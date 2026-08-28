@@ -346,18 +346,20 @@ html_context = {
 }
 
 # ``html_sidebars`` reproduces Furo's default sidebar section list (see
-# ``furo/theme/furo/theme.conf``) and inserts the language switcher between
-# the navigation tree and the ethical-ads slot, inside the scroll wrapper
-# (``sidebar/scroll-start.html`` … ``sidebar/scroll-end.html``). Overriding
-# the list is the officially supported Furo customisation path — see
-# https://pradyunsg.me/furo/customisation/sidebar/.
+# ``furo/theme/furo/theme.conf``). The language switcher is placed between
+# the search box and the scroll wrapper (``sidebar/scroll-start.html`` …
+# ``sidebar/scroll-end.html``), i.e. in the sidebar's fixed header zone, so
+# it stays visible without scrolling even when the navigation tree is long
+# (previously it sat inside the scroll wrapper and was hidden under the
+# menu). Overriding the list is the officially supported Furo customisation
+# path — see https://pradyunsg.me/furo/customisation/sidebar/.
 html_sidebars = {
     "**": [
         "sidebar/brand.html",
         "sidebar/search.html",
+        "sidebar/language-switcher.html",
         "sidebar/scroll-start.html",
         "sidebar/navigation.html",
-        "sidebar/language-switcher.html",
         "sidebar/ethical-ads.html",
         "sidebar/scroll-end.html",
         "sidebar/variant-selector.html",

@@ -50,13 +50,12 @@ table.docutils th {
 }
 
 /* ── Language switcher ─────────────────────────────────────────────────────── */
-/* Rendered by ``_templates/sidebar/language-switcher.html`` inside the
- * sidebar scroll wrapper. Kept compact so it doesn't crowd the nav tree. */
+/* Rendered by ``_templates/sidebar/language-switcher.html`` in the sidebar's
+ * fixed header zone (order set in conf.py ``html_sidebars``), always visible
+ * without scrolling — it must NOT be moved back inside the scroll wrapper. */
 .sidebar-language-switcher {
-  margin-top: 1rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-sidebar-border, rgba(0, 0, 0, 0.1));
-  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--color-sidebar-border, rgba(0, 0, 0, 0.1));
 }
 
 .sidebar-language-switcher-label {
@@ -94,6 +93,14 @@ table.docutils th {
   color: var(--color-foreground-primary, currentColor);
   text-decoration: none;
   cursor: default;
+}
+
+/* Touch-friendly hit areas on narrow screens (Furo collapses to a drawer). */
+@media (max-width: 680px) {
+  .sidebar-language-switcher-links a,
+  .language-switcher-active {
+    padding: 0.4rem 0.2rem;
+  }
 }
 
 /* ── Print styles ──────────────────────────────────────────────────────────── */

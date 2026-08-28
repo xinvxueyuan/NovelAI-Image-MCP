@@ -39,12 +39,12 @@
    translated page does not exist"). English has all pages, so links to
    English always point at the same ``pagename``.
 #}
-<div class="sidebar-language-switcher">
-  <p class="sidebar-language-switcher-label">Language</p>
-  <div class="sidebar-language-switcher-links">
+<div class="sidebar-language-switcher" role="navigation" aria-label="Language">
+  <p class="sidebar-language-switcher-label" id="language-switcher-label">Language</p>
+  <div class="sidebar-language-switcher-links" role="group" aria-labelledby="language-switcher-label">
     {%- for code, label, base_path in available_languages -%}
       {%- if code == current_language -%}
-        <span class="language-switcher-active">{{ label }}</span>
+        <span class="language-switcher-active" aria-current="true">{{ label }}</span>
       {%- else -%}
         {#- Leave the current language's subdirectory (if any). -#}
         {%- set up = "../" if current_base_path else "" -%}
