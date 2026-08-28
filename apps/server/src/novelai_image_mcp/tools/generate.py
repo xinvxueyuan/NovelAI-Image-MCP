@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from .._mcp import Context, Image
-from ..nai import Action, CharacterPrompt, GenerationRequest, Model
+from ..nai import Action, CharacterPrompt, GenerationRequest, Model, is_v5_model
 from ..output import save_image
 from ._ctx import app_context as _app
 
@@ -66,6 +66,7 @@ def register(mcp: FastMCP) -> None:
         smea: bool | None = None,
         smea_dynamic: bool | None = None,
         auto_smea: bool = False,
+        straight_alpha: bool = False,
         prefer_brownian: bool = True,
         noise_schedule: str = "karras",
         character_prompts: list[dict[str, Any]] | None = None,
@@ -73,20 +74,27 @@ def register(mcp: FastMCP) -> None:
     ) -> list[Any]:
         """Generate one or more images from a text prompt (text-to-image).
 
-        Supports NovelAI V3 / V4 / V4.5 models. Pass ``references`` as a list of
-        base64-encoded PNG/JPEG strings to apply vibe transfer (V4+ only).
-        ``character_prompts`` enables multi-character composition with per-character
-        prompts and center coordinates (x, y in 0.1–0.9). Dimensions are rounded up
-        to the nearest multiple of 64.
+        Supports NovelAI V3 / V4 / V4.5 / V5 models. Pass ``references`` as a
+        list of base64-encoded PNG/JPEG strings to apply vibe transfer (V4/V4.5
+        only — V5 does not support vibe transfer yet and rejects it). V5 models
+        additionally accept English/Japanese natural-language prompts and the
+        ``straight_alpha`` flag for true transparency (pair it with prompt
+        tags such as ``transparent background`` or ``has alpha``).
+        ``character_prompts`` enables multi-character composition with
+        per-character prompts and center coordinates (x, y in 0.1–0.9).
+        Dimensions are rounded up to the nearest multiple of 64.
         """
         app = _app(ctx)
         settings = app.settings
         client = app.client
+        model_enum = Model(model or settings.default_model)
+        if is_v5_model(model_enum) and references:
+            raise ValueError("vibe transfer is not supported on V5 models yet")
         request = GenerationRequest(
             prompt=prompt,
             action=Action.GENERATE,
             negative_prompt=negative_prompt,
-            model=Model(model or settings.default_model),
+            model=model_enum,
             width=width or settings.default_width,
             height=height or settings.default_height,
             steps=steps or settings.default_steps,
@@ -100,6 +108,7 @@ def register(mcp: FastMCP) -> None:
             smea=smea,
             smea_dynamic=smea_dynamic,
             auto_smea=auto_smea,
+            straight_alpha=straight_alpha,
             prefer_brownian=prefer_brownian,
             noise_schedule=noise_schedule,
             character_prompts=tuple(_character(cp) for cp in (character_prompts or ())),
@@ -190,7 +199,8 @@ def register(mcp: FastMCP) -> None:
 
         ``image`` and ``mask`` are base64-encoded PNG/JPEG; the mask marks the region
         to regenerate (non-transparent pixels are redrawn). Requires an inpainting
-        model such as ``nai-diffusion-4-5-full-inpainting``.
+        model such as ``nai-diffusion-4-5-full-inpainting`` or
+        ``nai-diffusion-5-full-inpainting``.
         """
         app = _app(ctx)
         settings = app.settings

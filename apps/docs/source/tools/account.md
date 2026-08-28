@@ -129,6 +129,12 @@ Opus-tier subscribers get **free samples** for small generations (≤1024²,
 ≤28 steps). Set `opus=True` to estimate with free samples applied.
 :::
 
+:::{warning}
+On **V5 models**, Opus free generations are capped by NovelAI's refillable
+usage limit and the API **silently bills Anlas** once exhausted — check
+`get_subscription`'s `usage` field before costly V5 runs.
+:::
+
 ## See also
 
 - [`estimate_anlas_cost` API reference](../api/tools.md)

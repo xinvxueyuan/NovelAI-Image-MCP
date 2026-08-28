@@ -54,7 +54,7 @@ accepts the same parameters). They are overridable per tool call.
 
 | Variable | Default | Range | Notes |
 |---|---|---|---|
-| `NOVELAI_DEFAULT_MODEL` | `nai-diffusion-4-5-full` | See `Model` enum | V3 / V4 / V4.5 model id. |
+| `NOVELAI_DEFAULT_MODEL` | `nai-diffusion-4-5-full` | See `Model` enum | V3 / V4 / V4.5 / V5 model id. |
 | `NOVELAI_DEFAULT_WIDTH` | `832` | 64–49152, multiple of 64 | Image width in pixels. |
 | `NOVELAI_DEFAULT_HEIGHT` | `1216` | 64–49152, multiple of 64 | Image height in pixels. |
 | `NOVELAI_DEFAULT_STEPS` | `28` | 1–50 | Sampler iterations. |

@@ -9,8 +9,9 @@ return a base64 `Image` block plus the saved file path.
 ## `generate_image`
 
 Text-to-image. The most common tool — produces one or more images from a
-prompt string. Supports NovelAI V3 / V4 / V4.5 models, multi-character
-composition, and vibe transfer.
+prompt string. Supports NovelAI V3 / V4 / V4.5 / V5 models, multi-character
+composition, and vibe transfer (V5 rejects vibe transfer — not yet released
+upstream). V5 additionally accepts English/Japanese natural-language prompts.
 
 ### Parameters
 
@@ -32,10 +33,11 @@ composition, and vibe transfer.
 | `smea` | `bool \| None` | model-dependent | Enable SMEA. `None` = auto. |
 | `smea_dynamic` | `bool \| None` | model-dependent | Enable dynamic SMEA. |
 | `auto_smea` | `bool` | `False` | Auto-select SMEA based on resolution. |
+| `straight_alpha` | `bool` | `False` | True alpha channel (V5 only; pair with `transparent background` / `has alpha`). |
 | `prefer_brownian` | `bool` | `True` | Prefer Brownian noise schedule (V4+). |
 | `noise_schedule` | `str` | `"karras"` | Noise schedule (`karras`, `exponential`, `polyexponential`). |
-| `character_prompts` | `list[dict] \| None` | `None` | V4+ multi-character composition. |
-| `references` | `list[str] \| None` | `None` | V4+ vibe tokens (base64 vibe strings from `encode_vibe`). |
+| `character_prompts` | `list[dict] \| None` | `None` | V4+ / V5 multi-character composition. |
+| `references` | `list[str] \| None` | `None` | V4/V4.5 vibe tokens (base64 vibe strings from `encode_vibe`); rejected on V5. |
 
 ### Returns
 
@@ -56,7 +58,7 @@ await ctx.session.call_tool("generate_image", {
 })
 ```
 
-### Multi-character composition (V4+)
+### Multi-character composition (V4+ / V5)
 
 ```python
 await ctx.session.call_tool("generate_image", {
@@ -71,7 +73,7 @@ await ctx.session.call_tool("generate_image", {
 `x` and `y` are normalized centers in the range `0.1`–`0.9`. The first
 character is always the focal subject.
 
-### Vibe transfer (V4+)
+### Vibe transfer (V4 / V4.5)
 
 ```python
 # 1. Encode a reference image
@@ -137,7 +139,7 @@ non-transparent pixels are regenerated.
 | `image` | `str` | *required* | Base64-encoded input PNG/JPEG. |
 | `mask` | `str` | *required* | Base64-encoded mask. Non-transparent = redraw. |
 | `negative_prompt` | `str` | `""` | Negative prompt for the region. |
-| `model` | `str \| None` | default | **Must** be an inpaint model (e.g. `nai-diffusion-4-5-full-inpainting`). |
+| `model` | `str \| None` | default | **Must** be an inpaint model (e.g. `nai-diffusion-4-5-full-inpainting` or `nai-diffusion-5-full-inpainting`). |
 | `strength` / `noise` / `width` / `height` / `steps` / `scale` / `sampler` / `seed` / `n_samples` / `quality` / `uc_preset` / `noise_schedule` / `cfg_rescale` / `extra_noise_seed` | (see `image_to_image`) | (same defaults) | |
 
 ### Example

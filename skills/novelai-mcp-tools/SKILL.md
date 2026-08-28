@@ -24,7 +24,12 @@ Model ids live in `Model` (`nai/constants.py`). Pick by quality need and
 content domain:
 
 ```text
-Want best overall quality / multi-character composition?
+Want best overall quality / natural language / multi-character?
+  → nai-diffusion-5-full             (V5, best quality, EN/JP natural language,
+                                      true alpha; vibes not yet supported)
+  → nai-diffusion-5-curated          (V5 curated, tighter aesthetics)
+
+Solid all-rounder with vibes?
   → nai-diffusion-4-5-full            (V4.5, default, supports character_prompts + vibes)
   → nai-diffusion-4-5-curated         (V4.5 curated, tighter aesthetics, fewer Anlas)
 
@@ -48,7 +53,7 @@ Inpainting (any family)?
 
 - V3 / Furry → `POST /ai/generate-image` → ZIP archive (`application/zip`),
   HTTP 201.
-- V4 / V4.5 → `POST /ai/generate-image-stream` → MessagePack stream
+- V4 / V4.5 / V5 → `POST /ai/generate-image-stream` → MessagePack stream
   (`stream: "msgpack"`), HTTP 200. Selected via `is_v4_model()` in
   `client.py`.
 - `/ai/upscale` and `/ai/annotate-image` are **not** on `image.novelai.net` —
@@ -56,9 +61,10 @@ Inpainting (any family)?
   (`NOVELAI_LEGACY_IMAGE_BASE_URL`). Never point that base URL at
   `image.novelai.net` or these two tools 404.
 
-**V4/V4.5-only features:** `character_prompts` (multi-character with
-per-character center coords) and `references` (vibe transfer). V3/Furry
-ignore both. Vibes must be encoded with `encode_vibe` first (also V4+ only).
+**V4/V4.5-only features:** `references` (vibe transfer) — V5 does not
+support vibes yet and rejects them. `character_prompts` (multi-character
+with per-character center coords) works on V4 / V4.5 / V5; V3/Furry ignore
+both. Vibes must be encoded with `encode_vibe` first (V4/V4.5 only).
 
 ### Parameter guide
 
@@ -106,8 +112,9 @@ Passing a non-inpaint model raises `ValueError`.
 
 | Param | Type | Notes |
 |---|---|---|
-| `character_prompts` | list[dict] | V4/V4.5 only. Each dict: `{prompt, negative_prompt, x, y, enabled}`. `x`/`y` are center coords in 0.1–0.9. |
-| `references` | list[str] | V4/V4.5 only. Base64 vibe tokens from `encode_vibe`. |
+| `character_prompts` | list[dict] | V4 / V4.5 / V5. Each dict: `{prompt, negative_prompt, x, y, enabled}`. `x`/`y` are center coords in 0.1–0.9. |
+| `references` | list[str] | V4/V4.5 only. Base64 vibe tokens from `encode_vibe`; rejected on V5. |
+| `straight_alpha` | bool | V5 only. True alpha channel; pair with `transparent background` / `has alpha`. |
 
 #### Tool-specific params
 
@@ -125,8 +132,8 @@ Passing a non-inpaint model raises `ValueError`.
   Returns `[{description, text, count}, ...]`.
 - **`encode_vibe`**: `reference` (base64, required),
   `information_extracted` (0.01–1.0, default 1.0; lower = more stylistic,
-  higher = more literal), `model` (must be V4/V4.5). Returns a base64 vibe
-  token string.
+  higher = more literal), `model` (must be V4/V4.5; V5 rejected). Returns a
+  base64 vibe token string.
 
 ### Anlas cost awareness
 

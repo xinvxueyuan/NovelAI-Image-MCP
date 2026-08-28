@@ -28,6 +28,7 @@ from .nai import (
     GenerationRequest,
     Model,
     NovelAIClient,
+    NovelAIError,
     create_http_client,
     create_novelai_client,
 )
@@ -69,10 +70,19 @@ def _build_client(settings: NovelAISettings) -> tuple[NovelAIClient, httpx.Async
 
 
 def _run(awaitable: Awaitable[object]) -> None:
-    """Run an async coroutine to completion on a fresh event loop."""
+    """Run an async coroutine to completion on a fresh event loop.
+
+    NovelAI errors are printed to stderr (their message carries the error code
+    and official explanation) and exit with a non-zero status instead of a raw
+    traceback.
+    """
 
     async def _wrapper() -> None:
-        await awaitable
+        try:
+            await awaitable
+        except NovelAIError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
 
     asyncio.run(_wrapper())
 

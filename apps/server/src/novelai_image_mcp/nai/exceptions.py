@@ -1,8 +1,39 @@
-"""Typed NovelAI domain failures."""
+"""Typed NovelAI domain failures.
+
+Every exception optionally carries the NovelAI error ``code`` (HTTP status or
+API-supplied stream code) and, when documented, NovelAI's official
+``explanation`` — see ``nai.errors``. The code and explanation are appended to
+the message (so they reach MCP tool callers and the CLI) and exposed as
+attributes for programmatic handling.
+"""
+
+from __future__ import annotations
 
 
 class NovelAIError(Exception):
-    """Base class for NovelAI failures."""
+    """Base class for NovelAI failures.
+
+    ``code`` is the NovelAI error code when known (``None`` for transport,
+    timeout, or local validation failures that carry no server code);
+    ``explanation`` is NovelAI's official explanation for documented codes.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: int | str | None = None,
+        explanation: str | None = None,
+    ) -> None:
+        self.code = code
+        self.explanation = explanation
+        if code is not None:
+            suffix = f" [code {code}"
+            if explanation:
+                suffix += f": {explanation}"
+            suffix += "]"
+            message = f"{message}{suffix}"
+        super().__init__(message)
 
 
 class NovelAIProviderError(NovelAIError):

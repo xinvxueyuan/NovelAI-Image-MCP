@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from .._mcp import Context
-from ..nai import Model
+from ..nai import Model, is_v5_model
 from ._ctx import app_context as _app
 
 if TYPE_CHECKING:
@@ -58,8 +58,9 @@ def register(mcp: FastMCP) -> None:
         ``information_extracted`` (0.01–1.0) controls how strongly the vibe
         captures the reference's identity (lower = more stylistic, higher =
         more literal). ``model`` must be a V4/V4.5 model (vibes are not
-        supported on V3). Returns a base64 vibe token suitable for the
-        ``references`` parameter of ``generate_image``.
+        supported on V3, and V5 does not support vibe transfer yet). Returns a
+        base64 vibe token suitable for the ``references`` parameter of
+        ``generate_image``.
         """
         client = _app(ctx).client
         try:
@@ -69,6 +70,8 @@ def register(mcp: FastMCP) -> None:
                 f"unknown model '{model}'; expected one of: "
                 f"{', '.join(m.value for m in Model)}"
             ) from exc
+        if is_v5_model(model_enum):
+            raise ValueError("vibe transfer is not supported on V5 models yet")
         if not 0.01 <= information_extracted <= 1.0:
             raise ValueError("information_extracted must be between 0.01 and 1.0")
         return await client.encode_vibe(

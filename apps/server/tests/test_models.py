@@ -102,6 +102,29 @@ class TestGenerationRequest:
         with pytest.raises(ValueError, match="total resolution exceeds"):
             GenerationRequest(prompt="test", width=49_152, height=64)
 
+    def test_v5_inpaint_model_accepted(self) -> None:
+        request = GenerationRequest(
+            prompt="test",
+            action=Action.INPAINT,
+            image="base64",
+            mask="base64",
+            model=Model.V5_INPAINT,
+        )
+        assert request.inpaint_img2img_strength == 1
+
+    def test_v5_curated_inpaint_rejected(self) -> None:
+        with pytest.raises(ValueError, match="inpainting requires an inpainting"):
+            GenerationRequest(
+                prompt="test",
+                action=Action.INPAINT,
+                image="base64",
+                mask="base64",
+                model=Model.V5_CURATED,
+            )
+
+    def test_straight_alpha_defaults_false(self) -> None:
+        assert GenerationRequest(prompt="test").straight_alpha is False
+
 
 class TestEffectivePrompts:
     def test_quality_toggle_appends_quality_tags(self) -> None:
@@ -160,6 +183,14 @@ class TestEstimateAnlasCost:
         # Only applies when autoSmea is off and model is V4.x — V4_5 + smea=True
         # takes the smea=True branch (factor 1.2).
         assert smea.estimate_anlas_cost() >= base.estimate_anlas_cost()
+
+    def test_v5_auto_smea_multiplies_cost(self) -> None:
+        base = GenerationRequest(prompt="test", width=832, height=1216, model=Model.V5)
+        smea = GenerationRequest(
+            prompt="test", width=832, height=1216, model=Model.V5, auto_smea=True
+        )
+        # V5 (a new-gen model) with autoSmea takes the 1.2 multiplier path.
+        assert smea.estimate_anlas_cost() > base.estimate_anlas_cost()
 
     def test_img2img_strength_scales_cost(self) -> None:
         full = GenerationRequest(

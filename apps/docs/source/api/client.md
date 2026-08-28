@@ -24,7 +24,8 @@ The high-level async client. Wraps the wire-format encoder
 
 Enums for the NovelAI API surface: `Action`, `Model`, `Sampler`,
 `DirectorTool`, `Emotion`, `EmotionLevel`, `ControlNetModel`, `Endpoint`,
-`NoiseSchedule`. Plus the predicates `is_v4_model` and `is_inpaint_model`.
+`NoiseSchedule`. Plus the predicates `is_v4_model`, `is_v5_model`,
+`supports_vibe`, and `is_inpaint_model`.
 
 ```{eval-rst}
 .. automodule:: novelai_image_mcp.nai.constants
@@ -109,6 +110,27 @@ wired `NovelAIClient`.
    :undoc-members:
    :show-inheritance:
 ```
+
+## Official error codes
+
+Every NovelAI error raised by this client carries the error ``code`` (the
+HTTP status, or the API's own stream code) and, where documented, NovelAI's
+official explanation. Both are appended to the message and exposed as
+attributes on the exception:
+
+| Code | Meaning (official) |
+|---|---|
+| `400` | Invalid request (validation failed) |
+| `401` | Authentication failed |
+| `402` | Active subscription or Anlas required |
+| `409` | Request conflict |
+| `429` | Rate limit / concurrency limit |
+| `5xx` | NovelAI upstream error |
+
+All exceptions derive from ``NovelAIError`` and expose ``.code`` /
+``.explanation`` (both ``None`` for transport, timeout, and local validation
+failures that carry no server code). See the ``novelai_image_mcp.nai.errors``
+module for the parsing helpers.
 
 ## See also
 

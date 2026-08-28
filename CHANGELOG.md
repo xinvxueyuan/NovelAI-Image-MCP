@@ -14,7 +14,15 @@ per-release section headings. This file is the human-curated companion.
 
 ### Added
 
-- _Nothing yet._
+- **NovelAI Diffusion V5 support**: new models `nai-diffusion-5-full`,
+  `nai-diffusion-5-curated`, `nai-diffusion-5-full-inpainting`; V5 payload
+  fields (`ucPresetId`, `qualityPresetId`, `straight_alpha`); content-sniffed
+  response decoding (ZIP vs MessagePack); explicit guard rejecting vibe
+  transfer on V5 (feature not yet released upstream).
+- **Official error codes on every NovelAI error**: errors now carry the API
+  error code and NovelAI's official explanation, appended to the message and
+  exposed as `.code` / `.explanation` on the exception; the CLI prints them to
+  stderr instead of a raw traceback.
 
 ### Changed
 

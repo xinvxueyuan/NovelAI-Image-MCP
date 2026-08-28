@@ -57,7 +57,7 @@
 
 | 変数 | デフォルト | 範囲 | 備考 |
 |---|---|---|---|
-| `NOVELAI_DEFAULT_MODEL` | `nai-diffusion-4-5-full` | `Model` enum 参照 | V3 / V4 / V4.5 モデル ID。 |
+| `NOVELAI_DEFAULT_MODEL` | `nai-diffusion-4-5-full` | `Model` enum 参照 | V3 / V4 / V4.5 / V5 モデル ID。 |
 | `NOVELAI_DEFAULT_WIDTH` | `832` | 64–49152、64 の倍数 | 画像の幅 (ピクセル)。 |
 | `NOVELAI_DEFAULT_HEIGHT` | `1216` | 64–49152、64 の倍数 | 画像の高さ (ピクセル)。 |
 | `NOVELAI_DEFAULT_STEPS` | `28` | 1–50 | サンプラーの反復回数。 |

@@ -15,6 +15,7 @@ from .constants import (
     NoiseSchedule,
     Sampler,
     is_inpaint_model,
+    is_v4_model,
 )
 
 _MIN_COORD = 0.1
@@ -255,6 +256,7 @@ class GenerationRequest:
     legacy: bool = False
     legacy_v3_extend: bool = False
     inpaint_img2img_strength: int | None = None
+    straight_alpha: bool = False
 
     def __post_init__(self) -> None:
         if not self.prompt.strip():
@@ -288,7 +290,7 @@ class GenerationRequest:
                     self, "extra_noise_seed", secrets.randbelow(2**32 - 7)
                 )
         if (
-            self.model in {Model.V4_5, Model.V4_5_INPAINT}
+            self.model in {Model.V4_5, Model.V4_5_INPAINT, Model.V5, Model.V5_INPAINT}
             and self.inpaint_img2img_strength is None
         ):
             object.__setattr__(self, "inpaint_img2img_strength", 1)
@@ -352,14 +354,20 @@ class GenerationRequest:
         return 0
 
     def estimate_anlas_cost(self, *, opus: bool = False) -> int:
-        """Estimate provider Anlas cost using the public web-client formula."""
+        """Estimate provider Anlas cost using the public web-client formula.
+
+        Note: on V5, Opus free generations (normal resolution, <=28 steps) are
+        subject to NovelAI's refillable "battery" usage limit; once exhausted
+        the API silently bills Anlas instead of erroring, so the estimate here
+        covers the paid cost regardless of quota state.
+        """
         resolution = max(self.width * self.height, 65_536)
         normal_portrait = 832 * 1_216
         normal_square = 1_024 * 1_024
         if normal_portrait < resolution <= normal_square:
             resolution = normal_portrait
         smea_factor = 1.0
-        if self.model.value.startswith("nai-diffusion-4") and self.auto_smea:
+        if is_v4_model(self.model) and self.auto_smea:
             smea_factor = 1.2
         elif self.smea_dynamic:
             smea_factor = 1.4

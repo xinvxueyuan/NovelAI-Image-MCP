@@ -189,7 +189,7 @@ uv run python -m novelai_image_mcp --help
 
 | 工具 | 说明 |
 |---|---|
-| `generate_image` | 文生图（V3 / V4 / V4.5 模型，角色提示，Vibe） |
+| `generate_image` | 文生图（V3 / V4 / V4.5 / V5 模型，角色提示；Vibe 仅 V4/V4.5） |
 | `image_to_image` | 图生图（strength / noise） |
 | `inpaint` | 局部重绘（需 inpaint 模型 + mask） |
 | `upscale_image` | 2× / 4× 放大 |

@@ -26,6 +26,7 @@ from .constants import (
     Endpoint,
     Model,
     is_v4_model,
+    is_v5_model,
 )
 from .exceptions import (
     NovelAIAuthenticationError,
@@ -34,6 +35,7 @@ from .exceptions import (
     NovelAIResponseError,
     NovelAITimeoutError,
     NovelAITransportError,
+    NovelAIValidationError,
 )
 from .http import BROWSER_HEADERS, create_http_client
 from .imaging import parse_image
@@ -81,6 +83,18 @@ def _first_image(content: bytes, *, filename: str) -> NovelAIImage:
             raise NovelAIResponseError("NovelAI returned an empty image archive")
         return replace(images[0], filename=filename)
     return NovelAIImage(filename=filename, data=content)
+
+
+def _decode_images(content: bytes) -> tuple[NovelAIImage, ...]:
+    """Decode a generate-image response by sniffing ZIP vs MessagePack.
+
+    NovelAI returns either a ZIP archive (legacy endpoint) or a MessagePack
+    stream; V5 integrations have been observed receiving both shapes, so sniff
+    the magic bytes instead of relying on the endpoint selection.
+    """
+    if content.startswith(b"PK\x03\x04"):
+        return parse_zip_images(content)
+    return parse_messagepack_images(content)
 
 
 class NovelAIClient:
@@ -204,6 +218,10 @@ class NovelAIClient:
     ) -> GenerationRequest:
         if not is_v4_model(request.model) or not request.references:
             return request
+        if is_v5_model(request.model):
+            raise NovelAIValidationError(
+                "vibe transfer is not supported on V5 models yet"
+            )
         information = request.reference_information or tuple(
             1.0 for _ in request.references
         )
@@ -230,18 +248,16 @@ class NovelAIClient:
             f"{self.image_base_url}{endpoint}",
             json_body=build_generation_payload(prepared),
         )
-        if is_v4_model(prepared.model):
-            return parse_messagepack_images(content)
-        return parse_zip_images(content)
+        return _decode_images(content)
 
     async def stream_generation(
         self,
         request: GenerationRequest,
     ) -> AsyncIterator[GenerationEvent]:
-        """Yield V4/V4.5 events as the active driver produces HTTP chunks."""
+        """Yield V4 / V4.5 / V5 events as the active driver produces chunks."""
         prepared = await self._prepare_references(request)
         if not is_v4_model(prepared.model):
-            raise ValueError("real-time generation requires a V4/V4.5 model")
+            raise ValueError("real-time generation requires a V4+ / V5 model")
         # Start from the Chrome fingerprint block (same as ``_request``) and
         # override Accept for the MessagePack streaming endpoint.
         headers = dict(BROWSER_HEADERS)

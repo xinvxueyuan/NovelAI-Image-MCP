@@ -51,6 +51,9 @@ class NovelAISettings(BaseSettings):
     timeout: float = Field(default=120.0, gt=0)
 
     # ── Generation defaults (overridable per tool call) ──
+    # Default stays on V4.5 for compatibility — V5 is ~2.5x heavier and its
+    # Opus free quota is refillable/limited; switch to "nai-diffusion-5-full"
+    # via NOVELAI_DEFAULT_MODEL when V5 is desired.
     default_model: str = "nai-diffusion-4-5-full"
     default_width: int = Field(default=832, ge=64, le=49_152)
     default_height: int = Field(default=1216, ge=64, le=49_152)

@@ -51,7 +51,7 @@
 
 | 变量 | 默认值 | 范围 | 说明 |
 |---|---|---|---|
-| `NOVELAI_DEFAULT_MODEL` | `nai-diffusion-4-5-full` | 见 `Model` 枚举 | V3 / V4 / V4.5 模型 ID。 |
+| `NOVELAI_DEFAULT_MODEL` | `nai-diffusion-4-5-full` | 见 `Model` 枚举 | V3 / V4 / V4.5 / V5 模型 ID。 |
 | `NOVELAI_DEFAULT_WIDTH` | `832` | 64–49152，64 的倍数 | 图像宽度（像素）。 |
 | `NOVELAI_DEFAULT_HEIGHT` | `1216` | 64–49152，64 的倍数 | 图像高度（像素）。 |
 | `NOVELAI_DEFAULT_STEPS` | `28` | 1–50 | 采样器迭代次数。 |

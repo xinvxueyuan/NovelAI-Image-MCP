@@ -56,6 +56,13 @@ await ctx.session.call_tool("generate_image", {
     "prompt": "1girl, fox ears",
     "model": "nai-diffusion-4-5-full",
 })
+
+# NovelAI Diffusion V5 — natural-language prompts, EN/JP, true alpha
+await ctx.session.call_tool("generate_image", {
+    "prompt": "a fox girl sitting in autumn leaves, soft watercolor",
+    "model": "nai-diffusion-5-full",
+    "straight_alpha": True,  # pair with "transparent background" in the prompt
+})
 ```
 
 ## 4. Reproduce a generation

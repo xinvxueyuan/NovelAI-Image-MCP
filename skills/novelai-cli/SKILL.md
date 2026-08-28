@@ -126,7 +126,8 @@ Valid model ids include: `nai-diffusion-4-5-full` (default),
 `nai-diffusion-4-full-inpainting`, `nai-diffusion-4-curated-preview`,
 `nai-diffusion-4-curated-inpainting`, `nai-diffusion-3`,
 `nai-diffusion-3-inpainting`, `nai-diffusion-furry-3`,
-`nai-diffusion-furry-3-inpainting`.
+`nai-diffusion-furry-3-inpainting`, `nai-diffusion-5-full`,
+`nai-diffusion-5-curated`, `nai-diffusion-5-full-inpainting`.
 
 The CLI prints one absolute path per generated image to stdout (one per line).
 Use `-o` to redirect output without touching the env var.

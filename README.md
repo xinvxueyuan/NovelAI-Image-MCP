@@ -217,7 +217,7 @@ for details.
 
 | Tool | Description |
 |---|---|
-| `generate_image` | Text-to-image (V3 / V4 / V4.5 models, character prompts, vibes) |
+| `generate_image` | Text-to-image (V3 / V4 / V4.5 / V5 models, character prompts; vibes V4/V4.5 only) |
 | `image_to_image` | Image-to-image with strength/noise |
 | `inpaint` | Inpainting (requires an inpaint model + mask) |
 | `upscale_image` | 2× / 4× upscale |

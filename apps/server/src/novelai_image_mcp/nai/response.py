@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import io
-import json
 import struct
 from typing import Any, cast
 import zipfile
 
 import msgpack
 
+from .errors import explain, parse_error_body
 from .exceptions import (
     NovelAIAuthenticationError,
     NovelAIConcurrencyError,
@@ -37,20 +37,17 @@ class GenerationEvent:
     image: NovelAIImage
 
 
-def _bounded_error(content: bytes) -> str:
-    raw = content[:2_048]
-    try:
-        value = json.loads(raw)
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        return raw.decode("utf-8", errors="replace")
-    return json.dumps(value, ensure_ascii=False)
-
-
 def check_status(status_code: int, content: bytes) -> None:
-    """Raise the domain error associated with an HTTP status."""
+    """Raise the domain error associated with an HTTP status.
+
+    The NovelAI error code (body ``statusCode``/``code``, or the HTTP status
+    when the body carries none) and its official explanation are attached to
+    the raised exception and appended to its message.
+    """
     if status_code < 400:
         return
-    detail = _bounded_error(content)
+    info = parse_error_body(content)
+    code = info.code if info.code is not None else status_code
     error_type: type[NovelAIProviderError | NovelAIValidationError]
     if status_code == 400:
         error_type = NovelAIValidationError
@@ -62,7 +59,11 @@ def check_status(status_code: int, content: bytes) -> None:
         error_type = NovelAIConcurrencyError
     else:
         error_type = NovelAIProviderError
-    raise error_type(f"NovelAI HTTP {status_code}: {detail}")
+    raise error_type(
+        f"NovelAI HTTP {status_code}: {info.message}",
+        code=code,
+        explanation=explain(code) or explain(status_code),
+    )
 
 
 def parse_zip_images(content: bytes) -> tuple[NovelAIImage, ...]:
@@ -85,8 +86,12 @@ def _event(value: object) -> GenerationEvent | None:
     if event_type == "retry":
         return None
     if event_type == "error":
+        code = data.get("code")
+        message = str(data.get("message", "unknown error"))
         raise NovelAIProviderError(
-            f"NovelAI stream error {data.get('code')}: {data.get('message')}"
+            f"NovelAI stream error: {message}",
+            code=code,
+            explanation=explain(code),
         )
     image = data.get("image")
     if event_type not in {"intermediate", "final"} or not isinstance(image, bytes):

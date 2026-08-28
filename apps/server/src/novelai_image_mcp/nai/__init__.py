@@ -29,6 +29,9 @@ from .constants import (
     Sampler,
     is_inpaint_model,
     is_v4_model,
+    is_v5_model,
+    params_version_for,
+    supports_vibe,
 )
 from .exceptions import (
     NovelAIAuthenticationError,
@@ -80,6 +83,9 @@ __all__ = [
     "Sampler",
     "is_inpaint_model",
     "is_v4_model",
+    "is_v5_model",
+    "params_version_for",
+    "supports_vibe",
     # exceptions
     "NovelAIAuthenticationError",
     "NovelAIConcurrencyError",

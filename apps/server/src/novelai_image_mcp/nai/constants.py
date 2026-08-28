@@ -17,8 +17,8 @@ class Endpoint(StrEnum):
 
     * ``IMAGE`` (``/ai/generate-image``) — used by V3 / Furry legacy models.
       Returns a ZIP archive (``application/zip``) with HTTP 201.
-    * ``IMAGE_STREAM`` (``/ai/generate-image-stream``) — used by V4 / V4.5
-      new models. Returns a MessagePack stream (``stream: "msgpack"``) with
+    * ``IMAGE_STREAM`` (``/ai/generate-image-stream``) — used by V4 / V4.5 /
+      V5 new models. Returns a MessagePack stream (``stream: "msgpack"``) with
       HTTP 200. The selection is driven by ``is_v4_model`` in ``client.py``.
     """
 
@@ -47,6 +47,9 @@ class Model(StrEnum):
     V4_5_INPAINT = "nai-diffusion-4-5-full-inpainting"
     V4_5_CURATED = "nai-diffusion-4-5-curated"
     V4_5_CURATED_INPAINT = "nai-diffusion-4-5-curated-inpainting"
+    V5 = "nai-diffusion-5-full"
+    V5_CURATED = "nai-diffusion-5-curated"
+    V5_INPAINT = "nai-diffusion-5-full-inpainting"
 
 
 class Action(StrEnum):
@@ -134,6 +137,14 @@ _V4_MODELS = frozenset({
     Model.V4_5_INPAINT,
     Model.V4_5_CURATED,
     Model.V4_5_CURATED_INPAINT,
+    Model.V5,
+    Model.V5_CURATED,
+    Model.V5_INPAINT,
+})
+_V5_MODELS = frozenset({
+    Model.V5,
+    Model.V5_CURATED,
+    Model.V5_INPAINT,
 })
 _INPAINT_MODELS = frozenset({
     Model.V3_INPAINT,
@@ -142,18 +153,56 @@ _INPAINT_MODELS = frozenset({
     Model.V4_CURATED_INPAINT,
     Model.V4_5_INPAINT,
     Model.V4_5_CURATED_INPAINT,
+    Model.V5_INPAINT,
 })
 
 
 def is_v4_model(model: Model) -> bool:
+    """True for structured-prompt (V4+) models: V4 / V4.5 / V5 families.
+
+    These use the ``/ai/generate-image-stream`` endpoint (MessagePack) and the
+    ``v4_prompt`` / ``v4_negative_prompt`` caption payload shape. The name is
+    retained for backward compatibility (public ``nai`` API).
+    """
     return model in _V4_MODELS
+
+
+def is_v5_model(model: Model) -> bool:
+    """True for NovelAI Diffusion V5 models (Full / Curated / Inpainting)."""
+    return model in _V5_MODELS
+
+
+def supports_vibe(model: Model) -> bool:
+    """True when vibe transfer (reference images) works for this model.
+
+    Vibe transfer is available on V4 / V4.5 only — V3 / Furry and V5 (feature
+    not yet released for V5 per the official announcement) return False.
+    """
+    return model in _V4_MODELS and not is_v5_model(model)
 
 
 def is_inpaint_model(model: Model) -> bool:
     return model in _INPAINT_MODELS
 
 
+def params_version_for(model: Model) -> int:
+    """Return the NovelAI ``params_version`` for a model.
+
+    V5 clients ship both ``3`` (Marinara-Engine) and ``4`` (Auto-NovelAI,
+    SDlab) and the API tolerates either; this project sends ``4`` for V5 (the
+    value used by the most recent third-party implementations) and ``3`` for
+    older generations, pending live verification.
+    """
+    return 4 if is_v5_model(model) else 3
+
+
 QUALITY_TAGS: dict[Model, str] = {
+    # V5 quality tags reuse the V4.5 baseline for now — early community
+    # reports say V4.5 tags do not transfer perfectly to V5 (paler, more
+    # painterly); tune after live tests (TODO-live-tune).
+    Model.V5: "very aesthetic, masterpiece, no text",
+    Model.V5_INPAINT: "very aesthetic, masterpiece, no text",
+    Model.V5_CURATED: "location, masterpiece, no text, -0.8::feet::, rating:general",
     Model.V4_5: "very aesthetic, masterpiece, no text",
     Model.V4_5_INPAINT: "very aesthetic, masterpiece, no text",
     Model.V4_5_CURATED: "location, masterpiece, no text, -0.8::feet::, rating:general",
@@ -249,6 +298,15 @@ _FURRY_LIGHT = (
 )
 
 UC_PRESETS: dict[Model, tuple[str, str, str, str]] = {
+    # V5 UC presets reuse the V4.5 texts as a tuning baseline (TODO-live-tune).
+    Model.V5: (_V45_HEAVY, _V45_LIGHT, _V45_FURRY, _V45_HUMAN),
+    Model.V5_INPAINT: (_V45_HEAVY, _V45_LIGHT, _V45_FURRY, _V45_HUMAN),
+    Model.V5_CURATED: (
+        _V45_CURATED_HEAVY,
+        _V45_CURATED_LIGHT,
+        _V45_CURATED_FOCUS,
+        "",
+    ),
     Model.V4_5: (_V45_HEAVY, _V45_LIGHT, _V45_FURRY, _V45_HUMAN),
     Model.V4_5_INPAINT: (_V45_HEAVY, _V45_LIGHT, _V45_FURRY, _V45_HUMAN),
     Model.V4_5_CURATED: (

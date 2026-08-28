@@ -113,3 +113,45 @@ class TestReferencesPayload:
         params = build_generation_payload(request)["parameters"]
         assert params["reference_image_multiple"] == ["vibe1", "vibe2"]
         assert params["reference_information_extracted_multiple"] == [0.7, 1.0]
+
+
+class TestV5Payload:
+    def test_v5_uses_string_presets_and_params_version(self) -> None:
+        request = _base_request(model=Model.V5)
+        params = build_generation_payload(request)["parameters"]
+        assert params["params_version"] == 4
+        assert params["ucPresetId"] == "heavy"
+        assert params["qualityPresetId"] == "standard"
+        assert "ucPreset" not in params
+        assert params["stream"] == "msgpack"
+        assert "v4_prompt" in params
+
+    def test_v5_string_preset_follows_uc_preset_index(self) -> None:
+        request = _base_request(model=Model.V5, uc_preset=3)
+        params = build_generation_payload(request)["parameters"]
+        assert params["ucPresetId"] == "humanFocus"
+
+    def test_v5_quality_off_maps_to_none(self) -> None:
+        request = _base_request(model=Model.V5, quality=False)
+        params = build_generation_payload(request)["parameters"]
+        assert params["qualityPresetId"] == "none"
+
+    def test_v5_straight_alpha_only_when_enabled(self) -> None:
+        on = _base_request(model=Model.V5, straight_alpha=True)
+        assert build_generation_payload(on)["parameters"]["straight_alpha"] is True
+        off = _base_request(model=Model.V5)
+        assert "straight_alpha" not in build_generation_payload(off)["parameters"]
+
+    def test_v5_omits_smea_pair(self) -> None:
+        request = _base_request(model=Model.V5, smea=True, smea_dynamic=True)
+        params = build_generation_payload(request)["parameters"]
+        assert "sm" not in params
+        assert "sm_dyn" not in params
+
+    def test_v4_5_keeps_integer_presets(self) -> None:
+        request = _base_request(model=Model.V4_5)
+        params = build_generation_payload(request)["parameters"]
+        assert params["params_version"] == 3
+        assert params["ucPreset"] == 0
+        assert "ucPresetId" not in params
+        assert "qualityPresetId" not in params

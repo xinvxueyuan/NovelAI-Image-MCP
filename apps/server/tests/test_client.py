@@ -24,6 +24,7 @@ from novelai_image_mcp.nai import (
     NovelAIClient,
     NovelAIConcurrencyError,
     NovelAICredentials,
+    NovelAIError,
     NovelAIInsufficientCreditsError,
     NovelAIResponseError,
     NovelAIValidationError,
@@ -134,6 +135,45 @@ class TestGenerate:
         assert len(images) == 1
         assert images[0].data == PNG_BYTES
 
+    @respx.mock
+    async def test_generate_v5_routes_to_stream(
+        self, nai_client: NovelAIClient
+    ) -> None:
+        route = respx.post("https://image.novelai.net/ai/generate-image-stream").mock(
+            return_value=httpx.Response(200, content=_msgpack_final_frame())
+        )
+        images = await nai_client.generate(
+            GenerationRequest(prompt="a cat", model=Model.V5)
+        )
+        assert route.called
+        assert len(images) == 1
+        assert images[0].data == PNG_BYTES
+
+    @respx.mock
+    async def test_generate_v5_accepts_zip_response(
+        self, nai_client: NovelAIClient
+    ) -> None:
+        # V5 integrations have been observed receiving a ZIP body; the
+        # content sniffer must handle it regardless of the stream endpoint.
+        route = respx.post("https://image.novelai.net/ai/generate-image-stream").mock(
+            return_value=httpx.Response(200, content=_png_zip())
+        )
+        images = await nai_client.generate(
+            GenerationRequest(prompt="a cat", model=Model.V5)
+        )
+        assert route.called
+        assert len(images) == 1
+        assert images[0].data == PNG_BYTES
+
+    @respx.mock
+    async def test_generate_v5_rejects_references(
+        self, nai_client: NovelAIClient
+    ) -> None:
+        with pytest.raises(NovelAIValidationError, match="not supported on V5"):
+            await nai_client.generate(
+                GenerationRequest(prompt="a cat", model=Model.V5, references=("vibe",))
+            )
+
 
 class TestUpscaleDirectorAnnotate:
     @respx.mock
@@ -241,13 +281,16 @@ class TestErrorHandling:
         self,
         nai_client: NovelAIClient,
         status: int,
-        exception: type[Exception],
+        exception: type[NovelAIError],
     ) -> None:
         respx.get("https://image.novelai.net/user/subscription").mock(
             return_value=httpx.Response(status, json={"detail": "nope"})
         )
-        with pytest.raises(exception):
+        with pytest.raises(exception) as raised:
             await nai_client.get_subscription()
+        # Errors transparently carry the NovelAI code + official explanation.
+        assert raised.value.code == status
+        assert raised.value.explanation
 
 
 class TestCredentials:

@@ -2,7 +2,8 @@
 
 Encode a reference image into a **NovelAI vibe token**. Vibe tokens are
 compact representations of a reference image's style/identity that can be
-passed to `generate_image` via the `references` parameter (V4+ models only).
+passed to `generate_image` via the `references` parameter (V4/V4.5 models
+only — V5 does not support vibe transfer yet).
 
 ## Parameters
 
@@ -10,7 +11,7 @@ passed to `generate_image` via the `references` parameter (V4+ models only).
 |---|---|---|---|
 | `reference` | `str` | *required* | Base64-encoded reference PNG/JPEG. |
 | `information_extracted` | `float` | `1.0` | 0.01–1.0. How strongly the vibe captures the reference's identity. |
-| `model` | `str` | `"nai-diffusion-4-5-full"` | Target model id (must be V4+). |
+| `model` | `str` | `"nai-diffusion-4-5-full"` | Target model id (must be V4/V4.5; V5 rejected). |
 
 ## Returns
 
@@ -71,8 +72,9 @@ without an API call.
 ## Tips
 
 :::{warning}
-**V3 models do not support vibes.** Calling `encode_vibe` with a V3 model
-id raises `ValueError`. Use the `is_v4_model()` function from `novelai_image_mcp.nai` to check before encoding.
+**V3 models and V5 do not support vibes.** Calling `encode_vibe` with a V3
+or V5 model id raises `ValueError`. Use `supports_vibe()` from
+`novelai_image_mcp.nai` to check before encoding.
 :::
 
 :::{tip}

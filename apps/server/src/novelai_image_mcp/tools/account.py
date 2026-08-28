@@ -62,6 +62,11 @@ def register(mcp: FastMCP) -> None:
         ``smea_dynamic`` / ``auto_smea`` apply the SMEA multiplier. ``opus``
         grants a free sample when the request is within Opus limits. Returns
         ``{"anlas": <cost>, "opus_free_sample": <bool>}``.
+
+        Note: on V5 models, Opus free generations are capped by NovelAI's
+        refillable "battery" usage limit (normal resolution, <=28 steps); once
+        exhausted the API silently bills Anlas instead of erroring, so check
+        ``get_subscription``'s ``usage`` field before costly V5 runs.
         """
         _ = ctx  # settings unused: estimation is pure and offline
         try:

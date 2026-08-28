@@ -123,6 +123,29 @@ class TestGenerateTools:
         assert request.mask == "base64-mask"
         assert request.action.value == "infill"
 
+    async def test_generate_image_v5_rejects_references(
+        self, tools: dict[str, Any], ctx: Any, fake_client: AsyncMock
+    ) -> None:
+        with pytest.raises(ValueError, match="not supported on V5"):
+            await tools["generate_image"](
+                ctx,
+                prompt="a cat",
+                model="nai-diffusion-5-full",
+                references=["vibe"],
+            )
+
+    async def test_generate_image_v5_straight_alpha_passthrough(
+        self, tools: dict[str, Any], ctx: Any, fake_client: AsyncMock
+    ) -> None:
+        await tools["generate_image"](
+            ctx,
+            prompt="a cat",
+            model="nai-diffusion-5-full",
+            straight_alpha=True,
+        )
+        request = fake_client.generate.await_args.args[0]
+        assert request.straight_alpha is True
+
 
 class TestEnhanceTools:
     async def test_upscale_image(
@@ -219,6 +242,14 @@ class TestTagsTools:
     ) -> None:
         with pytest.raises(ValueError, match="information_extracted"):
             await tools["encode_vibe"](ctx, reference="b64", information_extracted=2.0)
+
+    async def test_encode_vibe_v5_rejected(
+        self, tools: dict[str, Any], ctx: Any, fake_client: AsyncMock
+    ) -> None:
+        with pytest.raises(ValueError, match="not supported on V5"):
+            await tools["encode_vibe"](
+                ctx, reference="b64", model="nai-diffusion-5-full"
+            )
 
 
 class TestAccountTools:
@@ -337,6 +368,40 @@ class TestSerializationRegression:
             assert block.model_dump(mode="json") is not None
         image_block = next(b for b in result.content if isinstance(b, ImageContent))
         assert base64.b64decode(image_block.data) == nai_image.data
+
+    async def test_generate_image_v5_serializes_through_real_path(
+        self,
+        settings: Any,
+        fake_client: AsyncMock,
+        nai_image: NovelAIImage,
+        tmp_path: Path,
+    ) -> None:
+        """``generate_image`` with a V5 model still yields ImageContent."""
+        from mcp_types import ImageContent
+
+        from novelai_image_mcp.server import mcp
+
+        fake_client.generate.return_value = (nai_image,)
+        settings.output_dir = str(tmp_path)
+        self._seed_lifespan(fake_client, settings)
+
+        result = await mcp.call_tool(
+            "generate_image",
+            {
+                "prompt": "test",
+                "model": "nai-diffusion-5-full",
+                "straight_alpha": True,
+                "width": 512,
+                "height": 512,
+                "steps": 1,
+                "n_samples": 1,
+                "quality": False,
+            },
+        )
+
+        assert any(isinstance(b, ImageContent) for b in result.content)
+        for block in result.content:
+            assert block.model_dump(mode="json") is not None
 
     async def test_upscale_image_serializes_through_real_path(
         self,

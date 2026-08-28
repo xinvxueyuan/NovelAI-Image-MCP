@@ -151,6 +151,13 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
 ## 发布流程
 
 完整流程见 [`apps/docs/source/development/releasing.md`](apps/docs/source/development/releasing.md)。
+
+**基线与发布策略（硬约束，2026-08-28 决策）**：
+
+- 基线分支固定为 `main`：所有功能/修复分支从 `main` 创建，且仅作短期工作分支。
+- **线性历史**：合入 `main` 只允许 fast-forward 或 rebase 后的线性提交；禁止 merge commit，禁止长期分叉分支（如长期存在的 `feat/*`）。
+- **发版一律在 `main` 执行**：版本号（`apps/server/pyproject.toml`）与 `CHANGELOG.md` 的修改必须落在 `main` 上，再从 `main` 切出并推送 `releases/X.Y.Z` 触发发布。
+
 要点：
 
 1. 编辑 `apps/server/pyproject.toml`：`version = "X.Y.Z"`（唯一手改处）。
