@@ -55,12 +55,20 @@ configuration
 
 - **源码**: <https://github.com/xinvxueyuan/NovelAI-Image-MCP>
 - **Issues**: <https://github.com/xinvxueyuan/NovelAI-Image-MCP/issues>
-- **License**: [MIT](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/LICENSE)
-- **Changelog**: <https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/CHANGELOG.md>
+- **License**: [MIT](https://xinvxueyuan.github.io/NovelAI-Image-MCP/about/license.html)
+- **Changelog**: [Keep a Changelog](https://xinvxueyuan.github.io/NovelAI-Image-MCP/about/changelog.html)
 - **NovelAI API 文档**: <https://image.novelai.net/docs/index.html>
 
 ---
 
-## 其他章节
+## 其他章节（英文）
 
-工具参考、教程、传输方式、开发指南、API 参考等章节暂仅提供英文版本。请通过页面左下角的语言切换器切换到 English 查看。
+工具参考、教程、传输方式、开发指南、API 参考等章节目前仅提供英文版本，点击直达：
+
+- [工具参考](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tools/index.html) —— 全部 11 个 MCP 工具的参数与示例
+- [教程](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tutorials/index.html) —— 端到端工作流（txt2img、img2img、inpaint 等）
+- [传输方式](https://xinvxueyuan.github.io/NovelAI-Image-MCP/transports/index.html) —— stdio 与 streamable-http 对比
+- [Agent 技能](https://xinvxueyuan.github.io/NovelAI-Image-MCP/skills.html) —— 让 AI 智能体学会 CLI 与 MCP 工具
+- [开发指南](https://xinvxueyuan.github.io/NovelAI-Image-MCP/development/index.html) —— 架构、贡献、测试与发布
+- [API 参考](https://xinvxueyuan.github.io/NovelAI-Image-MCP/api/index.html) —— autodoc 生成的 Python API
+- [许可证 / 更新日志 / 工具验证](https://xinvxueyuan.github.io/NovelAI-Image-MCP/about/license.html)

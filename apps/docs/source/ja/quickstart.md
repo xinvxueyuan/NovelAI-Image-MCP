@@ -132,7 +132,7 @@ MCP サーバーが登録されます。Claude に *「水彩画でキツネを�
 頼んでみて、`generate_image` が呼び出される様子を観察してください。
 
 その他のエージェントホスト (Cline、Cursor、Continue、Windsurf、Codex CLI)
-については、[エージェントホスト](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/docs/source/transports/agent-hosts.md)
+については、[エージェントホスト](https://xinvxueyuan.github.io/NovelAI-Image-MCP/transports/agent-hosts.html)
 (英語版) を参照してください。
 
 ## 5. アカウント残高を確認する
@@ -158,10 +158,10 @@ uv run python -m novelai_image_mcp info
 
 ## 次のよくあるステップ
 
-- 📚 各パラメータの詳細は [ツールリファレンス](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/docs/source/tools/index.md) (英語版) を参照
-- 🎨 [チュートリアル](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/docs/source/tutorials/index.md) (英語版) を試す — img2img、inpaint、アップスケール、ControlNet
+- 📚 各パラメータの詳細は [ツールリファレンス](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tools/index.html) (英語版) を参照
+- 🎨 [チュートリアル](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tutorials/index.html) (英語版) を試す — img2img、inpaint、アップスケール、ControlNet
 - 🔧 環境変数で [生成デフォルト](configuration.md) を調整する
-- 🐳 本番運用向けに [Docker 化](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/docs/source/transports/http.md) する (英語版)
+- 🐳 本番運用向けに [Docker 化](https://xinvxueyuan.github.io/NovelAI-Image-MCP/transports/http.html) する (英語版)
 
 ## トラブルシューティング
 

@@ -56,12 +56,20 @@ configuration
 
 - **ソースコード**: <https://github.com/xinvxueyuan/NovelAI-Image-MCP>
 - **Issue**: <https://github.com/xinvxueyuan/NovelAI-Image-MCP/issues>
-- **ライセンス**: [MIT](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/LICENSE)
-- **変更履歴**: [Keep a Changelog](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/CHANGELOG.md)
+- **ライセンス**: [MIT](https://xinvxueyuan.github.io/NovelAI-Image-MCP/about/license.html)
+- **変更履歴**: [Keep a Changelog](https://xinvxueyuan.github.io/NovelAI-Image-MCP/about/changelog.html)
 - **NovelAI API ドキュメント**: <https://image.novelai.net/docs/index.html>
 
 ---
 
-## その他のセクション
+## その他のセクション（英語）
 
-ツールリファレンス、チュートリアル、トランスポート、開発ガイド、API リファレンスなどのセクションは現在英語版のみ提供されています。ページ左下の言語切り替えボタンから English に切り替えてご覧ください。
+ツールリファレンス、チュートリアル、トランスポート、開発ガイド、API リファレンスなどのセクションは現在英語版のみの提供です。以下のリンクから直接ご覧いただけます：
+
+- [ツールリファレンス](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tools/index.html) —— 全 11 個の MCP ツールのパラメータと例
+- [チュートリアル](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tutorials/index.html) —— エンドツーエンドのワークフロー（txt2img、img2img、inpaint など）
+- [トランスポート](https://xinvxueyuan.github.io/NovelAI-Image-MCP/transports/index.html) —— stdio と streamable-http の比較
+- [エージェントスキル](https://xinvxueyuan.github.io/NovelAI-Image-MCP/skills.html) —— AI エージェントに CLI と MCP ツールを教える
+- [開発ガイド](https://xinvxueyuan.github.io/NovelAI-Image-MCP/development/index.html) —— アーキテクチャ、貢献、テスト、リリース
+- [API リファレンス](https://xinvxueyuan.github.io/NovelAI-Image-MCP/api/index.html) —— autodoc 生成の Python API
+- [ライセンス / 変更履歴 / ツール検証](https://xinvxueyuan.github.io/NovelAI-Image-MCP/about/license.html)

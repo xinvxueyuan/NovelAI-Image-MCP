@@ -1,7 +1,7 @@
 # 設定
 
 ランタイムの設定はすべて環境変数経由で行います (`pydantic-settings` が
-[`novelai_image_mcp.settings`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/docs/source/api/settings.md)
+[`novelai_image_mcp.settings`](https://xinvxueyuan.github.io/NovelAI-Image-MCP/api/settings.html)
 で読み取ります)。正の参照元はリポジトリルートの
 [`.env.example`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/.env.example)
 です。
@@ -23,14 +23,14 @@
 | 変数 | デフォルト | 必須 | 備考 |
 |---|---|---|---|
 | `NOVELAI_TOKEN` | — | *いずれか一つ* | 永続 API トークン (推奨)。<https://novelai.net> → Account から取得します。 |
-| `NOVELAI_USERNAME` | — | *いずれか一つ* | アクスキーログイン用のユーザー名 (メールアドレス)。 |
+| `NOVELAI_USERNAME` | — | *いずれか一つ* | アクセスキーログイン用のユーザー名 (メールアドレス)。 |
 | `NOVELAI_PASSWORD` | — | *いずれか一つ* | アカウントのパスワード。`NOVELAI_USERNAME` と組み合わせて argon2id に通し、アクセスキーを導出します。 |
 
 :::{important}
 `NOVELAI_TOKEN` **または** `NOVELAI_USERNAME` + `NOVELAI_PASSWORD` のペアの
 **いずれか一方**を設定してください。どちらも存在しない場合、サーバーは起動時に
 `RuntimeError` を送出します
-([`NovelAISettings.has_credentials`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/docs/source/api/settings.md)
+([`NovelAISettings.has_credentials`](https://xinvxueyuan.github.io/NovelAI-Image-MCP/api/settings.html)
 を参照)。
 :::
 
@@ -141,6 +141,6 @@ ConfigMap / Secret 対応の env プロバイダーを使用してください�
 
 ## 関連項目
 
-- [`novelai_image_mcp.settings` API リファレンス](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/docs/source/api/settings.md) (英語版)
+- [`novelai_image_mcp.settings` API リファレンス](https://xinvxueyuan.github.io/NovelAI-Image-MCP/api/settings.html) (英語版)
 - [.env.example](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/.env.example)
-- [トランスポート](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/docs/source/transports/index.md) — stdio と streamable-http のトレードオフ (英語版)
+- [トランスポート](https://xinvxueyuan.github.io/NovelAI-Image-MCP/transports/index.html) — stdio と streamable-http のトレードオフ (英語版)

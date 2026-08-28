@@ -2,12 +2,14 @@
    override in ``conf.py`` (between ``sidebar/navigation.html`` and
    ``sidebar/ethical-ads.html``).
 
-   ``available_languages``, ``current_language``, ``current_base_path`` and
-   ``translated_pages`` are injected through ``html_context`` and are
-   therefore top-level template variables here. Each entry in
-   ``available_languages`` is a ``(code, label, base_path)`` tuple where
-   ``base_path`` is the deploy subdirectory (``""`` for English at the site
-   root, ``"zh"`` / ``"ja"`` for the translations).
+   ``available_languages``, ``current_language``, ``current_base_path``,
+   ``translated_pages`` and ``switcher_label`` are injected through
+   ``html_context`` and are therefore top-level template variables here.
+   ``switcher_label`` is localised per build (English "Language", 中文
+   "语言", 日本語 "言語"). Each entry in ``available_languages`` is a
+   ``(code, label, base_path)`` tuple where ``base_path`` is the deploy
+   subdirectory (``""`` for English at the site root, ``"zh"`` / ``"ja"``
+   for the translations).
 
    Link target logic
    -----------------
@@ -39,8 +41,8 @@
    translated page does not exist"). English has all pages, so links to
    English always point at the same ``pagename``.
 #}
-<div class="sidebar-language-switcher" role="navigation" aria-label="Language">
-  <p class="sidebar-language-switcher-label" id="language-switcher-label">Language</p>
+<div class="sidebar-language-switcher" role="navigation" aria-label="{{ switcher_label }}">
+  <p class="sidebar-language-switcher-label" id="language-switcher-label">{{ switcher_label }}</p>
   <div class="sidebar-language-switcher-links" role="group" aria-labelledby="language-switcher-label">
     {%- for code, label, base_path in available_languages -%}
       {%- if code == current_language -%}

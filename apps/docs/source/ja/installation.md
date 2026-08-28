@@ -131,11 +131,11 @@ docker compose up --build
 
 イメージは [`apps/server/Dockerfile`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/server/Dockerfile)
 からビルドされ、デフォルトでポート `8000` 上に streamable-http トランスポート
-を公開します。高度な設定については [トランスポート → streamable-http](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/docs/source/transports/http.md)
+を公開します。高度な設定については [トランスポート → streamable-http](https://xinvxueyuan.github.io/NovelAI-Image-MCP/transports/http.html)
 を参照してください。
 
 ## 次のステップ
 
 - ⚡ [クイックスタート](quickstart.md) — 最初の画像を生成する
 - 🔧 [設定](configuration.md) — 環境変数による生成デフォルトの調整
-- 🐳 [Docker での運用](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/docs/source/transports/index.md) — stdio と streamable-http の比較 (英語版)
+- 🐳 [Docker での運用](https://xinvxueyuan.github.io/NovelAI-Image-MCP/transports/index.html) — stdio と streamable-http の比較 (英語版)

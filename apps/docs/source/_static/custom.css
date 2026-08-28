@@ -95,11 +95,13 @@ table.docutils th {
   cursor: default;
 }
 
-/* Touch-friendly hit areas on narrow screens (Furo collapses to a drawer). */
+/* Touch-friendly hit areas on narrow screens (Furo collapses to a drawer).
+ * 0.85rem text + 2×1rem padding ≈ 45px — meets the 44px minimum target. */
 @media (max-width: 680px) {
   .sidebar-language-switcher-links a,
   .language-switcher-active {
-    padding: 0.4rem 0.2rem;
+    display: inline-block;
+    padding: 1rem 0.25rem;
   }
 }
 

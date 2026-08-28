@@ -101,7 +101,7 @@ uv run python -m novelai_image_mcp info
 
 ## 可选：Node 侧工具
 
-仓库还使用 pnpm 管理跨 cuts 的 Node 工具（turbo 任务运行器、husky git
+仓库还使用 pnpm 管理贯穿各子包的 Node 工具（turbo 任务运行器、husky git
 钩子、markdownlint）。如果你打算参与贡献，请安装它：
 
 ```bash
