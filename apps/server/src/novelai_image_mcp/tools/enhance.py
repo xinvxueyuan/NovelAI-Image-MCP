@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import base64
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from .._mcp import Context, Image
 from ..nai import (
@@ -25,12 +25,20 @@ def _save_and_return(
     *,
     name: str,
     output_dir: str,
-) -> list[Any]:
+):
     """Persist a single image and return ImageContent block + saved path.
 
     fastmcp auto-converts its ``Image`` helper into an ``ImageContent`` block
     when returned from a tool, so returning ``Image(...)`` needs no manual
     ``to_image_content()`` step.
+
+    Callers must carry no return annotation: fastmcp derives an output schema
+    from a ``list`` annotation and then requires ``structured_content`` on the
+    result, but ``Image`` is a plain class that cannot be serialized to JSON.
+    fastmcp reacts by silently dropping ``structured_content``, which makes the
+    tool unusable on any client that validates results against the declared
+    schema (MCP SDK v2 raises "has an output schema but did not return structured
+    content"). ``tests/test_tools.py`` pins this contract for every image tool.
     """
     path = save_image(image.data, name=name, output_dir=output_dir)
     return [
@@ -42,12 +50,13 @@ def _save_and_return(
 def register(mcp: FastMCP) -> None:
     """Register the image-enhancement tools."""
 
+    # No return annotation on the image tools below - see _save_and_return.
     @mcp.tool()
     async def upscale_image(
         ctx: Context,
         image: str,
         factor: int = 4,
-    ) -> list[Any]:
+    ):
         """Upscale an image by 2× or 4× using NovelAI's dedicated upscaler.
 
         ``image`` is a base64-encoded PNG/JPEG. ``factor`` must be 2 or 4. The
@@ -60,7 +69,7 @@ def register(mcp: FastMCP) -> None:
         result = await client.upscale(base64.b64decode(image), factor=factor)
         return _save_and_return(result, name="upscale", output_dir=settings.output_dir)
 
-    @mcp.tool()
+    @mcp.tool()  # image tools carry no return annotation - see _save_and_return
     async def director_tool(
         ctx: Context,
         tool: str,
@@ -69,7 +78,7 @@ def register(mcp: FastMCP) -> None:
         defry: int = 0,
         emotion: str | None = None,
         emotion_level: int = 0,
-    ) -> list[Any]:
+    ):
         """Apply a NovelAI Director tool to an image.
 
         ``tool`` is one of: ``lineart``, ``sketch``, ``bg-removal``,
@@ -119,12 +128,12 @@ def register(mcp: FastMCP) -> None:
             result, name=f"director-{director.value}", output_dir=settings.output_dir
         )
 
-    @mcp.tool()
+    @mcp.tool()  # image tools carry no return annotation - see _save_and_return
     async def annotate_image(
         ctx: Context,
         image: str,
         model: str,
-    ) -> list[Any]:
+    ):
         """Annotate an image with a ControlNet preprocessor.
 
         ``image`` is a base64-encoded PNG/JPEG. ``model`` is one of: ``hed``

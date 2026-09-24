@@ -424,3 +424,77 @@ class TestSerializationRegression:
         assert any(isinstance(b, ImageContent) for b in result.content)
         for block in result.content:
             assert block.model_dump(mode="json") is not None
+
+
+class TestImageToolOutputContract:
+    """Image tools must not advertise an output schema they cannot satisfy.
+
+    ``TestSerializationRegression`` asserts the content blocks of the server-side
+    ``ToolResult`` serialize, but a tool can pass that and still be unusable: if
+    it advertises an ``outputSchema``, MCP SDK v2 clients require
+    ``structured_content`` on the result and raise ``Tool <name> has an output
+    schema but did not return structured content`` when it is missing. fastmcp
+    drops that field silently whenever the result is not JSON-serializable, which
+    is exactly what happens to the ``Image`` helper -- so the tool both declares
+    the schema and cannot honour it. This is the same check
+    ``@modelcontextprotocol/client`` performs (``validateToolResult`` in the
+    TypeScript SDK, ``validate_tool_result`` in the Python one).
+    """
+
+    IMAGE_TOOLS: tuple[tuple[str, dict[str, Any]], ...] = (
+        ("generate_image", {"prompt": "test"}),
+        ("image_to_image", {"prompt": "test", "image": "aGVsbG8="}),
+        (
+            "inpaint",
+            {
+                "prompt": "test",
+                "image": "aGVsbG8=",
+                "mask": "aGVsbG8=",
+                "model": "nai-diffusion-4-5-full-inpainting",
+            },
+        ),
+        ("upscale_image", {"image": "aGVsbG8=", "factor": 2}),
+        ("director_tool", {"tool": "lineart", "image": "aGVsbG8="}),
+        ("annotate_image", {"image": "aGVsbG8=", "model": "hed"}),
+    )
+
+    @staticmethod
+    def _seed_lifespan(client: Any, settings: Any) -> None:
+        """Give the shared server a lifespan value so tools see AppContext.
+
+        fastmcp's ``Context.lifespan_context`` reads the server's
+        ``_lifespan_result`` (the value the lifespan yielded). Seeding it here
+        lets ``call_tool`` run the tool body without a live session.
+        """
+        from novelai_image_mcp.server import mcp
+
+        mcp._lifespan_result = SimpleNamespace(client=client, settings=settings)
+
+    @pytest.mark.parametrize(("name", "arguments"), IMAGE_TOOLS)
+    async def test_declares_schema_only_when_structured_content_exists(
+        self,
+        name: str,
+        arguments: dict[str, Any],
+        settings: Any,
+        fake_client: AsyncMock,
+        tmp_path: Path,
+    ) -> None:
+        """Declaring an ``outputSchema`` requires returning ``structured_content``."""
+        from mcp_types import ImageContent, TextContent
+
+        from novelai_image_mcp.server import mcp
+
+        settings.output_dir = str(tmp_path)
+        self._seed_lifespan(fake_client, settings)
+        tool = await mcp.get_tool(name)
+        assert tool is not None
+
+        result = await mcp.call_tool(name, arguments)
+
+        assert any(isinstance(b, ImageContent) for b in result.content)
+        assert any(isinstance(b, TextContent) for b in result.content)
+        if tool.output_schema is not None:
+            assert result.structured_content is not None, (
+                f"{name} advertises an outputSchema but returned no "
+                "structured_content; strict MCP clients reject such a result"
+            )

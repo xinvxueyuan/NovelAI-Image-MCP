@@ -29,13 +29,21 @@ def _save_and_return(
     *,
     name: str,
     output_dir: str,
-) -> list[Any]:
+):
     """Persist every image, return the first as an ImageContent block plus all paths.
 
     fastmcp auto-converts its ``Image`` helper (and ``str``) into the
     corresponding MCP content blocks when they are returned from a tool, so
     returning ``Image(...)`` here becomes an ``ImageContent`` block on the wire
     without any manual ``to_image_content()`` step.
+
+    Callers must carry no return annotation: fastmcp derives an output schema
+    from a ``list`` annotation and then requires ``structured_content`` on the
+    result, but ``Image`` is a plain class that cannot be serialized to JSON.
+    fastmcp reacts by silently dropping ``structured_content``, which makes the
+    tool unusable on any client that validates results against the declared
+    schema (MCP SDK v2 raises "has an output schema but did not return structured
+    content"). ``tests/test_tools.py`` pins this contract for every image tool.
     """
     paths = [save_image(img.data, name=name, output_dir=output_dir) for img in images]
     return [
@@ -47,6 +55,10 @@ def _save_and_return(
 def register(mcp: FastMCP) -> None:
     """Register the generation tools."""
 
+    # No return annotation on the image tools below: fastmcp turns a `list`
+    # annotation into an advertised outputSchema, which it then cannot satisfy
+    # (see _save_and_return). Omitting it keeps the wire result honest, since
+    # the ImageContent + TextContent blocks are the whole payload.
     @mcp.tool()
     async def generate_image(
         ctx: Context,
@@ -71,7 +83,7 @@ def register(mcp: FastMCP) -> None:
         noise_schedule: str = "karras",
         character_prompts: list[dict[str, Any]] | None = None,
         references: list[str] | None = None,
-    ) -> list[Any]:
+    ):
         """Generate one or more images from a text prompt (text-to-image).
 
         Supports NovelAI V3 / V4 / V4.5 / V5 models. Pass ``references`` as a
@@ -117,7 +129,7 @@ def register(mcp: FastMCP) -> None:
         images = await client.generate(request)
         return _save_and_return(images, name="generate", output_dir=settings.output_dir)
 
-    @mcp.tool()
+    @mcp.tool()  # image tools carry no return annotation - see generate_image
     async def image_to_image(
         ctx: Context,
         prompt: str,
@@ -138,7 +150,7 @@ def register(mcp: FastMCP) -> None:
         noise_schedule: str = "karras",
         cfg_rescale: float = 0.0,
         extra_noise_seed: int | None = None,
-    ) -> list[Any]:
+    ):
         """Generate a new image conditioned on an input image (image-to-image).
 
         ``image`` is a base64-encoded PNG/JPEG. ``strength`` (0.01–0.99) controls
@@ -172,7 +184,7 @@ def register(mcp: FastMCP) -> None:
         images = await client.generate(request)
         return _save_and_return(images, name="img2img", output_dir=settings.output_dir)
 
-    @mcp.tool()
+    @mcp.tool()  # image tools carry no return annotation - see generate_image
     async def inpaint(
         ctx: Context,
         prompt: str,
@@ -194,7 +206,7 @@ def register(mcp: FastMCP) -> None:
         noise_schedule: str = "karras",
         cfg_rescale: float = 0.0,
         extra_noise_seed: int | None = None,
-    ) -> list[Any]:
+    ):
         """Inpaint (locally redraw) a region of an image.
 
         ``image`` and ``mask`` are base64-encoded PNG/JPEG; the mask marks the region
