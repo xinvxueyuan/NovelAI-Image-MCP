@@ -266,7 +266,24 @@ nitpick_ignore: list[tuple[str, str]] = [
     ("py:class", "Tool"),
     ("py:class", "mcp.shared.exceptions.McpError"),
 ]
-nitpick_ignore_regex: list[tuple[str, str]] = []
+# Regex suppressions (Sphinx matches these with re.fullmatch).
+nitpick_ignore_regex: list[tuple[str, str]] = [
+    # Annotated[int, Field(ge=1, le=8)] parameters -- used by the MCP tool
+    # schemas -- make autodoc render pydantic's FieldInfo repr, and Sphinx
+    # then treats each fragment of that repr as a class reference, e.g.
+    # FieldInfo(annotation=int, required=False, metadata=[Ge(ge=1), Le(le=8)]).
+    # Suppress the whole family rather than chasing every individual token.
+    ("py:class", r"(?:Ge|Le|Gt|Lt)"),
+    (
+        "py:class",
+        r"(?:ge|le|gt|lt|pattern|min_length|max_length|max_digits"
+        r"|decimal_places|multiple_of)=.*",
+    ),
+    ("py:class", r"annotation=NoneType"),
+    ("py:class", r"required=(?:True|False)"),
+    ("py:class", r"metadata="),
+    ("py:class", r"FieldInfo"),
+]
 
 # ─── autodoc ─────────────────────────────────────────────────────────────────
 # Auto-generate entries for every public member; order source-by-source so the
