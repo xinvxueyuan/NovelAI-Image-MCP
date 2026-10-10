@@ -46,6 +46,20 @@ per-release section headings. This file is the human-curated companion.
 
 ### Added
 
+- _Nothing yet._
+
+### Changed
+
+- _Nothing yet._
+
+### Fixed
+
+- _Nothing yet._
+
+## [0.5.0] — 2026-10-10
+
+### Added
+
 - **MCP prompts**: `novelai_prompt_writer` turns a plain-language idea into a
   NovelAI-style tag prompt, and `novelai_image_workflow` lays out the tool
   sequence for a goal.
