@@ -265,6 +265,21 @@ nitpick_ignore: list[tuple[str, str]] = [
     ("py:class", "fastmcp.utilities.types.Image"),
     ("py:class", "Tool"),
     ("py:class", "mcp.shared.exceptions.McpError"),
+    # Middleware plumbing (fastmcp.server.middleware) — same missing-inventory
+    # situation as the rest of fastmcp. The mcp.types alias is used directly
+    # in the middleware signature, so the alias form is listed as well.
+    ("py:class", "Middleware"),
+    ("py:class", "fastmcp.server.middleware.middleware.Middleware"),
+    ("py:class", "MiddlewareContext"),
+    ("py:class", "CallNext"),
+    ("py:class", "ToolResult"),
+    ("py:class", "mt.CallToolRequestParams"),
+    # Token verification base class (fastmcp.server.auth, lazily imported at
+    # runtime so it never reaches an intersphinx inventory).
+    ("py:class", "TokenVerifier"),
+    ("py:class", "fastmcp.server.auth.TokenVerifier"),
+    # pydantic config helper used by the structured-output models.
+    ("py:class", "ConfigDict"),
 ]
 # Regex suppressions (Sphinx matches these with re.fullmatch).
 nitpick_ignore_regex: list[tuple[str, str]] = [

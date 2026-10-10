@@ -28,7 +28,8 @@ from .middleware import ToolCallLoggingMiddleware
 from .nai import create_http_client, create_novelai_client
 from .settings import get_mcp_settings, get_novelai_settings
 
-#: Server-level instructions: how an agent should approach this server.
+#: The server-level instructions an agent receives, describing the tools,
+#: the intended workflow and where generated images land.
 INSTRUCTIONS = """NovelAI image generation server.
 
 Tools: generate_image (text-to-image), image_to_image, inpaint, upscale_image,
