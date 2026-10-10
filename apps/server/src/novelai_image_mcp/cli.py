@@ -33,14 +33,20 @@ from .nai import (
     create_novelai_client,
 )
 from .output import save_image
-from .settings import NovelAISettings, get_novelai_settings
+from .settings import NovelAISettings, get_mcp_settings, get_novelai_settings
 
 
 class Transport(StrEnum):
-    """Selectable MCP transport on the ``serve`` subcommand."""
+    """Selectable MCP transport on the ``serve`` subcommand.
+
+    ``http`` is the canonical name for FastMCP's streamable-HTTP transport;
+    ``streamable-http`` is kept as an alias so existing scripts keep
+    working.
+    """
 
     STDIO = "stdio"
-    HTTP = "streamable-http"
+    HTTP = "http"
+    STREAMABLE_HTTP = "streamable-http"
 
 
 app = typer.Typer(
@@ -110,36 +116,47 @@ def _read_image_file(path: Path) -> bytes:
 @app.command()
 def serve(
     transport: Annotated[
-        Transport,
+        Transport | None,
         typer.Option(
             "--transport",
             "-t",
             help="MCP transport (overrides MCP_TRANSPORT env var).",
             case_sensitive=False,
         ),
-    ] = Transport.STDIO,
+    ] = None,
     host: Annotated[
-        str,
-        typer.Option(help="Bind host for streamable-http (overrides MCP_HOST)."),
-    ] = "127.0.0.1",
+        str | None,
+        typer.Option(help="Bind host for the HTTP transport (overrides MCP_HOST)."),
+    ] = None,
     port: Annotated[
-        int,
-        typer.Option(help="Bind port for streamable-http (overrides MCP_PORT)."),
-    ] = 8000,
+        int | None,
+        typer.Option(help="Bind port for the HTTP transport (overrides MCP_PORT)."),
+    ] = None,
+    path: Annotated[
+        str | None,
+        typer.Option(help="Endpoint path (overrides MCP_PATH)."),
+    ] = None,
 ) -> None:
-    """Run the MCP server (stdio by default, or streamable-http)."""
-    # Defer the import so `novelai-image-mcp generate` does not pay the MCP SDK
-    # import cost (and so credential errors surface only when actually serving).
+    """Run the MCP server (stdio by default, or HTTP)."""
+    # Defer the import so `novelai-image-mcp generate` does not pay the MCP
+    # SDK import cost (and so credential errors surface only when serving).
     from . import server as server_module
 
-    if transport is Transport.HTTP:
+    mcp_settings = get_mcp_settings()
+    selected = transport or Transport(mcp_settings.transport)
+    if selected is Transport.STDIO:
         server_module.mcp.run(
-            transport="streamable-http",
-            host=host,
-            port=port,
+            transport="stdio",
+            log_level=mcp_settings.log_level,
         )
     else:
-        server_module.mcp.run(transport="stdio")
+        server_module.mcp.run(
+            transport="http",
+            host=host or mcp_settings.host,
+            port=port or mcp_settings.port,
+            path=path or mcp_settings.path,
+            log_level=mcp_settings.log_level,
+        )
 
 
 @app.command()

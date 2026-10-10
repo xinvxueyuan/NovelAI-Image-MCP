@@ -1,20 +1,38 @@
-"""Tests for the MCP tool wrappers in ``novelai_image_mcp.tools``."""
+"""Tests for the MCP tool wrappers in `novelai_image_mcp.tools`.
+
+Two layers are covered here. Direct calls (`await generate.generate_image(app=...)`)
+assert exactly which request reaches `NovelAIClient` and which content blocks
+come back. Calls through the `mcp_client` fixture cover everything FastMCP
+adds on top: schema validation, dependency injection, annotations and the
+conversion of returned helpers into MCP content blocks.
+"""
 
 from __future__ import annotations
 
 import base64
-from pathlib import Path
-from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock
 
-from _helpers import PNG_BYTES, RecordingMCPServer
+from _helpers import PNG_BYTES
 import pytest
 
+from novelai_image_mcp import server as server_module
+from novelai_image_mcp.nai import (
+    Action,
+    ControlNetModel,
+    DirectorTool,
+    Emotion,
+    EmotionLevel,
+    Model,
+    NoiseSchedule,
+    NovelAIError,
+    Sampler,
+)
+from novelai_image_mcp.schemas import AnlasEstimate, TagSuggestion
 from novelai_image_mcp.tools import account, enhance, generate, tags
 
 if TYPE_CHECKING:
-    from novelai_image_mcp._mcp import FastMCP
+    from novelai_image_mcp.deps import AppContext
     from novelai_image_mcp.nai import NovelAIImage
 
 
@@ -23,38 +41,13 @@ def _b64(data: bytes = PNG_BYTES) -> str:
     return base64.b64encode(data).decode("ascii")
 
 
-def _register_all(mcp: RecordingMCPServer) -> None:
-    # ``RecordingMCPServer`` is a structural test double that exposes the same
-    # ``tool()`` decorator contract as fastmcp's ``FastMCP``; cast to satisfy
-    # the production-typed ``register(mcp: FastMCP)`` signatures.
-    server = cast("FastMCP", mcp)
-    generate.register(server)
-    enhance.register(server)
-    tags.register(server)
-    account.register(server)
-
-
-@pytest.fixture
-def tools(recording_mcp: RecordingMCPServer) -> dict[str, Any]:
-    """Register every tool group and expose them as a name → callable dict."""
-    _register_all(recording_mcp)
-    return recording_mcp.tools
-
-
-@pytest.fixture
-def ctx(fake_ctx: Any) -> Any:
-    """Forward the conftest ``fake_ctx`` fixture (lifespan_context)."""
-    return fake_ctx
-
-
 def _assert_image_block(result: list[Any]) -> bytes:
     """Pull the raw bytes out of the returned image item.
 
-    Tools returned the fastmcp ``Image`` helper (whose ``.data`` is the raw PNG
-    bytes) because fastmcp converts it to ``ImageContent`` only when it passes
-    through the real server pipeline; direct (recording-stub) invocation hands
-    back the helper as-is. The helper decodes nothing — ``.data`` is already the
-    original ``NovelAIImage.data`` bytes.
+    Tools return the FastMCP `Image` helper (whose `.data` is the raw PNG
+    bytes) because FastMCP converts it to `ImageContent` only when it passes
+    through the real server pipeline; direct invocation hands the helper back
+    as-is.
     """
     image_block = next(item for item in result if hasattr(item, "data"))
     return image_block.data
@@ -68,17 +61,16 @@ def _assert_path_str(result: list[Any]) -> str:
 class TestGenerateTools:
     async def test_generate_image_calls_client(
         self,
-        tools: dict[str, Any],
-        ctx: Any,
+        fake_app: AppContext,
         fake_client: AsyncMock,
         nai_image: NovelAIImage,
     ) -> None:
         fake_client.generate.return_value = (nai_image,)
-        result = await tools["generate_image"](
-            ctx,
+        result = await generate.generate_image(
             prompt="a cat, masterpiece",
             negative_prompt="lowres",
             seed=42,
+            app=fake_app,
         )
         fake_client.generate.assert_awaited_once()
         request = fake_client.generate.await_args.args[0]
@@ -88,209 +80,258 @@ class TestGenerateTools:
         assert "Saved 1 image(s)" in _assert_path_str(result)
 
     async def test_generate_image_with_character_prompts(
-        self, tools: dict[str, Any], ctx: Any, fake_client: AsyncMock
+        self, fake_app: AppContext, fake_client: AsyncMock
     ) -> None:
-        await tools["generate_image"](
-            ctx,
+        await generate.generate_image(
             prompt="a girl and a boy",
             character_prompts=[{"prompt": "girl", "x": 0.3, "y": 0.5}],
+            app=fake_app,
         )
         request = fake_client.generate.await_args.args[0]
         assert len(request.character_prompts) == 1
         assert request.character_prompts[0].x == 0.3
 
-    async def test_img2img_passes_image_through(
-        self, tools: dict[str, Any], ctx: Any, fake_client: AsyncMock
+    async def test_generate_image_accepts_enum_values(
+        self, fake_app: AppContext, fake_client: AsyncMock
     ) -> None:
-        await tools["image_to_image"](
-            ctx, prompt="restyle", image="base64-image-string", strength=0.5
+        await generate.generate_image(
+            prompt="a cat",
+            model=Model.V5,
+            sampler=Sampler.EULER,
+            noise_schedule=NoiseSchedule.EXPONENTIAL,
+            uc_preset=2,
+            app=fake_app,
+        )
+        request = fake_client.generate.await_args.args[0]
+        assert request.model is Model.V5
+        assert request.sampler.value == "k_euler"
+        assert request.noise_schedule.value == "exponential"
+        assert request.uc_preset == 2
+
+    async def test_generate_image_v5_rejects_references(
+        self, fake_app: AppContext
+    ) -> None:
+        from fastmcp.exceptions import ToolError
+
+        with pytest.raises(ToolError, match="not supported on V5"):
+            await generate.generate_image(
+                prompt="a cat",
+                model=Model.V5,
+                references=["vibe"],
+                app=fake_app,
+            )
+
+    async def test_generate_image_v5_straight_alpha_passthrough(
+        self, fake_app: AppContext, fake_client: AsyncMock
+    ) -> None:
+        await generate.generate_image(
+            prompt="a cat",
+            model=Model.V5,
+            straight_alpha=True,
+            app=fake_app,
+        )
+        request = fake_client.generate.await_args.args[0]
+        assert request.straight_alpha is True
+
+    async def test_img2img_passes_image_through(
+        self, fake_app: AppContext, fake_client: AsyncMock
+    ) -> None:
+        await generate.image_to_image(
+            prompt="restyle",
+            image="base64-image-string",
+            strength=0.5,
+            app=fake_app,
         )
         request = fake_client.generate.await_args.args[0]
         assert request.image == "base64-image-string"
         assert request.strength == 0.5
 
     async def test_inpaint_passes_mask_through(
-        self, tools: dict[str, Any], ctx: Any, fake_client: AsyncMock
+        self, fake_app: AppContext, fake_client: AsyncMock
     ) -> None:
-        await tools["inpaint"](
-            ctx,
+        await generate.inpaint(
             prompt="redraw",
             image="base64-image",
             mask="base64-mask",
-            model="nai-diffusion-4-5-full-inpainting",
+            model=Model.V4_5_INPAINT,
+            app=fake_app,
         )
         request = fake_client.generate.await_args.args[0]
         assert request.mask == "base64-mask"
-        assert request.action.value == "infill"
+        assert request.action is Action.INPAINT
 
-    async def test_generate_image_v5_rejects_references(
-        self, tools: dict[str, Any], ctx: Any, fake_client: AsyncMock
+    async def test_provider_error_becomes_tool_error(
+        self, fake_app: AppContext, fake_client: AsyncMock
     ) -> None:
-        with pytest.raises(ValueError, match="not supported on V5"):
-            await tools["generate_image"](
-                ctx,
-                prompt="a cat",
-                model="nai-diffusion-5-full",
-                references=["vibe"],
-            )
+        from fastmcp.exceptions import ToolError
 
-    async def test_generate_image_v5_straight_alpha_passthrough(
-        self, tools: dict[str, Any], ctx: Any, fake_client: AsyncMock
-    ) -> None:
-        await tools["generate_image"](
-            ctx,
-            prompt="a cat",
-            model="nai-diffusion-5-full",
-            straight_alpha=True,
-        )
-        request = fake_client.generate.await_args.args[0]
-        assert request.straight_alpha is True
+        fake_client.generate.side_effect = NovelAIError("rate limited")
+        with pytest.raises(ToolError, match="rate limited"):
+            await generate.generate_image(prompt="a cat", app=fake_app)
 
 
 class TestEnhanceTools:
     async def test_upscale_image(
         self,
-        tools: dict[str, Any],
-        ctx: Any,
+        fake_app: AppContext,
         fake_client: AsyncMock,
         nai_image: NovelAIImage,
     ) -> None:
         fake_client.upscale.return_value = nai_image
-        result = await tools["upscale_image"](ctx, image=_b64(), factor=4)
+        result = await enhance.upscale_image(image=_b64(), factor=4, app=fake_app)
         fake_client.upscale.assert_awaited_once_with(PNG_BYTES, factor=4)
         assert _assert_image_block(result) == nai_image.data
 
-    async def test_director_emotion_validates(
-        self, tools: dict[str, Any], ctx: Any, fake_client: AsyncMock
+    async def test_director_emotion_requires_emotion(
+        self, fake_app: AppContext
     ) -> None:
-        with pytest.raises(ValueError, match="emotion tool requires an emotion"):
-            await tools["director_tool"](ctx, tool="emotion", image="b64", emotion=None)
+        from fastmcp.exceptions import ToolError
+
+        with pytest.raises(ToolError, match="emotion tool requires an emotion"):
+            await enhance.director_tool(
+                tool=DirectorTool.EMOTION,
+                image="b64",
+                emotion=None,
+                app=fake_app,
+            )
 
     async def test_director_emotion_success(
         self,
-        tools: dict[str, Any],
-        ctx: Any,
+        fake_app: AppContext,
         fake_client: AsyncMock,
         nai_image: NovelAIImage,
     ) -> None:
         fake_client.director.return_value = nai_image
-        await tools["director_tool"](
-            ctx,
-            tool="emotion",
+        await enhance.director_tool(
+            tool=DirectorTool.EMOTION,
             image=_b64(),
-            emotion="happy",
-            emotion_level=0,
+            emotion=Emotion.HAPPY,
+            emotion_level=EmotionLevel.NORMAL,
+            app=fake_app,
         )
         fake_client.director.assert_awaited_once()
         call = fake_client.director.await_args
         assert call.kwargs["emotion"].value == "happy"
 
-    async def test_director_unknown_tool_raises(
-        self, tools: dict[str, Any], ctx: Any
-    ) -> None:
-        with pytest.raises(ValueError, match="unknown director tool"):
-            await tools["director_tool"](ctx, tool="bogus", image="b64")
-
     async def test_annotate_image(
         self,
-        tools: dict[str, Any],
-        ctx: Any,
+        fake_app: AppContext,
         fake_client: AsyncMock,
         nai_image: NovelAIImage,
     ) -> None:
         fake_client.annotate.return_value = nai_image
-        await tools["annotate_image"](ctx, image=_b64(), model="hed")
+        await enhance.annotate_image(
+            image=_b64(), model=ControlNetModel.PALETTE_SWAP, app=fake_app
+        )
         fake_client.annotate.assert_awaited_once()
         call = fake_client.annotate.await_args
         assert call.args[1].value == "hed"
 
-    async def test_annotate_unknown_model_raises(
-        self, tools: dict[str, Any], ctx: Any
+
+class TestStringCoercion:
+    """Direct Python callers may pass plain strings: the tools coerce them.
+
+    MCP callers are validated against the generated enum schema before the
+    function runs; in-process callers (scripts, notebooks, tests) bypass that
+    layer, so the tool bodies still resolve the value through the enum.
+    """
+
+    async def test_director_tool_accepts_strings(
+        self, fake_app: AppContext, fake_client: AsyncMock
     ) -> None:
-        with pytest.raises(ValueError, match="unknown controlnet model"):
-            await tools["annotate_image"](ctx, image="b64", model="bogus")
+        await enhance.director_tool(
+            tool="emotion",  # type: ignore[arg-type]
+            image=_b64(),
+            emotion="happy",  # type: ignore[arg-type]
+            emotion_level=2,  # type: ignore[arg-type]
+            app=fake_app,
+        )
+        call = fake_client.director.await_args
+        assert call.args[0] is DirectorTool.EMOTION
+        assert call.kwargs["emotion"] is Emotion.HAPPY
+        assert call.kwargs["emotion_level"] is EmotionLevel.WEAK
+
+    async def test_annotate_image_accepts_strings(
+        self, fake_app: AppContext, fake_client: AsyncMock
+    ) -> None:
+        await enhance.annotate_image(
+            image=_b64(),
+            model="mlsd",  # type: ignore[arg-type]
+            app=fake_app,
+        )
+        assert (
+            fake_client.annotate.await_args.args[1] is ControlNetModel.BUILDING_CONTROL
+        )
 
 
 class TestTagsTools:
-    async def test_suggest_tags(
-        self, tools: dict[str, Any], ctx: Any, fake_client: AsyncMock
+    async def test_suggest_tags_returns_models(
+        self, fake_app: AppContext, fake_client: AsyncMock
     ) -> None:
-        fake_client.suggest_tags.return_value = ({"text": "cat"},)
-        result = await tools["suggest_tags"](ctx, prompt="ca")
+        fake_client.suggest_tags.return_value = ({"text": "cat", "count": 3},)
+        result = await tags.suggest_tags(prompt="ca", client=fake_client)
         fake_client.suggest_tags.assert_awaited_once()
-        assert result == [{"text": "cat"}]
+        assert result == [TagSuggestion(text="cat", count=3)]
 
-    async def test_suggest_tags_unknown_model_raises(
-        self, tools: dict[str, Any], ctx: Any
+    async def test_suggest_tags_preserves_unknown_fields(
+        self, fake_app: AppContext, fake_client: AsyncMock
     ) -> None:
-        with pytest.raises(ValueError, match="unknown model"):
-            await tools["suggest_tags"](ctx, prompt="ca", model="bogus")
+        fake_client.suggest_tags.return_value = (
+            {"text": "cat", "count": 3, "category": "animal"},
+        )
+        result = await tags.suggest_tags(prompt="ca", client=fake_client)
+        assert result[0].model_extra == {"category": "animal"}
 
     async def test_encode_vibe(
-        self, tools: dict[str, Any], ctx: Any, fake_client: AsyncMock
+        self, fake_app: AppContext, fake_client: AsyncMock
     ) -> None:
         fake_client.encode_vibe.return_value = "vibe-token"
-        result = await tools["encode_vibe"](
-            ctx, reference="b64", information_extracted=0.5
+        result = await tags.encode_vibe(
+            reference="b64", information_extracted=0.5, client=fake_client
         )
         assert result == "vibe-token"
         call = fake_client.encode_vibe.await_args
         assert call.kwargs["information_extracted"] == 0.5
 
-    async def test_encode_vibe_information_range(
-        self, tools: dict[str, Any], ctx: Any
-    ) -> None:
-        with pytest.raises(ValueError, match="information_extracted"):
-            await tools["encode_vibe"](ctx, reference="b64", information_extracted=2.0)
-
     async def test_encode_vibe_v5_rejected(
-        self, tools: dict[str, Any], ctx: Any, fake_client: AsyncMock
+        self, fake_app: AppContext, fake_client: AsyncMock
     ) -> None:
-        with pytest.raises(ValueError, match="not supported on V5"):
-            await tools["encode_vibe"](
-                ctx, reference="b64", model="nai-diffusion-5-full"
-            )
+        from fastmcp.exceptions import ToolError
+
+        with pytest.raises(ToolError, match="not supported on V5"):
+            await tags.encode_vibe(reference="b64", model=Model.V5, client=fake_client)
 
 
 class TestAccountTools:
     async def test_get_subscription(
-        self, tools: dict[str, Any], ctx: Any, fake_client: AsyncMock
+        self, fake_app: AppContext, fake_client: AsyncMock
     ) -> None:
         fake_client.get_subscription.return_value = {"tier": 1}
-        result = await tools["get_subscription"](ctx)
+        result = await account.get_subscription(client=fake_client)
         assert result == {"tier": 1}
 
     async def test_get_user_data(
-        self, tools: dict[str, Any], ctx: Any, fake_client: AsyncMock
+        self, fake_app: AppContext, fake_client: AsyncMock
     ) -> None:
         fake_client.get_user_data.return_value = {"email": "a@b.com"}
-        result = await tools["get_user_data"](ctx)
+        result = await account.get_user_data(client=fake_client)
         assert result == {"email": "a@b.com"}
 
-    async def test_estimate_anlas_cost_returns_dict(
-        self, tools: dict[str, Any], ctx: Any
+    async def test_estimate_anlas_cost_returns_model(
+        self, fake_app: AppContext
     ) -> None:
-        result = await tools["estimate_anlas_cost"](
-            ctx, width=832, height=1216, steps=28, opus=True
+        _ = fake_app  # estimation is pure and offline
+        result = await account.estimate_anlas_cost(
+            width=832, height=1216, steps=28, opus=True
         )
-        assert result["anlas"] == 0
-        assert result["opus_free_sample"] is True
-
-    async def test_estimate_anlas_cost_unknown_action_raises(
-        self, tools: dict[str, Any], ctx: Any
-    ) -> None:
-        with pytest.raises(ValueError, match="unknown action"):
-            await tools["estimate_anlas_cost"](
-                ctx, width=832, height=1216, steps=28, action="bogus"
-            )
+        assert isinstance(result, AnlasEstimate)
+        assert result.anlas == 0
+        assert result.opus_free_sample is True
 
 
 class TestRegistration:
-    def test_register_all_invokes_each_group(
-        self, recording_mcp: RecordingMCPServer
-    ) -> None:
-        _register_all(recording_mcp)
-        # 11 tools expected: 3 generate + 3 enhance + 2 tags + 3 account.
+    async def test_every_tool_is_registered(self) -> None:
+        """The shared server exposes exactly the 11 documented tools."""
         expected = {
             "generate_image",
             "image_to_image",
@@ -304,51 +345,95 @@ class TestRegistration:
             "get_user_data",
             "estimate_anlas_cost",
         }
-        assert expected.issubset(recording_mcp.tools.keys())
-        assert len(expected) == 11
+        registered = {tool.name for tool in await server_module.mcp.list_tools()}
+        assert registered == expected
+
+
+class TestToolMetadata:
+    def test_annotations_and_tags(self) -> None:
+        from novelai_image_mcp.tools._meta import (
+            IMAGE_WRITE_ANNOTATIONS,
+            OFFLINE_ANNOTATIONS,
+            READ_ONLY_ANNOTATIONS,
+        )
+
+        # Image tools spend Anlas and write a new PNG; the read-only tools only
+        # read; the estimator is offline and idempotent.
+        assert IMAGE_WRITE_ANNOTATIONS.read_only_hint is False
+        assert IMAGE_WRITE_ANNOTATIONS.destructive_hint is False
+        assert READ_ONLY_ANNOTATIONS.read_only_hint is True
+        assert OFFLINE_ANNOTATIONS.open_world_hint is False
+        assert OFFLINE_ANNOTATIONS.idempotent_hint is True
+
+    async def test_titles_and_annotations_are_published(self) -> None:
+        tools_by_name = {
+            tool.name: tool for tool in await server_module.mcp.list_tools()
+        }
+        for tool in tools_by_name.values():
+            assert tool.title, f"{tool.name} has no title"
+            assert "novelai" in tool.tags
+            assert tool.annotations is not None
+        subscription_annotations = tools_by_name["get_subscription"].annotations
+        assert subscription_annotations is not None
+        assert subscription_annotations.read_only_hint is True
+        estimate_annotations = tools_by_name["estimate_anlas_cost"].annotations
+        assert estimate_annotations is not None
+        assert estimate_annotations.open_world_hint is False
+        generate_annotations = tools_by_name["generate_image"].annotations
+        assert generate_annotations is not None
+        assert generate_annotations.read_only_hint is False
+
+
+class TestSchemaValidation:
+    """Invalid arguments are rejected by the generated schema, not at runtime."""
+
+    async def test_enum_parameter_rejects_unknown_value(self, mcp_client: Any) -> None:
+        from fastmcp.exceptions import ToolError
+
+        with pytest.raises(ToolError):
+            await mcp_client.call_tool(
+                "annotate_image", {"image": "b64", "model": "bogus"}
+            )
+
+    async def test_numeric_bound_rejects_out_of_range(self, mcp_client: Any) -> None:
+        from fastmcp.exceptions import ToolError
+
+        with pytest.raises(ToolError):
+            await mcp_client.call_tool(
+                "generate_image", {"prompt": "a cat", "n_samples": 99}
+            )
+
+    async def test_dependency_parameters_are_not_exposed(self, mcp_client: Any) -> None:
+        listed = await mcp_client.list_tools()
+        for tool in listed:
+            properties = set((tool.input_schema or {}).get("properties", {}))
+            assert "app" not in properties
+            assert "client" not in properties
+            assert "ctx" not in properties
 
 
 class TestSerializationRegression:
-    """Verify image returns serialize correctly through fastmcp's real path.
+    """Verify image returns serialize correctly through FastMCP's real path.
 
-    ``RecordingMCPServer`` bypasses fastmcp's result conversion, so these tests
-    close that gap by invoking the production ``server.mcp`` through
-    ``call_tool`` — fastmcp's full execution pipeline, which converts the
-    returned ``Image`` helper into an ``ImageContent`` block. They assert the
-    resulting content blocks are the MIME-typed MCP content blocks and that
-    each JSON-serializes (the historical ``PydanticSerializationError`` lived
-    in the SDK's structured-content ``model_dump(mode="json")`` path).
+    These tests drive the production server instance through
+    `fastmcp.Client`, which runs the full execution pipeline and converts the
+    returned `Image` helper into an `ImageContent` block. They assert the
+    blocks are MIME-typed MCP content and that each JSON-serializes (the
+    historical `PydanticSerializationError` lived in the SDK's
+    structured-content `model_dump(mode="json")` path).
     """
-
-    @staticmethod
-    def _seed_lifespan(client: Any, settings: Any) -> None:
-        """Give the shared server a lifespan value so tools see AppContext.
-
-        fastmcp's ``Context.lifespan_context`` reads the server's
-        ``_lifespan_result`` (the value the lifespan yielded). Seeding it here
-        lets ``call_tool`` run the tool body without a live session.
-        """
-        from novelai_image_mcp.server import mcp
-
-        mcp._lifespan_result = SimpleNamespace(client=client, settings=settings)
 
     async def test_generate_image_serializes_through_real_path(
         self,
-        settings: Any,
+        mcp_client: Any,
         fake_client: AsyncMock,
         nai_image: NovelAIImage,
-        tmp_path: Path,
     ) -> None:
-        """``generate_image`` yields a ``ToolResult`` with ``ImageContent``."""
+        """`generate_image` yields an `ImageContent` block plus its path."""
         from mcp_types import ImageContent, TextContent
 
-        from novelai_image_mcp.server import mcp
-
         fake_client.generate.return_value = (nai_image,)
-        settings.output_dir = str(tmp_path)
-        self._seed_lifespan(fake_client, settings)
-
-        result = await mcp.call_tool(
+        result = await mcp_client.call_tool(
             "generate_image",
             {
                 "prompt": "test",
@@ -363,64 +448,17 @@ class TestSerializationRegression:
 
         assert any(isinstance(b, ImageContent) for b in result.content)
         assert any(isinstance(b, TextContent) for b in result.content)
-        # The historical bug was here: content must JSON-serialize.
         for block in result.content:
             assert block.model_dump(mode="json") is not None
         image_block = next(b for b in result.content if isinstance(b, ImageContent))
         assert base64.b64decode(image_block.data) == nai_image.data
 
-    async def test_generate_image_v5_serializes_through_real_path(
-        self,
-        settings: Any,
-        fake_client: AsyncMock,
-        nai_image: NovelAIImage,
-        tmp_path: Path,
+    async def test_estimate_anlas_cost_returns_structured_output(
+        self, mcp_client: Any
     ) -> None:
-        """``generate_image`` with a V5 model still yields ImageContent."""
-        from mcp_types import ImageContent
-
-        from novelai_image_mcp.server import mcp
-
-        fake_client.generate.return_value = (nai_image,)
-        settings.output_dir = str(tmp_path)
-        self._seed_lifespan(fake_client, settings)
-
-        result = await mcp.call_tool(
-            "generate_image",
-            {
-                "prompt": "test",
-                "model": "nai-diffusion-5-full",
-                "straight_alpha": True,
-                "width": 512,
-                "height": 512,
-                "steps": 1,
-                "n_samples": 1,
-                "quality": False,
-            },
+        """A pydantic return yields both content and structured content."""
+        result = await mcp_client.call_tool(
+            "estimate_anlas_cost",
+            {"width": 832, "height": 1216, "steps": 28, "opus": True},
         )
-
-        assert any(isinstance(b, ImageContent) for b in result.content)
-        for block in result.content:
-            assert block.model_dump(mode="json") is not None
-
-    async def test_upscale_image_serializes_through_real_path(
-        self,
-        settings: Any,
-        fake_client: AsyncMock,
-        nai_image: NovelAIImage,
-        tmp_path: Path,
-    ) -> None:
-        """``upscale_image`` yields a ``ToolResult`` with ``ImageContent``."""
-        from mcp_types import ImageContent
-
-        from novelai_image_mcp.server import mcp
-
-        fake_client.upscale.return_value = nai_image
-        settings.output_dir = str(tmp_path)
-        self._seed_lifespan(fake_client, settings)
-
-        result = await mcp.call_tool("upscale_image", {"image": _b64(), "factor": 2})
-
-        assert any(isinstance(b, ImageContent) for b in result.content)
-        for block in result.content:
-            assert block.model_dump(mode="json") is not None
+        assert result.structured_content == {"anlas": 0, "opus_free_sample": True}

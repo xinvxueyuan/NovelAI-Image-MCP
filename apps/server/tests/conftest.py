@@ -2,20 +2,22 @@
 
 from __future__ import annotations
 
+import base64
 from pathlib import Path
 import sys
-from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+import pytest_asyncio
 
-# Make tests/ importable so test files can ``from _helpers import ...``.
+# Make tests/ importable so test files can `from _helpers import ...`.
 sys.path.insert(0, str(Path(__file__).parent))
 
-from _helpers import PNG_BYTES, RecordingMCPServer
+from _helpers import PNG_BYTES
 
 if TYPE_CHECKING:
+    from novelai_image_mcp.deps import AppContext
     from novelai_image_mcp.nai import NovelAIImage
     from novelai_image_mcp.settings import NovelAISettings
 
@@ -29,8 +31,6 @@ def png_bytes() -> bytes:
 @pytest.fixture
 def png_b64() -> str:
     """Return the same PNG as a base64-encoded ASCII string (wire format)."""
-    import base64
-
     return base64.b64encode(PNG_BYTES).decode("ascii")
 
 
@@ -63,8 +63,8 @@ def settings(tmp_path: Path) -> NovelAISettings:
 def fake_client(nai_image: NovelAIImage) -> Any:
     """An AsyncMock of NovelAIClient that returns canned images by default.
 
-    Individual tests override specific ``return_value`` / ``side_effect`` values
-    on the mock's methods (``generate``, ``upscale``, ``director``, ...).
+    Individual tests override specific `return_value` / `side_effect` values
+    on the mock's methods (`generate`, `upscale`, `director`, ...).
     """
     client = AsyncMock()
     client.generate.return_value = (nai_image,)
@@ -83,19 +83,51 @@ def fake_client(nai_image: NovelAIImage) -> Any:
 
 
 @pytest.fixture
-def fake_ctx(fake_client: Any, settings: NovelAISettings) -> Any:
-    """A minimal Context stand-in exposing ``lifespan_context``.
+def fake_app(fake_client: Any, settings: NovelAISettings) -> AppContext:
+    """An `AppContext` as the lifespan yields it.
 
-    Tools read the lifespan value via ``ctx.lifespan_context`` (the fastmcp
-    ``Context`` convenience property), so the stand-in exposes that attribute
-    directly rather than the MCP v2 ``request_context.lifespan_context`` shape.
+    Tools declare `app: AppContext = Depends(get_app_context)`; passing this
+    value directly exercises the tool body without going through FastMCP.
     """
-    return SimpleNamespace(
-        lifespan_context=SimpleNamespace(client=fake_client, settings=settings),
+    from novelai_image_mcp.deps import AppContext
+
+    return AppContext(client=fake_client, settings=settings)
+
+
+# The client must be entered on the same event loop that the test body runs
+# on: the in-memory transport is bound to whichever loop opened it, so the
+# session-scoped fixture loop (asyncio_default_fixture_loop_scope) would hang
+# every `await` in a function-scoped test.
+@pytest_asyncio.fixture(loop_scope="function")
+async def mcp_client(
+    monkeypatch: pytest.MonkeyPatch,
+    settings: NovelAISettings,
+    fake_client: Any,
+) -> Any:
+    """An in-memory `fastmcp.Client` driving the real server pipeline.
+
+    The server's lifespan is patched to build the canned client instead of a
+    real `curl_cffi` session, so tests exercise the production registration,
+    schema generation, dependency injection and result conversion without
+    touching the network.
+    """
+    from fastmcp import Client
+
+    from novelai_image_mcp import server as server_module
+
+    fake_http = MagicMock(name="httpx.AsyncClient")
+    fake_http.is_closed = False
+    fake_http.aclose = AsyncMock()
+
+    monkeypatch.setattr(server_module, "get_novelai_settings", lambda: settings)
+    monkeypatch.setattr(
+        server_module, "create_http_client", lambda **_kwargs: fake_http
+    )
+    monkeypatch.setattr(
+        server_module,
+        "create_novelai_client",
+        lambda _settings, **_kwargs: fake_client,
     )
 
-
-@pytest.fixture
-def recording_mcp() -> RecordingMCPServer:
-    """An MCPServer stub that records tools as ``register(mcp)`` is called."""
-    return RecordingMCPServer()
+    async with Client(server_module.mcp) as client:
+        yield client

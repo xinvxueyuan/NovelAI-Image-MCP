@@ -240,6 +240,18 @@ allowed-confusables = [
     "TRY003",
     "TC001", "TC003", "TC005",
 ]
+# Dependency providers: the TypeError guards a missing lifespan and its message
+# names the exact mistake, which TRY003 would push into a dedicated exception
+# class for a single defensive branch.
+"src/novelai_image_mcp/deps.py" = [
+    "TRY003",
+]
+# Output helpers: the ValueError/FileNotFoundError messages carry the offending
+# image name and the rule that rejected it, which is what the resource handler
+# relays to the client.
+"src/novelai_image_mcp/output.py" = [
+    "TRY003",
+]
 # Payload module imports only type-only models under ``from __future__ import
 # annotations``; TC002 is the matching third-party rule for ``msgpack`` types.
 "src/novelai_image_mcp/nai/payload.py" = [
@@ -275,7 +287,9 @@ combine-as-imports = true
 pythonVersion = "3.13"
 pythonPlatform = "All"
 typeCheckingMode = "standard"
-include = ["src", "tests"]
+# mcp_server.py is the src-layout entry shim FastMCP loads by path; it is
+# checked alongside the package so a broken re-export fails CI.
+include = ["src", "tests", "mcp_server.py"]
 exclude = [
     ".trae",
     ".venv",
@@ -323,14 +337,21 @@ exclude_lines = [
 # Poe tasks (cross-platform, uv-friendly runner: `uv run poe <task>`)
 # ─────────────────────────────────────────────────────────────────────────────
 [tool.poe.tasks]
-lint = "ruff check src tests"
-lint-fix = "ruff check --fix src tests"
-format = "ruff format src tests"
-format-check = "ruff format --check src tests"
+# The scope mirrors .husky/pre-commit's Python bucket (^apps/server/.*[.]py$),
+# which includes the container smoke test under docker/.
+lint = "ruff check src tests mcp_server.py docker"
+lint-fix = "ruff check --fix src tests mcp_server.py docker"
+format = "ruff format src tests mcp_server.py docker"
+format-check = "ruff format --check src tests mcp_server.py docker"
 typecheck = "pyright"
 test = "pytest"
 check.sequence = ["format-check", "lint", "typecheck", "test"]
 check.ignore_fail = "return_zero"
 serve = "python -m novelai_image_mcp serve"
-serve-http.shell = "MCP_TRANSPORT=streamable-http python -m novelai_image_mcp serve"
+serve-http.shell = "MCP_TRANSPORT=http python -m novelai_image_mcp serve"
+# Standard FastMCP entry points: run the declarative config, or open the
+# server in the MCP Inspector for interactive debugging.
+run = "fastmcp run ../fastmcp.json"
+inspect = "fastmcp inspect mcp_server.py"
+dev = "fastmcp dev inspector mcp_server.py"
 reuse = "reuse lint"

@@ -73,7 +73,7 @@ class NovelAISettings(BaseSettings):
 
 
 class MCPServerSettings(BaseSettings):
-    """MCP server transport selection (``MCP_*`` env vars)."""
+    """MCP server transport, auth and logging (``MCP_*`` env vars)."""
 
     model_config = SettingsConfigDict(
         env_prefix="MCP_",
@@ -83,10 +83,23 @@ class MCPServerSettings(BaseSettings):
         case_sensitive=False,
     )
 
-    transport: Literal["stdio", "streamable-http"] = "stdio"
+    # ``streamable-http`` is the historical alias for the canonical
+    # ``http`` transport; both are accepted so existing scripts keep
+    # working, and ``resolved_transport`` normalises the value passed to
+    # FastMCP.
+    transport: Literal["stdio", "http", "streamable-http"] = "stdio"
     host: str = "127.0.0.1"
     port: int = Field(default=8000, ge=1, le=65_535)
     path: str = "/mcp"
+    # Opt-in bearer token: when set, the HTTP transport requires the
+    # ``Authorization: Bearer <token>`` header. stdio is unaffected.
+    auth_token: str | None = None
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] | None = None
+
+    @property
+    def resolved_transport(self) -> Literal["stdio", "http"]:
+        """Canonical transport name (the legacy alias maps to ``http``)."""
+        return "stdio" if self.transport == "stdio" else "http"
 
 
 def get_novelai_settings() -> NovelAISettings:

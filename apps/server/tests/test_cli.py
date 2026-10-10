@@ -400,15 +400,20 @@ class TestCliServe:
                     "0.0.0.0",
                     "--port",
                     "9000",
+                    "--path",
+                    "/custom",
                 ],
             )
         finally:
             monkeypatch.setattr(server_module, "mcp", original)
 
         assert result.exit_code == 0, result.stderr
-        assert captured.get("transport") == "streamable-http"
+        # The legacy ``streamable-http`` enum member maps onto the canonical
+        # ``http`` transport FastMCP expects.
+        assert captured.get("transport") == "http"
         assert captured.get("host") == "0.0.0.0"
         assert captured.get("port") == 9000
+        assert captured.get("path") == "/custom"
 
 
 class TestCliReadImageBase64:

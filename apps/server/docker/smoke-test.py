@@ -2,19 +2,25 @@
 """Container entrypoint for NovelAI Image MCP smoke tests.
 
 The script verifies the production image boots cleanly: it imports the
-package, instantiates the MCP server, registers every tool against a
-recording stub (without making real HTTP calls), and writes a JUnit-style
-XML report to ``/app/smoke-test-results.xml`` (override with
-``SMOKE_TEST_RESULTS_XML``).
+package, asks the real server instance for its registered components (without
+starting a transport or making HTTP calls), and writes a JUnit-style XML
+report to `/app/smoke-test-results.xml` (override with
+`SMOKE_TEST_RESULTS_XML`).
 
-Designed to run with ``SMOKE_TEST=true`` (set as a Docker build-arg in
-``Dockerfile``). The CI workflow ``.github/workflows/ci.yml`` invokes the
-image with that flag and an inert ``NOVELAI_TOKEN`` to avoid hitting the
-real NovelAI API.
+The checks run through the FastMCP server API (`list_tools`,
+`list_prompts`, `list_resources`, `list_resource_templates`) rather than
+a recording stub, so a registration or schema regression fails the image
+build instead of only the unit suite.
+
+Designed to run with `SMOKE_TEST=true` (set as a Docker build-arg in
+`Dockerfile`). The CI workflow `.github/workflows/ci.yml` invokes the
+image with that flag and an inert `NOVELAI_TOKEN` to avoid hitting the real
+NovelAI API.
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from pathlib import Path
@@ -31,6 +37,31 @@ sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
 _LOGGER = logging.getLogger("smoke-test")
 
+_EXPECTED_TOOLS = {
+    # generation
+    "generate_image",
+    "image_to_image",
+    "inpaint",
+    # enhance
+    "upscale_image",
+    "director_tool",
+    "annotate_image",
+    # tags
+    "suggest_tags",
+    "encode_vibe",
+    # account
+    "get_subscription",
+    "get_user_data",
+    "estimate_anlas_cost",
+}
+_EXPECTED_PROMPTS = {"novelai_image_workflow", "novelai_prompt_writer"}
+_EXPECTED_RESOURCES = {
+    "novelai://defaults",
+    "novelai://models",
+    "novelai://samplers",
+}
+_EXPECTED_TEMPLATES = {"novelai://outputs/{name}"}
+
 
 def _init_logging() -> None:
     logging.basicConfig(
@@ -38,30 +69,6 @@ def _init_logging() -> None:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
         stream=sys.stdout,
     )
-
-
-class _RecordingMCPServer:
-    """Minimal MCPServer stub that records ``@mcp.tool()`` registrations.
-
-    Mirrors the ``RecordingMCPServer`` used by the test suite (see
-    ``tests/_helpers.py``): the real ``MCPServer.tool`` decorator returns
-    the original function unchanged after registering it, so the recording
-    stub mimics that contract while exposing each tool under its function
-    name for inspection.
-    """
-
-    def __init__(self) -> None:
-        self.tools: dict[str, object] = {}
-
-    def tool(self, **_kwargs: object) -> object:
-        def decorator(fn: object) -> object:
-            assert hasattr(fn, "__name__"), (
-                "tool decorator received a nameless callable"
-            )
-            self.tools[fn.__name__] = fn  # type: ignore[reportGeneralTypeIssues]
-            return fn
-
-        return decorator
 
 
 async def _check_import() -> None:
@@ -74,8 +81,8 @@ async def _check_import() -> None:
 async def _check_settings_instantiate() -> None:
     """Settings models load from environment without raising.
 
-    With ``NOVELAI_TOKEN=pst-smoke-test`` set by the CI entrypoint, the
-    ``has_credentials()`` guard should pass.
+    With `NOVELAI_TOKEN=pst-smoke-test` set by the CI entrypoint, the
+    `has_credentials()` guard should pass.
     """
     from novelai_image_mcp.settings import get_novelai_settings
 
@@ -83,37 +90,42 @@ async def _check_settings_instantiate() -> None:
     assert settings.has_credentials(), "smoke-test credentials are not set"
 
 
-async def _check_tool_registration() -> None:
-    """Every tool group must register against an MCPServer without errors.
+async def _check_server_metadata() -> None:
+    """The server reports the package version and faces the same defaults."""
+    import novelai_image_mcp
+    from novelai_image_mcp.server import mcp
 
-    Uses the recording stub so we don't actually start the MCP server (which
-    would block on stdio). The check confirms that the tool decorators, type
-    annotations, and registration logic are sound at import time.
-    """
-    from novelai_image_mcp.tools import register_all
+    assert mcp.name == "novelai-image", f"unexpected server name: {mcp.name}"
+    assert mcp.version == novelai_image_mcp.__version__, (
+        f"server version {mcp.version!r} does not match the package version "
+        f"{novelai_image_mcp.__version__!r}"
+    )
+    assert mcp.instructions, "the server publishes no instructions"
 
-    mcp = _RecordingMCPServer()
-    register_all(mcp)
 
-    expected_tools = {
-        # generation
-        "generate_image",
-        "image_to_image",
-        "inpaint",
-        # enhance
-        "upscale_image",
-        "director_tool",
-        "annotate_image",
-        # tags
-        "suggest_tags",
-        "encode_vibe",
-        # account
-        "get_subscription",
-        "get_user_data",
-        "estimate_anlas_cost",
+async def _check_components() -> None:
+    """Every tool, prompt and resource must be registered on the server."""
+    from novelai_image_mcp.server import mcp
+
+    tools = {tool.name for tool in await mcp.list_tools()}
+    missing_tools = _EXPECTED_TOOLS - tools
+    assert not missing_tools, f"missing tool registrations: {sorted(missing_tools)}"
+
+    prompts = {prompt.name for prompt in await mcp.list_prompts()}
+    missing_prompts = _EXPECTED_PROMPTS - prompts
+    assert not missing_prompts, f"missing prompts: {sorted(missing_prompts)}"
+
+    resources = {str(resource.uri) for resource in await mcp.list_resources()}
+    missing_resources = _EXPECTED_RESOURCES - resources
+    assert not missing_resources, f"missing resources: {sorted(missing_resources)}"
+
+    templates = {
+        template.uri_template for template in await mcp.list_resource_templates()
     }
-    missing = expected_tools - set(mcp.tools)
-    assert not missing, f"missing tool registrations: {sorted(missing)}"
+    missing_templates = _EXPECTED_TEMPLATES - templates
+    assert not missing_templates, (
+        f"missing resource templates: {sorted(missing_templates)}"
+    )
 
 
 async def _check_cli_app_loads() -> None:
@@ -128,7 +140,8 @@ async def _check_cli_app_loads() -> None:
 _CHECKS: list[tuple[str, object]] = [
     ("test_import", _check_import),
     ("test_settings_instantiate", _check_settings_instantiate),
-    ("test_tool_registration", _check_tool_registration),
+    ("test_server_metadata", _check_server_metadata),
+    ("test_components", _check_components),
     ("test_cli_app_loads", _check_cli_app_loads),
 ]
 
@@ -221,9 +234,6 @@ def main() -> int:
     """Synchronous wrapper around the async smoke-test workflow."""
     _init_logging()
     _ensure_smoke_env()
-
-    import asyncio
-
     return asyncio.run(_async_main())
 
 
