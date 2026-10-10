@@ -14,7 +14,10 @@
     "test": "uv run pytest",
     "reuse": "uv run --directory ../.. reuse lint",
     "serve": "uv run python -m novelai_image_mcp serve",
-    "serve:http": "MCP_TRANSPORT=streamable-http uv run python -m novelai_image_mcp serve",
+    "serve:http": "MCP_TRANSPORT=http uv run python -m novelai_image_mcp serve",
+    "run": "uv run fastmcp run ../fastmcp.json",
+    "inspect": "uv run fastmcp inspect mcp_server.py",
+    "dev": "uv run fastmcp dev inspector mcp_server.py",
     "clean": "rimraf dist build *.egg-info test-results .pytest_cache .ruff_cache"
   }
 }

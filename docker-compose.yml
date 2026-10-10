@@ -5,7 +5,7 @@ x-config-host: &config-host ${MCP_HOST:-127.0.0.1}
 x-config-port: &config-port ${MCP_PORT:-8000}
 
 services:
-  # ── Primary MCP server (streamable-http transport) ──────────────────
+  # ── Primary MCP server (HTTP transport) ─────────────────────────────
   # Use this when running as a remote service for multiple agents / clients.
   # For local single-agent use, prefer `novelai-image-mcp serve` (stdio).
   #
@@ -20,7 +20,9 @@ services:
     env_file:
       - .env
     environment:
-      MCP_TRANSPORT: streamable-http
+      # "http" is the canonical transport name ("streamable-http" is accepted
+      # as a legacy alias). Set MCP_AUTH_TOKEN to require a bearer token.
+      MCP_TRANSPORT: http
       MCP_HOST: *config-host
       MCP_PORT: *config-port
       # Container-aware defaults (override in .env if needed).

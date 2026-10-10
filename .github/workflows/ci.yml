@@ -115,10 +115,10 @@ jobs:
         # Scope to apps/server so ruff finds the [tool.ruff] config block
         # in apps/server/pyproject.toml (the workspace root pyproject.toml
         # is a virtual manifest with no ruff config).
-        run: uv run --directory apps/server ruff format --check src tests
+        run: uv run --directory apps/server ruff format --check src tests mcp_server.py docker
       - name: Ruff lint
         if: needs.changes.outputs.python == 'true'
-        run: uv run --directory apps/server ruff check src tests
+        run: uv run --directory apps/server ruff check src tests mcp_server.py docker
       - name: REUSE compliance
         run: uv run reuse lint
       - name: Pyright
@@ -264,8 +264,8 @@ jobs:
         run: uv sync --no-dev --all-extras --group lint --frozen
       - name: Auto-fix
         run: |
-          uv run --directory apps/server ruff check --fix src tests || true
-          uv run --directory apps/server ruff format src tests
+          uv run --directory apps/server ruff check --fix src tests mcp_server.py docker || true
+          uv run --directory apps/server ruff format src tests mcp_server.py docker
           pnpm exec markdownlint-cli2 --fix || true
       - name: Commit changes
         run: |
