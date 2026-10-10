@@ -32,13 +32,10 @@ authors = [{ name = "NovelAI Image MCP contributors" }]
 maintainers = [{ name = "NovelAI Image MCP contributors" }]
 dependencies = [
     # fastmcp 4 (PrefectHQ/fastmcp) is the server framework; it builds on the
-    # MCP SDK v2 (mcp>=2.0.0), so the SDK remains a transitive dependency. It
-    # is pinned to the 4.0.0b3 prerelease (the first line to target SDK v2);
-    # relax to `>=4` once fastmcp 4 ships stable. fastmcp-slim is pinned via
-    # [tool.uv] constraint-dependencies so uv admits the prerelease for this
-    # indirect dependency (uv gates prereleases to explicitly-named packages).
-    "fastmcp==4.0.0b3",
-    "mcp>=2.0.0",
+    # MCP SDK v2 (mcp>=2.x), so the SDK remains a transitive dependency whose
+    # floor is kept in step with the fastmcp release line.
+    "fastmcp>=4.1.0,<5",
+    "mcp>=2.3.0",
     # httpx is pinned below 1.0 because respx (test dep) doesn't yet support httpx 1.x.
     "httpx>=0.28.0,<1.0.0",
     # Browser TLS + header fingerprint impersonation for Cloudflare's bot WAF.
@@ -93,10 +90,6 @@ module-root = "src"
 
 [tool.uv]
 package = true
-# fastmcp-slim arrives transitively (fastmcp -> fastmcp-slim); uv only admits
-# prereleases for packages it is told about explicitly, so constrain it to the
-# same 4.0.0b3 prerelease the top-level fastmcp pin requests.
-constraint-dependencies = ["fastmcp-slim==4.0.0b3"]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Ruff
