@@ -19,6 +19,7 @@ import httpx
 
 from .auth import NovelAICredentials, derive_access_key, request_tracking_headers
 from .constants import (
+    UPSCALE_MODELS,
     ControlNetModel,
     DirectorTool,
     Emotion,
@@ -27,6 +28,7 @@ from .constants import (
     Model,
     is_v4_model,
     is_v5_model,
+    supports_upscale,
 )
 from .exceptions import (
     NovelAIAuthenticationError,
@@ -317,18 +319,45 @@ class NovelAIClient:
         )
         return _first_image(content, filename=f"{tool.value}.png")
 
-    async def upscale(self, image: bytes, *, factor: int = 4) -> NovelAIImage:
-        if factor not in {2, 4}:
-            raise ValueError("upscale factor must be 2 or 4")
+    async def upscale(
+        self,
+        image: bytes,
+        *,
+        factor: int = 4,
+        model: Model | str | None = None,
+    ) -> NovelAIImage:
+        """Upscale an image 4x with NovelAI's standalone upscaler.
+
+        The endpoint lives on `image.novelai.net` and takes
+        `{image, model, declared_blur_sigma}`. It is 4x only — the API exposes
+        no scaling factor — and only the V5 line supports standalone upscaling,
+        so `model` defaults to the V5 full model (see
+        `NovelAISettings.upscale_model`).
+
+        Verified live on 2026-10-10: V3 / V4 / V4.5 (including their inpainting
+        and curated variants) are rejected with "model ... doesn't support
+        standalone upscaling".
+        """
+        if factor != 4:
+            raise NovelAIValidationError(
+                "NovelAI's standalone upscaler is 4x only; "
+                "factor must be 4 (the API accepts no other scaling factor)"
+            )
+        upscale_model = Model(model) if model is not None else Model.V5
+        if not supports_upscale(upscale_model):
+            raise NovelAIValidationError(
+                f"model {upscale_model.value!r} does not support standalone "
+                f"upscaling; use one of: "
+                f"{', '.join(sorted(m.value for m in UPSCALE_MODELS))}"
+            )
         parsed = parse_image(image)
         content = await self._request(
             "POST",
-            f"{self.legacy_image_base_url}{Endpoint.UPSCALE}",
+            f"{self.image_base_url}{Endpoint.UPSCALE}",
             json_body={
                 "image": parsed.base64,
-                "width": parsed.width,
-                "height": parsed.height,
-                "scale": factor,
+                "model": upscale_model.value,
+                "declared_blur_sigma": 0,
             },
         )
         return _first_image(content, filename="upscaled.png")

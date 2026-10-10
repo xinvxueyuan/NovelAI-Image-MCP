@@ -56,10 +56,10 @@ Inpainting (any family)?
 - V4 / V4.5 / V5 → `POST /ai/generate-image-stream` → MessagePack stream
   (`stream: "msgpack"`), HTTP 200. Selected via `is_v4_model()` in
   `client.py`.
-- `/ai/upscale` and `/ai/annotate-image` are **not** on `image.novelai.net` —
-  they remain on the legacy Primary API `api.novelai.net`
-  (`NOVELAI_LEGACY_IMAGE_BASE_URL`). Never point that base URL at
-  `image.novelai.net` or these two tools 404.
+- `/ai/upscale` **is** on `image.novelai.net` (it moved there) and only
+  accepts the V5 line; `/ai/annotate-image` is the one endpoint still on the
+  legacy Primary API `api.novelai.net` (`NOVELAI_LEGACY_IMAGE_BASE_URL`).
+  Never point that base URL at `image.novelai.net` or `annotate_image` 404s.
 
 **V4/V4.5-only features:** `references` (vibe transfer) — V5 does not
 support vibes yet and rejects them. `character_prompts` (multi-character
@@ -118,8 +118,9 @@ Passing a non-inpaint model raises `ValueError`.
 
 #### Tool-specific params
 
-- **`upscale_image`**: `image` (base64, required), `factor` (`2` or `4`,
-  default `4`).
+- **`upscale_image`**: `image` (base64, required), `factor` (`4` only —
+  the standalone upscaler is a single 4× step). The model comes from
+  `NOVELAI_UPSCALE_MODEL` (V5 line).
 - **`director_tool`**: `tool` (required; `lineart`, `sketch`, `bg-removal`,
   `declutter`, `colorize`, `emotion`), `image` (base64, required), `prompt`
   (guides `colorize` + `emotion`), `defry` (0–10, line-art sharpening),
@@ -280,7 +281,7 @@ estimate_anlas_cost(width=1024, height=1024, steps=50, n_samples=8,
 | `generate_image` | Text-to-image (V3 / V4 / V4.5, character prompts, vibe references) |
 | `image_to_image` | Image-to-image with `strength` / `noise` |
 | `inpaint` | Locally redraw a masked region (requires an inpaint model + mask) |
-| `upscale_image` | 2× / 4× upscale via NovelAI's dedicated upscaler |
+| `upscale_image` | 4× upscale via NovelAI's standalone upscaler (V5 model) |
 | `director_tool` | Line art / sketch / bg-removal / declutter / colorize / emotion |
 | `annotate_image` | ControlNet preprocessor (hed, midas, fake_scribble, mlsd, uniformer) |
 | `suggest_tags` | Complete/refine a prompt with NovelAI tag suggestions |
@@ -345,9 +346,12 @@ examples.
   use an `*-inpainting` model id.
 - **`character_prompts` / `references` on V3/Furry** are silently ignored
   by the API. Switch to a V4/V4.5 model to use them.
-- **`upscale_image` / `annotate_image` 404 on `image.novelai.net`** — they
-  are routed to `api.novelai.net` automatically. Do not override
+- **`annotate_image` 404 on `image.novelai.net`** — it is routed to
+  `api.novelai.net` automatically. Do not override
   `NOVELAI_LEGACY_IMAGE_BASE_URL` to point at `image.novelai.net`.
+- **`upscale_image` says "does not support standalone upscaling"** — set
+  `NOVELAI_UPSCALE_MODEL` to a V5 model (`nai-diffusion-5-full` or
+  `nai-diffusion-5-curated`).
 - **Unknown enum values** (`model`, `sampler`, `tool`, `emotion`,
   ControlNet `model`) raise `ValueError` with the accepted list in the
   message — read the error and retry with an exact value from the message.

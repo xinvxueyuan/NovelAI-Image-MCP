@@ -20,6 +20,7 @@ import pytest
 from typer.testing import CliRunner
 
 from novelai_image_mcp import cli
+from novelai_image_mcp.nai import Model
 
 if TYPE_CHECKING:
     from novelai_image_mcp.nai import NovelAIImage
@@ -203,7 +204,7 @@ class TestCliEnhance:
             ],
         )
         assert result.exit_code == 0, result.stderr
-        client.upscale.assert_awaited_once_with(PNG_BYTES, factor=4)
+        client.upscale.assert_awaited_once_with(PNG_BYTES, factor=4, model=Model.V5)
 
     def test_upscale_missing_file_returns_bad_parameter(
         self,

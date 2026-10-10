@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import json
 import struct
 from typing import cast
 import zipfile
@@ -178,19 +179,53 @@ class TestGenerate:
 class TestUpscaleDirectorAnnotate:
     @respx.mock
     async def test_upscale_returns_image(self, nai_client: NovelAIClient) -> None:
-        respx.post("https://api.novelai.net/ai/upscale").mock(
+        """The standalone upscaler lives on the image host and takes a model.
+
+        Live-verified 2026-10-10: `POST /ai/upscale` only accepts
+        `{image, model, declared_blur_sigma}` and only the V5 line.
+        """
+        route = respx.post("https://image.novelai.net/ai/upscale").mock(
             return_value=httpx.Response(200, content=PNG_BYTES)
         )
         result = await nai_client.upscale(PNG_BYTES, factor=4)
         assert result.data == PNG_BYTES
         assert result.filename == "upscaled.png"
+        payload = json.loads(route.calls.last.request.content)
+        assert payload["model"] == Model.V5.value
+        assert payload["declared_blur_sigma"] == 0
+        assert set(payload) == {"image", "model", "declared_blur_sigma"}
+
+    @respx.mock
+    async def test_upscale_uses_the_configured_model(
+        self, nai_client: NovelAIClient
+    ) -> None:
+        route = respx.post("https://image.novelai.net/ai/upscale").mock(
+            return_value=httpx.Response(200, content=PNG_BYTES)
+        )
+        await nai_client.upscale(PNG_BYTES, model=Model.V5_CURATED)
+        assert json.loads(route.calls.last.request.content)["model"] == (
+            Model.V5_CURATED.value
+        )
 
     @respx.mock
     async def test_upscale_invalid_factor_rejected(
         self, nai_client: NovelAIClient
     ) -> None:
-        with pytest.raises(ValueError, match="upscale factor"):
+        with pytest.raises(NovelAIValidationError, match="4x only"):
             await nai_client.upscale(PNG_BYTES, factor=3)
+
+    @respx.mock
+    async def test_upscale_2x_is_rejected(self, nai_client: NovelAIClient) -> None:
+        """The API exposes no 2x step, so it is refused before any request."""
+        with pytest.raises(NovelAIValidationError, match="4x only"):
+            await nai_client.upscale(PNG_BYTES, factor=2)
+
+    @respx.mock
+    async def test_upscale_model_without_support_is_rejected(
+        self, nai_client: NovelAIClient
+    ) -> None:
+        with pytest.raises(NovelAIValidationError, match="does not support"):
+            await nai_client.upscale(PNG_BYTES, model=Model.V4_5)
 
     @respx.mock
     async def test_director_emotion_requires_emotion(

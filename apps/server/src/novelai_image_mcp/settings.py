@@ -61,6 +61,11 @@ class NovelAISettings(BaseSettings):
     default_scale: float = Field(default=5.0, gt=0, le=20)
     default_sampler: str = "k_euler_ancestral"
 
+    # ── Upscale ──
+    # The standalone upscaler (4x) only accepts the V5 line; this is a `Model`
+    # id. See `nai.constants.supports_upscale`.
+    upscale_model: str = "nai-diffusion-5-full"
+
     # ── Client ──
     vibe_cache_entries: int = Field(default=64, ge=1, le=1024)
 

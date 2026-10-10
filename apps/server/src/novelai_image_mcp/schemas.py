@@ -22,16 +22,18 @@ class AnlasEstimate(BaseModel):
 class TagSuggestion(BaseModel):
     """One tag suggested by NovelAI's tagger for a partial prompt.
 
-    Unknown fields are preserved (``extra="allow"``) and every field is
-    optional with a default so an upstream vocabulary change never turns a
-    suggestion into a validation failure.
+    The wire shape is live-verified (2026-10-10):
+    ``{"tag": "1girl", "count": 10000, "confidence": 0.79}``. Unknown
+    fields are preserved (``extra="allow"``) and every field has a
+    default, so an upstream vocabulary change never turns a suggestion into a
+    validation failure.
     """
 
     model_config = ConfigDict(extra="allow")
 
-    text: str = ""
+    tag: str = ""
     count: int = 0
-    description: str | None = None
+    confidence: float = 0.0
 
 
 __all__ = ["AnlasEstimate", "TagSuggestion"]

@@ -68,8 +68,12 @@ per-release section headings. This file is the human-curated companion.
 - **Standard FastMCP entry points**: `fastmcp.json` at the repository root,
   plus `apps/server/mcp_server.py` as the path-loadable entry shim, so
   `fastmcp run`, `fastmcp inspect` and `fastmcp dev inspector` all work.
-- **New settings**: `MCP_LOG_LEVEL` (forwarded to FastMCP) and
-  `MCP_AUTH_TOKEN`.
+- **New settings**: `MCP_LOG_LEVEL` (forwarded to FastMCP),
+  `MCP_AUTH_TOKEN` (optional HTTP bearer token) and `NOVELAI_UPSCALE_MODEL`
+  (the V5 model the standalone 4× upscaler runs on).
+- **API alignment audit** (`apps/docs/source/development/api-alignment.md`):
+  every documented NovelAI endpoint checked against the live API, with the
+  doc-lag list that keeps future readers from "fixing" working request fields.
 
 ### Changed
 
@@ -104,6 +108,18 @@ per-release section headings. This file is the human-curated companion.
 
 ### Fixed
 
+- **`upscale_image` was broken (live-verified)**: NovelAI moved `/ai/upscale`
+  to `image.novelai.net`, changed the body to
+  `{image, model, declared_blur_sigma}` and made it **V5-only** — the previous
+  request to `api.novelai.net/ai/upscale` now returns 404. The client posts to
+  the image host, sends the documented body, defaults the model to the new
+  `NOVELAI_UPSCALE_MODEL` (`nai-diffusion-5-full`), and rejects anything but a
+  4× step (the API exposes no scaling factor; `2` is refused before any
+  request).
+- **`suggest_tags` published the wrong fields**: the tagger returns
+  `{tag, count, confidence}` (verified live), not
+  `{description, text, count}`, so `TagSuggestion` and the docs now mirror the
+  wire shape.
 - **`MCP_PATH` had no effect**: the configured HTTP endpoint path is now passed
   to FastMCP, so the server actually listens on it (default `/mcp` unchanged).
 - **Framework version reported as the server version**: `FastMCP` now receives

@@ -63,11 +63,13 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
    NovelAI 已将大部分第三方 API 访问收口到 `image.novelai.net`：它承载
    `/ai/generate-image`、`/ai/generate-image-stream`、`/ai/augment-image`、
    `/ai/encode-vibe`、`/ai/generate-image/suggest-tags` 以及 `/user/*`（账户 /
-   订阅 / 数据）端点。**例外**：`/ai/upscale` 与 `/ai/annotate-image` 未迁移，
-   仍在 Primary API `api.novelai.net` 上——`api.novelai.net/docs/` 明确指出
-   第三方用户可使用其 `/ai/` 路由。`NovelAISettings.legacy_image_base_url`
-   （默认 `https://api.novelai.net`）专门服务这两个端点，`upscale()` 与
-   `annotate()` 必须使用它。`create_http_client()` 用
+   订阅 / 数据）端点。**例外**：只有 `/ai/annotate-image` 未迁移，仍在 Primary API
+   `api.novelai.net` 上——`NovelAISettings.legacy_image_base_url`（默认
+   `https://api.novelai.net`）只为它服务，`annotate()` 必须使用它。
+   **`/ai/upscale` 已迁到 `image.novelai.net`**，请求体是
+   `{image, model, declared_blur_sigma}`（没有 factor 字段），且**只有 V5 系列**
+   支持独立放大（2026-10-10 实测：V3/V4/V4.5 全部报 "doesn't support
+   standalone upscaling"，旧的 `api.novelai.net/ai/upscale` 返回 404）。`create_http_client()` 用
    `httpx_curl_cffi.AsyncCurlTransport(impersonate="chrome")` 复刻 Chrome 的
    BoringSSL 指纹 + 完整 Chrome 150 请求头块（`BROWSER_HEADERS`）。
 3. **MCP 工具返回图像时返回 fastmcp 的 `Image` 辅助类（`from

@@ -212,7 +212,7 @@ uv run python -m novelai_image_mcp --help
 | `generate_image` | 文生图（V3 / V4 / V4.5 / V5 模型，角色提示；Vibe 仅 V4/V4.5） |
 | `image_to_image` | 图生图（strength / noise） |
 | `inpaint` | 局部重绘（需 inpaint 模型 + mask） |
-| `upscale_image` | 2× / 4× 放大 |
+| `upscale_image` | 4× 放大（V5 模型） |
 | `director_tool` | 线稿 / 草图 / 去背景 / 去杂物 / 上色 / 表情 |
 | `annotate_image` | ControlNet 标注（hed, midas, scribble, mlsd, uniformer） |
 | `suggest_tags` | 标签建议 |

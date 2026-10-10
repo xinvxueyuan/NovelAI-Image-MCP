@@ -138,22 +138,28 @@ Valid model ids include: `nai-diffusion-4-5-full` (default),
 The CLI prints one absolute path per generated image to stdout (one per line).
 Use `-o` to redirect output without touching the env var.
 
-#### `upscale` — 2× or 4× upscale
+#### `upscale` — 4× upscale (V5 model)
 
 ```bash
 novelai-image-mcp upscale ./outputs/generate-20260728.png --factor 4
-novelai-image-mcp upscale input.jpg -f 2 -o ./upscaled
+novelai-image-mcp upscale input.jpg -o ./upscaled
 ```
 
 Arguments / flags:
 
 - `image` (positional, required) — path to the PNG/JPEG to upscale.
-- `--factor, -f` — `2` or `4`. Default `4`.
+- `--factor, -f` — `4` only. NovelAI's standalone upscaler exposes a
+  single 4× step, and `2` is rejected before any request is sent.
 - `--output-dir, -o` — override `NOVELAI_OUTPUT_DIR`.
 
-Note: `/ai/upscale` lives on the legacy Primary API (`api.novelai.net`), not
-`image.novelai.net`. The client handles this automatically via
-`NOVELAI_LEGACY_IMAGE_BASE_URL` — do not point that at `image.novelai.net`.
+Note: `/ai/upscale` is served by `image.novelai.net` and only the V5 line
+supports standalone upscaling, so the request carries
+`{image, model, declared_blur_sigma}` with the model from
+`NOVELAI_UPSCALE_MODEL` (default `nai-diffusion-5-full`). Verified live on
+2026-10-10: V3/V4/V4.5 (inpainting and curated included) are rejected with
+"model ... doesn't support standalone upscaling", and the older
+`api.novelai.net/ai/upscale` path returns 404. Only `/ai/annotate-image`
+still lives on the legacy host.
 
 #### `director` — Director tools
 
@@ -290,9 +296,12 @@ novelai-image-mcp info | jq '.subscription.tier'
   `curl_cffi` with a Chrome TLS fingerprint by design; do not bypass
   `create_http_client()`. If you see TLS errors, ensure `curl_cffi` is
   installed and up to date (`uv sync`).
-- **`/ai/upscale` or `/ai/annotate-image` 404** — these endpoints are on
-  `api.novelai.net`, not `image.novelai.net`. Do not override
-  `NOVELAI_LEGACY_IMAGE_BASE_URL` to point at `image.novelai.net`.
+- **`/ai/annotate-image` 404** — that endpoint is on `api.novelai.net`, not
+  `image.novelai.net`. Do not override `NOVELAI_LEGACY_IMAGE_BASE_URL` to
+  point at `image.novelai.net`.
+- **`upscale` fails with "does not support standalone upscaling"** — pass a
+  V5 model id via `NOVELAI_UPSCALE_MODEL` (`nai-diffusion-5-full` or
+  `nai-diffusion-5-curated`).
 
 ### Source reference
 

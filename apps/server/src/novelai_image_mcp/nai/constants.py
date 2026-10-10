@@ -185,6 +185,21 @@ def is_inpaint_model(model: Model) -> bool:
     return model in _INPAINT_MODELS
 
 
+#: Models the standalone upscaler accepts. Live-verified 2026-10-10 against
+#: `POST https://image.novelai.net/ai/upscale`: the V5 line returns 200 while
+#: every V3 / V4 / V4.5 variant (inpainting and curated included) is rejected
+#: with "model ... doesn't support standalone upscaling".
+UPSCALE_MODELS = frozenset({
+    Model.V5,
+    Model.V5_CURATED,
+})
+
+
+def supports_upscale(model: Model) -> bool:
+    """True when the standalone `/ai/upscale` endpoint accepts this model."""
+    return model in UPSCALE_MODELS
+
+
 def params_version_for(model: Model) -> int:
     """Return the NovelAI ``params_version`` for a model.
 

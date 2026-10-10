@@ -21,6 +21,7 @@ from .nai import (
     is_inpaint_model,
     is_v4_model,
     is_v5_model,
+    supports_upscale,
     supports_vibe,
 )
 from .output import resolve_output_path
@@ -47,6 +48,7 @@ def list_models() -> dict[str, Any]:
                 "v5": is_v5_model(model),
                 "inpainting": is_inpaint_model(model),
                 "vibe_transfer": supports_vibe(model),
+                "standalone_upscale": supports_upscale(model),
             }
             for model in Model
         ]

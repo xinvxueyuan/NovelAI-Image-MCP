@@ -30,6 +30,9 @@ class TestCatalogResources:
         assert v5["vibe_transfer"] is False
         assert v5["v5"] is True
         assert by_id[Model.V4_5_INPAINT.value]["inpainting"] is True
+        # Only the V5 line supports the standalone 4x upscaler (live-verified).
+        assert v5["standalone_upscale"] is True
+        assert v45["standalone_upscale"] is False
 
     async def test_samplers_resource(self, mcp_client: Any) -> None:
         contents = await mcp_client.read_resource("novelai://samplers")

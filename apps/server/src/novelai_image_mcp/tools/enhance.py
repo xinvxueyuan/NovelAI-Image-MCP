@@ -15,6 +15,7 @@ from ..nai import (
     DirectorTool,
     Emotion,
     EmotionLevel,
+    Model,
     NovelAIImage,
 )
 from ..output import save_image
@@ -46,25 +47,30 @@ def _save_and_return(
 
 
 @mcp.tool(
-    title="Upscale an image",
+    title="Upscale an image (4x)",
     tags={"novelai", "enhancement"},
     annotations=IMAGE_WRITE_ANNOTATIONS,
 )
 @translate_errors
 async def upscale_image(
     image: str,
-    factor: Literal[2, 4] = 4,
+    factor: Literal[4] = 4,
     app: AppContext = Depends(get_app_context),
 ) -> list[Any]:
-    """Upscale an image by 2× or 4× using NovelAI's dedicated upscaler.
+    """Upscale an image 4x using NovelAI's standalone upscaler.
 
-    ``image`` is a base64-encoded PNG/JPEG. ``factor`` must be 2 or 4.
-    The upscaler is model-independent and consumes Anlas based on the source
-    resolution and factor.
+    ``image`` is a base64-encoded PNG/JPEG. NovelAI's standalone upscaler
+    offers a single 4x step — the API exposes no scaling factor — so
+    ``factor`` only accepts ``4``. The upscaler runs on the V5 model
+    configured by ``NOVELAI_UPSCALE_MODEL`` (default
+    ``nai-diffusion-5-full``) and consumes Anlas based on the source
+    resolution.
     """
     settings = app.settings
     client = app.client
-    result = await client.upscale(base64.b64decode(image), factor=factor)
+    result = await client.upscale(
+        base64.b64decode(image), factor=factor, model=Model(settings.upscale_model)
+    )
     return _save_and_return(result, name="upscale", output_dir=settings.output_dir)
 
 

@@ -12,7 +12,7 @@ lifespan state.
 | [`generate_image`](generate.md#generate_image) | generation | Text-to-image (V3 / V4 / V4.5, character prompts, vibes) |
 | [`image_to_image`](generate.md#image_to_image) | generation | Image-to-image with strength / noise |
 | [`inpaint`](generate.md#inpaint) | generation | Local redraw (requires inpaint model + mask) |
-| [`upscale_image`](upscale.md#upscale_image) | enhance | 2× / 4× upscaling |
+| [`upscale_image`](upscale.md#upscale_image) | enhance | 4× upscaling (V5 model) |
 | [`director_tool`](director.md#director_tool) | enhance | line art / sketch / bg-removal / declutter / colorize / emotion |
 | [`annotate_image`](annotate.md#annotate_image) | enhance | ControlNet preprocessing (hed, midas, scribble, mlsd, uniformer) |
 | [`suggest_tags`](tags.md#suggest_tags) | tags | Prompt tag suggestions |

@@ -224,11 +224,15 @@ def upscale(
     image: Annotated[Path, typer.Argument(help="Path to the PNG/JPEG to upscale.")],
     factor: Annotated[
         int,
-        typer.Option("--factor", "-f", help="Upscale factor (2 or 4)."),
+        typer.Option(
+            "--factor",
+            "-f",
+            help="Upscale factor (NovelAI's standalone upscaler is 4x only).",
+        ),
     ] = 4,
     output_dir: Annotated[str | None, typer.Option("--output-dir", "-o")] = None,
 ) -> None:
-    """Upscale an image by 2× or 4×."""
+    """Upscale an image 4x with NovelAI's standalone upscaler."""
     settings = get_novelai_settings()
     client, http_client = _build_client(settings)
     raw = _read_image_file(image)
@@ -236,7 +240,9 @@ def upscale(
 
     async def _do() -> None:
         try:
-            result = await client.upscale(raw, factor=factor)
+            result = await client.upscale(
+                raw, factor=factor, model=Model(settings.upscale_model)
+            )
             path = save_image(result.data, name="upscale", output_dir=target_dir)
             typer.echo(str(path))
         finally:

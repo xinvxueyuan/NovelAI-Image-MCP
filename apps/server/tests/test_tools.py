@@ -179,7 +179,11 @@ class TestEnhanceTools:
     ) -> None:
         fake_client.upscale.return_value = nai_image
         result = await enhance.upscale_image(image=_b64(), factor=4, app=fake_app)
-        fake_client.upscale.assert_awaited_once_with(PNG_BYTES, factor=4)
+        # The standalone upscaler needs a V5 model; the tool takes it from
+        # NOVELAI_UPSCALE_MODEL (default nai-diffusion-5-full).
+        fake_client.upscale.assert_awaited_once_with(
+            PNG_BYTES, factor=4, model=Model.V5
+        )
         assert _assert_image_block(result) == nai_image.data
 
     async def test_director_emotion_requires_emotion(
@@ -268,16 +272,19 @@ class TestTagsTools:
     async def test_suggest_tags_returns_models(
         self, fake_app: AppContext, fake_client: AsyncMock
     ) -> None:
-        fake_client.suggest_tags.return_value = ({"text": "cat", "count": 3},)
+        # Live-verified wire shape (2026-10-10).
+        fake_client.suggest_tags.return_value = (
+            {"tag": "fox girl", "count": 10000, "confidence": 0.745},
+        )
         result = await tags.suggest_tags(prompt="ca", client=fake_client)
         fake_client.suggest_tags.assert_awaited_once()
-        assert result == [TagSuggestion(text="cat", count=3)]
+        assert result == [TagSuggestion(tag="fox girl", count=10000, confidence=0.745)]
 
     async def test_suggest_tags_preserves_unknown_fields(
         self, fake_app: AppContext, fake_client: AsyncMock
     ) -> None:
         fake_client.suggest_tags.return_value = (
-            {"text": "cat", "count": 3, "category": "animal"},
+            {"tag": "cat", "count": 3, "confidence": 0.5, "category": "animal"},
         )
         result = await tags.suggest_tags(prompt="ca", client=fake_client)
         assert result[0].model_extra == {"category": "animal"}

@@ -154,7 +154,7 @@ Without looking, answer:
    blocks when returned from a tool, so no manual `.to_image_content()`
    step is needed — the old `PydanticSerializationError` is gone.)_
 3. Which two endpoints still live on `api.novelai.net` rather than
-   `image.novelai.net`? _(`/ai/upscale` and `/ai/annotate-image` — they
+   `image.novelai.net`? _(`/ai/annotate-image` — it
    weren't migrated. Use `legacy_image_base_url`.)_
 
 ⏱️ _1–2 hours_
@@ -245,7 +245,7 @@ V3.
 | Host | Endpoints |
 |---|---|
 | `image.novelai.net` | All generation, augmentation, vibe encoding, tag suggestion, account/subscription/data |
-| `api.novelai.net` (legacy) | `/ai/upscale`, `/ai/annotate-image` only |
+| `api.novelai.net` (legacy) | `/ai/annotate-image` only |
 
 The `legacy_image_base_url` setting exists specifically for the two
 not-yet-migrated endpoints. Don't "fix" it by routing them to
@@ -544,8 +544,11 @@ English. Never link to a not-yet-translated page from a translated toctree.
 - **Image not coming through / serialization error?** You returned raw bytes
   or hand-built `ImageContent` instead of fastmcp's `Image` helper. Return
   `Image(data=..., format="png")` and let fastmcp convert it.
-- **404 on upscale/annotate?** The endpoint was routed to
-  `image.novelai.net` by mistake. Use `legacy_image_base_url`.
+- **404 on annotate?** The endpoint was routed to `image.novelai.net` by
+  mistake. Only `/ai/annotate-image` uses `legacy_image_base_url`.
+- **Upscale fails with "does not support standalone upscaling"?** The
+  standalone upscaler is V5-only: set `NOVELAI_UPSCALE_MODEL` to
+  `nai-diffusion-5-full` (see `docs/source/development/api-alignment.md`).
 - **CI failing on `uv lock`?** You edited `pyproject.toml` without running
   `uv lock` afterward.
 

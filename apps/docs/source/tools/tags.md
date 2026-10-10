@@ -14,13 +14,16 @@ their training occurrence count.
 
 ## Returns
 
-`list[dict]` — list of tag descriptors, each with:
+`list[TagSuggestion]` — each suggestion carries the fields NovelAI returns:
 
 | Key | Type | Notes |
 |---|---|---|
-| `description` | `str` | Human-readable description (localized to `language`). |
-| `text` | `str` | The tag string itself (use this in your prompt). |
-| `count` | `int` | Training-set occurrence count (higher = more reliable). |
+| `tag` | `str` | The tag string itself (use this in your prompt). |
+| `count` | `int` | Training-set occurrence count (higher = commoner). |
+| `confidence` | `float` | Tagger confidence for this completion (0–1). |
+
+The wire shape is verified live (see
+[API surface alignment](../development/api-alignment.md)):
 
 ## Example
 
@@ -31,8 +34,8 @@ result = await ctx.session.call_tool("suggest_tags", {
     "language": "en",
 })
 # result: [
-#   {"description": "fox tail", "text": "fox tail", "count": 12450},
-#   {"description": "autumn leaves", "text": "autumn leaves", "count": 8230},
+#   {"tag": "fox girl", "count": 10000, "confidence": 0.745},
+#   {"tag": "fox tail", "count": 4321, "confidence": 0.612},
 #   ...
 # ]
 ```

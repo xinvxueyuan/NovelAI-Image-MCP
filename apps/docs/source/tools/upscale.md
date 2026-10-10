@@ -1,7 +1,7 @@
 # `upscale_image`
 
-Upscale an image by 2× or 4× using NovelAI's dedicated upscaler. The
-upscaler is model-independent — it works on any source image, regardless of
+Upscale an image 4× using NovelAI's standalone upscaler. The upscaler runs
+on a V5 model (``NOVELAI_UPSCALE_MODEL``) regardless of the model that
 how it was produced.
 
 ## Parameters
@@ -9,7 +9,7 @@ how it was produced.
 | Name | Type | Default | Notes |
 |---|---|---|---|
 | `image` | `str` | *required* | Base64-encoded PNG/JPEG to upscale. |
-| `factor` | `int` | `4` | `2` or `4`. |
+| `factor` | `Literal[4]` | `4` | `4` only — the API exposes no other step. |
 
 ## Returns
 

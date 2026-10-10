@@ -40,7 +40,8 @@
 |---|---|---|
 | `NOVELAI_IMAGE_BASE_URL` | `https://image.novelai.net` | 画像生成 / Director / encode-vibe / タグ補完エンドポイント。NovelAI はサードパーティ API アクセスの大部分を `image.novelai.net` に統合しました。 |
 | `NOVELAI_ACCOUNT_BASE_URL` | `https://image.novelai.net` | アカウント / サブスクリプション / ユーザーデータエンドポイント。`NOVELAI_IMAGE_BASE_URL` と同じホストを共有します。 |
-| `NOVELAI_LEGACY_IMAGE_BASE_URL` | `https://api.novelai.net` | `/ai/upscale` と `/ai/annotate-image` をホストする Primary API。これら 2 つのエンドポイントは `image.novelai.net` に移行されず (404 を返します)、Primary API ドキュメント (<https://api.novelai.net/docs/>) はサードパーティユーザーがその `/ai/` ルートを使用できると明記しています。 |
+| `NOVELAI_LEGACY_IMAGE_BASE_URL` | `https://api.novelai.net` | `/ai/annotate-image` のみをホストする Primary API (他のエンドポイントはここでは 404 を返します)。 |
+| `NOVELAI_UPSCALE_MODEL` | `nai-diffusion-5-full` | スタンドアロン 4× アップスケーラが使用するモデル。独立したアップスケーリングに対応するのは V5 系のみです。 |
 | `NOVELAI_TIMEOUT` | `120` (秒) | 単一の NovelAI リクエストに対する HTTP タイムアウト。 |
 
 :::{tip}

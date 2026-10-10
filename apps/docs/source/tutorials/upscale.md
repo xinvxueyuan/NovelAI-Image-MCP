@@ -1,7 +1,7 @@
 # Tutorial: Upscaling
 
-Increase an image's resolution by 2× or 4× using NovelAI's dedicated
-upscaler. The upscaler is faster and produces cleaner results than
+Increase an image's resolution by 4× using NovelAI's standalone upscaler.
+The upscaler is faster and produces cleaner results than
 re-generating at a higher resolution.
 
 ## 1. Upscale an image

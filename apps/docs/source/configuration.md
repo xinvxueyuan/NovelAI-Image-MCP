@@ -37,7 +37,7 @@ pair. The server raises `RuntimeError` at startup if neither is present
 |---|---|---|
 | `NOVELAI_IMAGE_BASE_URL` | `https://image.novelai.net` | Image generation / Director / encode-vibe / suggest-tags endpoints. NovelAI consolidated most third-party API access to `image.novelai.net`. |
 | `NOVELAI_ACCOUNT_BASE_URL` | `https://image.novelai.net` | Account / subscription / user-data endpoints. Shares the same host as `NOVELAI_IMAGE_BASE_URL`. |
-| `NOVELAI_LEGACY_IMAGE_BASE_URL` | `https://api.novelai.net` | Primary API host for `/ai/upscale` and `/ai/annotate-image`. These two endpoints were not migrated to `image.novelai.net` and 404 there. The Primary API docs (<https://api.novelai.net/docs/>) state that third-party users may use its `/ai/` routes. |
+| `NOVELAI_LEGACY_IMAGE_BASE_URL` | `https://api.novelai.net` | Primary API host for `/ai/annotate-image` — the only endpoint that never moved (everything else 404s there). The standalone `/ai/upscale` lives on `image.novelai.net` and is V5-only. |
 | `NOVELAI_TIMEOUT` | `120` (seconds) | HTTP timeout for any single NovelAI request. |
 
 :::{tip}
@@ -72,6 +72,7 @@ accepts the same parameters). They are overridable per tool call.
 | Variable | Default | Notes |
 |---|---|---|
 | `NOVELAI_OUTPUT_DIR` | `outputs` | Directory where generated PNGs are saved. Relative paths resolve against the server's working directory. The directory is created on demand. |
+| `NOVELAI_UPSCALE_MODEL` | `nai-diffusion-5-full` | Model the standalone 4× upscaler runs on. Only the V5 line supports standalone upscaling (`nai-diffusion-5-full`, `nai-diffusion-5-curated`). |
 
 ## MCP transport
 

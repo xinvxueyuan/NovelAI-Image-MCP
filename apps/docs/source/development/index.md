@@ -7,6 +7,7 @@ How to hack on the NovelAI Image MCP server itself.
 :hidden:
 
 architecture
+api-alignment
 contributing
 testing
 releasing

@@ -44,7 +44,8 @@ Use this skill when the user asks for a multi-step image pipeline or workflow re
       `upscale_image(image="<base64>", factor=4)` → returns the 4× PNG
       (`outputs/upscale-<ts>.png`).
 
-   The model is irrelevant to upscale — the upscaler is model-independent.
+   Upscale always runs on a V5 model (`NOVELAI_UPSCALE_MODEL`, default
+   `nai-diffusion-5-full`); the source model does not matter.
 
    **CLI sequence**:
 
@@ -55,11 +56,11 @@ Use this skill when the user asks for a multi-step image pipeline or workflow re
 
    **Notes**:
 
-   - `factor` must be `2` or `4`. 4× on a large source yields a very large PNG —
-     verify the Anlas budget first.
-   - Upscale hits the legacy `api.novelai.net` host (`/ai/upscale`); the client
-     routes this automatically. Do not override
-     `NOVELAI_LEGACY_IMAGE_BASE_URL` to `image.novelai.net` or it 404s.
+   - `factor` must be `4`: NovelAI's standalone upscaler has a single 4×
+     step (the API exposes no scaling factor). 4× on a large source yields a
+     very large PNG — verify the Anlas budget first.
+   - Upscale posts to `image.novelai.net/ai/upscale` with a V5 model; only
+     `/ai/annotate-image` still uses `NOVELAI_LEGACY_IMAGE_BASE_URL`.
    - Generate at the model's native aspect ratio first; upscaling does not
      change aspect ratio.
 

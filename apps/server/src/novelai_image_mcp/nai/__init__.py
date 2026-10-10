@@ -18,6 +18,7 @@ from .client import (
     generate_image_from_plan,
 )
 from .constants import (
+    UPSCALE_MODELS,
     Action,
     ControlNetModel,
     DirectorTool,
@@ -31,6 +32,7 @@ from .constants import (
     is_v4_model,
     is_v5_model,
     params_version_for,
+    supports_upscale,
     supports_vibe,
 )
 from .exceptions import (
@@ -81,10 +83,12 @@ __all__ = [
     "Model",
     "NoiseSchedule",
     "Sampler",
+    "UPSCALE_MODELS",
     "is_inpaint_model",
     "is_v4_model",
     "is_v5_model",
     "params_version_for",
+    "supports_upscale",
     "supports_vibe",
     # exceptions
     "NovelAIAuthenticationError",

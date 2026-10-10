@@ -32,8 +32,9 @@ async def suggest_tags(
     ``prompt`` is the partial prompt text to complete. ``model`` selects
     the tagger vocabulary (default ``nai-diffusion-4-5-full``).
     ``language`` is the ISO 639-1 code for the response language (e.g.
-    ``en``, ``ja``, ``zh``). Returns a list of tag descriptors
-    (``description``, ``text``, ``count`` of training occurrences).
+    ``en``, ``ja``). Returns tag suggestions carrying the tag
+    string, its training-set occurrence ``count`` and the tagger's
+    ``confidence``.
     """
     found = await client.suggest_tags(prompt, model=Model(model), language=language)
     return [TagSuggestion.model_validate(tag) for tag in found]

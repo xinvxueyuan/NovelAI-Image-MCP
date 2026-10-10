@@ -35,7 +35,8 @@
 |---|---|---|
 | `NOVELAI_IMAGE_BASE_URL` | `https://image.novelai.net` | 图像生成 / Director / encode-vibe / 标签推荐端点。NovelAI 已将大部分第三方 API 访问收口到 `image.novelai.net`。 |
 | `NOVELAI_ACCOUNT_BASE_URL` | `https://image.novelai.net` | 账户 / 订阅 / 用户数据端点。与 `NOVELAI_IMAGE_BASE_URL` 共用同一主机。 |
-| `NOVELAI_LEGACY_IMAGE_BASE_URL` | `https://api.novelai.net` | Primary API 主机，服务 `/ai/upscale` 与 `/ai/annotate-image`。这两个端点未迁移到 `image.novelai.net`（在那里返回 404）。Primary API 文档（<https://api.novelai.net/docs/>）明确指出第三方用户可使用其 `/ai/` 路由。 |
+| `NOVELAI_LEGACY_IMAGE_BASE_URL` | `https://api.novelai.net` | Primary API 主机，只服务 `/ai/annotate-image`（唯一未迁移的端点，其他端点在这里返回 404）。 |
+| `NOVELAI_UPSCALE_MODEL` | `nai-diffusion-5-full` | 独立 4× 放大器使用的模型；只有 V5 系列支持独立放大。 |
 | `NOVELAI_TIMEOUT` | `120`（秒） | 单次 NovelAI 请求的 HTTP 超时。 |
 
 :::{tip}
