@@ -8,11 +8,15 @@ walks through the layers and how they fit together.
 ```{mermaid}
 graph TD
     A[Agent / MCP host] -->|JSON-RPC over stdio / HTTP| B[FastMCP]
+    B -->|middleware| M[ToolCallLoggingMiddleware]
+    B -->|optional bearer auth| N[mcp_auth.build_auth]
     B -->|lifespan| C[AppContext: NovelAIClient + NovelAISettings]
-    B -->|tool calls| D[tools/*]
+    C -->|Depends DI| D[tools/* · resources.py · prompts.py]
     D -->|calls| E[NovelAIClient nai/]
     E -->|httpx.AsyncClient| F[NovelAI API]
     D -->|saves| G[output.py → outputs/]
+    D -->|ImageContent| A
+    D -->|structured output| A
 ```
 
 ## `FastMCP` composition root
@@ -22,10 +26,32 @@ graph TD
 1. Builds a single shared `httpx.AsyncClient` (connection pool) owned by
    the MCP `lifespan`.
 2. Builds a `NovelAIClient` from settings + the httpx client.
-3. Yields both via `AppContext` to every tool invocation.
+3. Yields both as `AppContext`, which dependency providers expose to every
+   tool, resource and prompt.
 4. Tears down both on shutdown (closing `NovelAIClient` first, then the
    underlying httpx session — even if the client close raises, the httpx
    session is still released to avoid leaking sockets).
+
+The instance itself is configured once, at import time:
+
+```python
+mcp = FastMCP(
+    name="novelai-image",
+    version=__version__,          # serves the package version, not the framework version
+    instructions=INSTRUCTIONS,    # how an agent should use the server
+    lifespan=lifespan,
+    auth=build_auth(get_mcp_settings()),   # None unless MCP_AUTH_TOKEN is set
+    mask_error_details=True,      # only ToolError messages reach the client
+    middleware=[ToolCallLoggingMiddleware()],
+)
+
+from . import prompts, resources, tools  # decorators attach to `mcp`
+```
+
+Tools, resources and prompts are attached by module-level decorators, so
+there is no `register(mcp)` function to call: importing `tools/` (or
+`resources.py`, `prompts.py`) is the registration step, and it happens after
+`mcp` exists.
 
 ```python
 @asynccontextmanager
@@ -33,7 +59,7 @@ async def lifespan(_server: FastMCP) -> AsyncIterator[AppContext]:
     settings = get_novelai_settings()
     if not settings.has_credentials():
         raise RuntimeError("NovelAI credentials are not configured...")
-    http_client = httpx.AsyncClient(timeout=settings.timeout)
+    http_client = create_http_client(timeout=settings.timeout)
     client = create_novelai_client(settings, http_client=http_client)
     try:
         yield AppContext(client=client, settings=settings)
@@ -45,13 +71,24 @@ async def lifespan(_server: FastMCP) -> AsyncIterator[AppContext]:
                 await http_client.aclose()
 ```
 
-Every tool reads the client + settings from the fastmcp request context:
+Every component declares what it needs; FastMCP resolves it per request and
+keeps the dependency out of the input schema:
 
 ```python
-app = _app(ctx)  # extracts AppContext from ctx.lifespan_context
-settings = app.settings
-client = app.client
+@mcp.tool(title=..., tags={...}, annotations=IMAGE_WRITE_ANNOTATIONS)
+@translate_errors
+async def generate_image(
+    prompt: str,
+    model: Model | None = None,
+    app: AppContext = Depends(get_app_context),   # hidden from the schema
+) -> list[Any]: ...
 ```
+
+`deps.py` owns the providers (`get_app_context`, `get_client`), and
+`tools/_errors.py` owns the `NovelAIError`/`ValueError` → `ToolError`
+translation. The translation has to happen inside the tool body: by the
+time a middleware hook sees the call, FastMCP has already masked the
+exception.
 
 ## `NovelAIClient` (the `nai/` subpackage)
 
@@ -82,7 +119,20 @@ tool decorator and `NovelAIClient`. Each tool:
 
 Tools deliberately avoid business logic — validation and parameter
 marshaling live in `nai/` so the same code path serves the MCP server, the
-CLI, and direct client use.
+CLI, and direct client use. Enum-typed parameters (`Model`, `Sampler`,
+`DirectorTool`, ...) are still coerced inside the tool body, so direct
+Python callers may pass plain strings while MCP callers get schema
+validation.
+
+Alongside the tools the server exposes read-only context:
+
+| Component | Where | Purpose |
+|---|---|---|
+| `novelai://models` | `resources.py` | Model ids with capability flags. |
+| `novelai://samplers` | `resources.py` | Sampler / noise-schedule / UC-preset vocabulary. |
+| `novelai://defaults` | `resources.py` | The active generation defaults (no credentials). |
+| `novelai://outputs/{name}` | `resources.py` | Read a generated PNG back (name validated against the output directory). |
+| `novelai_prompt_writer`, `novelai_image_workflow` | `prompts.py` | House-style prompt drafting and tool sequencing. |
 
 ## CLI
 
@@ -114,9 +164,11 @@ demand. Filenames include the tool name + ISO timestamp + sample index
 
 ## Transports
 
-The server supports stdio (default) and streamable-http, selected at
-startup via `MCP_TRANSPORT`. Both share the same `lifespan`, the same
-tools, and the same `NovelAIClient` — only the framing differs. See
+The server supports stdio (default) and HTTP, selected at startup via
+`MCP_TRANSPORT` (`http` is canonical, `streamable-http` is an accepted
+alias). Both share the same `lifespan`, the same tools, and the same
+`NovelAIClient` — only the framing differs. Setting `MCP_AUTH_TOKEN` makes
+the HTTP transport require a bearer token; stdio is unaffected. See
 [Transports](../transports/index.md).
 
 ## Containerization

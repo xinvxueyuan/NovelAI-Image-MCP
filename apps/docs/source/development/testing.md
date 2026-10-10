@@ -29,14 +29,18 @@ uv run --directory apps/server pytest --junitxml=test-results/pytest.xml
 
 ```text
 apps/server/tests/
-├── conftest.py             # Shared fixtures (png_bytes, settings, fake_client, ...)
-├── _helpers.py             # Constants + helpers (PNG_BYTES, RecordingMCPServer)
+├── conftest.py             # Shared fixtures (png_bytes, settings, fake_client, fake_app, mcp_client)
+├── _helpers.py             # Constants + helpers (PNG_BYTES)
 ├── test_cli.py             # CLI subcommands
 ├── test_client.py          # NovelAIClient HTTP layer (uses respx)
+├── test_mcp_auth.py        # Optional bearer-token auth (unit + live HTTP)
+├── test_middleware.py      # Tool-call logging middleware
 ├── test_models.py          # Pydantic models
-├── test_output.py          # save_image
+├── test_output.py          # save_image + resolve_output_path
 ├── test_payload.py         # build_generation_payload
-├── test_server.py          # FastMCP lifespan + tool registration
+├── test_prompts.py         # novelai_* prompt templates
+├── test_resources.py       # novelai://... resources and templates
+├── test_server.py          # FastMCP lifespan, metadata + transport selection
 └── test_tools.py           # Each MCP tool's happy path + error cases
 ```
 
@@ -51,20 +55,25 @@ apps/server/tests/
 | `nai_image` | `NovelAIImage` | Canned image returned by mocked client methods. |
 | `settings` | `NovelAISettings` | Settings with a token + tmp output dir. |
 | `fake_client` | `AsyncMock` | Mocked `NovelAIClient` that returns canned images by default. |
-| `fake_ctx` | `SimpleNamespace` | Minimal Context stand-in for `ctx.lifespan_context`. |
-| `recording_mcp` | `RecordingMCPServer` | Stub that captures `@mcp.tool()` registrations. |
+| `fake_app` | `AppContext` | The lifespan value tools receive via `Depends(get_app_context)`; pass it when calling a tool directly. |
+| `mcp_client` | `Client` | In-memory `fastmcp.Client` over the production `server.mcp`, with the lifespan patched to the mocked client. Exercises schema validation, dependency injection and result conversion without network access. |
 
 Override any `return_value` / `side_effect` on `fake_client`'s methods to
 customize per-test behavior:
 
 ```python
-async def test_generate_image_handles_provider_error(fake_ctx):
-    fake_ctx.lifespan_context.client.generate.side_effect = (
-        NovelAIProviderError("rate limited")
-    )
-    with pytest.raises(NovelAIProviderError):
-        await generate_image(...)
+from fastmcp.exceptions import ToolError
+
+
+async def test_generate_image_handles_provider_error(fake_app, fake_client):
+    fake_client.generate.side_effect = NovelAIProviderError("rate limited")
+    with pytest.raises(ToolError, match="rate limited"):
+        await generate.generate_image(prompt="1girl", app=fake_app)
 ```
+
+Expected failures surface as `ToolError` (the server runs with
+`mask_error_details=True`, so anything else is masked — see
+`tools/_errors.py`).
 
 ## HTTP mocking
 
@@ -114,27 +123,38 @@ verifying the container actually boots and the tools register.
 ```python
 # apps/server/tests/test_tools.py
 
-async def test_generate_image_with_v4_model(fake_ctx, fake_client):
+async def test_generate_image_with_v4_model(fake_app, fake_client):
     """generate_image should pass through V4 model ids."""
+    from novelai_image_mcp.tools import generate
+
     fake_client.generate.return_value = (
         NovelAIImage(filename="test.png", data=PNG_BYTES),
     )
 
-    # Call the tool directly (recording_mcp also works)
-    from novelai_image_mcp.tools.generate import register
-    from tests._helpers import RecordingMCPServer
-
-    mcp = RecordingMCPServer()
-    register(mcp)
-    result = await mcp.tools["generate_image"](
-        ctx=fake_ctx,
+    # Direct call: asserts the request and the returned content blocks.
+    result = await generate.generate_image(
         prompt="1girl",
-        model="nai-diffusion-4-5-full",
+        model=Model.V4,
+        app=fake_app,
     )
 
     assert len(result) == 2
     assert result[0].data == PNG_BYTES  # fastmcp Image helper holds raw bytes
     assert "Saved 1 image" in result[1]
+```
+
+For anything that only FastMCP can prove — schema validation, dependency
+injection, annotations, `Image`→`ImageContent` conversion — go through the
+client instead:
+
+```python
+async def test_generate_image_serializes(mcp_client, fake_client, nai_image):
+    from mcp_types import ImageContent
+
+    fake_client.generate.return_value = (nai_image,)
+    result = await mcp_client.call_tool("generate_image", {"prompt": "1girl"})
+
+    assert any(isinstance(block, ImageContent) for block in result.content)
 ```
 
 Run it:

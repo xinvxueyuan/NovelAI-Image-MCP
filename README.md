@@ -15,7 +15,7 @@ An [MCP (Model Context Protocol)][mcp] server that
 exposes **NovelAI image generation** as tools for AI agents (Claude Desktop,
 Cline, custom agents, remote clients).
 
-Built on FastMCP 4 (the fastmcp framework over the MCP SDK v2 `mcp>=2.0.0`), it lets an agent generate
+Built on FastMCP 4 (the fastmcp framework over the MCP SDK v2 `mcp>=2.3.0`), it lets an agent generate
 images (txt2img / img2img / inpaint), upscale, run Director tools (line art,
 emotion, background removal, …), annotate with ControlNet, suggest tags, encode
 vibes, and query account subscription — all through the standard MCP tool
@@ -26,7 +26,14 @@ interface.
 ## Features
 
 - **11 MCP tools** covering the full NovelAI image API surface.
-- **Two transports**: stdio (local agents) + streamable-http (remote / multi-client).
+- **2 prompts + 3 resources**: house-style prompt drafting and tool sequencing
+  (`novelai_prompt_writer`, `novelai_image_workflow`), plus `novelai://models`,
+  `novelai://samplers`, `novelai://defaults` and `novelai://outputs/{name}` for
+  discovering the model/sampler vocabulary and reading generated PNGs back.
+- **Two transports**: stdio (local agents) + HTTP (remote / multi-client), the
+  latter optionally protected by a bearer token (`MCP_AUTH_TOKEN`).
+- **Structured results**: enum-validated tool schemas, MCP tool annotations and
+  `ToolError` for expected failures.
 - **Dual image return**: base64 `Image` content blocks (the agent *sees* the image)
   **and** PNG saved to disk (path returned as text).
 - **Async + sync**: async tool handlers + a `typer` CLI for direct invocation.
@@ -84,7 +91,7 @@ cp .env.example .env
 uv run python -m novelai_image_mcp serve
 
 # 5. Or over HTTP
-MCP_TRANSPORT=streamable-http uv run python -m novelai_image_mcp serve
+MCP_TRANSPORT=http uv run python -m novelai_image_mcp serve
 #   → http://127.0.0.1:8000/mcp
 ```
 
@@ -95,6 +102,22 @@ pip install novelai-image-mcp
 export NOVELAI_TOKEN=pst-...
 novelai-image-mcp serve
 ```
+
+### Standard FastMCP entry points
+
+The repository ships a [`fastmcp.json`](fastmcp.json) whose source points at
+`apps/server/mcp_server.py`, so plain FastMCP tooling works too (run from the
+repository root, after `uv sync`):
+
+```bash
+uv run fastmcp run fastmcp.json                     # stdio server
+uv run fastmcp inspect                              # list tools/prompts/resources
+uv run --directory apps/server fastmcp dev inspector mcp_server.py   # Inspector
+```
+
+`fastmcp.json` has no `environment` block on purpose: the workspace virtualenv
+already has the package installed, and an `environment` entry would make
+FastMCP build a second, throwaway environment for every run.
 
 ### Optional: Node tooling (contributors)
 
@@ -241,8 +264,10 @@ All settings are environment variables (see `.env.example`). Key ones:
 | `NOVELAI_TOKEN` | — | Persistent API token (preferred auth) |
 | `NOVELAI_USERNAME` / `NOVELAI_PASSWORD` | — | Access-key login (argon2id) |
 | `NOVELAI_OUTPUT_DIR` | `outputs` | Where generated PNGs are saved |
-| `MCP_TRANSPORT` | `stdio` | `stdio` or `streamable-http` |
-| `MCP_HOST` / `MCP_PORT` | `127.0.0.1` / `8000` | For streamable-http |
+| `MCP_TRANSPORT` | `stdio` | `stdio` or `http` (`streamable-http` is a legacy alias) |
+| `MCP_HOST` / `MCP_PORT` / `MCP_PATH` | `127.0.0.1` / `8000` / `/mcp` | For the HTTP transport |
+| `MCP_AUTH_TOKEN` | — | When set, the HTTP transport requires `Authorization: Bearer <token>` |
+| `MCP_LOG_LEVEL` | — | `DEBUG`/`INFO`/`WARNING`/`ERROR`/`CRITICAL` |
 
 NovelAI API reference: [image.novelai.net/docs][nai-docs]
 

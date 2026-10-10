@@ -278,9 +278,10 @@ The manual `.to_image_content()` step is gone — see
    execution pipeline — and asserts the returned `ToolResult.content`
    contains an `ImageContent` block and a `TextContent` block, each of which
    `model_dump(mode="json")`s (which is what failed before the fix).
-2. **`mcp dev` Inspector:** the server was loaded via
-   `apps/server/dev_server.py` and the `generate_image` tool was invoked
-   through the Inspector UI; the call returned an `ImageContent` block
+2. **Inspector:** the server was loaded via
+   `uv run --directory apps/server fastmcp dev inspector mcp_server.py` and
+   the `generate_image` tool was invoked through the Inspector UI; the call
+   returned an `ImageContent` block
    with the base64 PNG and a `TextContent` block with the saved path, with
    no serialization error.
 
@@ -429,9 +430,10 @@ return [Image(data=..., format="png").to_image_content(), f"Saved ..."]
    asserting the returned `ToolResult.content` holds an `ImageContent` +
    `TextContent` block, each of which `model_dump(mode="json")`s. These tests
    fail on the pre-fix code and pass on the post-fix code.
-2. `mcp dev` Inspector was used to load the server via
-   `apps/server/dev_server.py` (a non-relative-import entry point that
-   imports `novelai_image_mcp.server.mcp`) and invoke `generate_image`
+2. The Inspector was used to load the server via
+   `fastmcp dev inspector mcp_server.py` (`mcp_server.py` is the
+   non-relative-import entry point that imports `novelai_image_mcp.server.mcp`)
+   and invoke `generate_image`
    interactively — the tool returned an `ImageContent` block with the
    base64 PNG and a `TextContent` block with the saved path, with no
    serialization error.

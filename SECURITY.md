@@ -57,15 +57,16 @@ The following are **out of scope**:
   NovelAI directly.
 - Issues in third-party dependencies — report those upstream; we will track
   and bump the affected version via Dependabot.
-- Denial-of-service via the public streamable-http transport when no
-  authentication is configured — that is expected behavior. Configure
-  `MCP_HOST` to bind to `127.0.0.1` or front the server with a reverse proxy
-  that enforces auth.
+- Denial-of-service via the public HTTP transport when no authentication is
+  configured — that is expected behavior. Set `MCP_AUTH_TOKEN` to require a
+  bearer token, bind `MCP_HOST` to `127.0.0.1`, or front the server with a
+  reverse proxy that enforces auth.
 
 ## Hardening checklist (for production deployments)
 
 - [ ] Set `MCP_HOST=127.0.0.1` (never expose `0.0.0.0` without a reverse proxy)
-- [ ] Front the streamable-http transport with TLS termination
+- [ ] Set `MCP_AUTH_TOKEN` when the HTTP transport is reachable beyond
+      localhost, and front it with TLS termination
 - [ ] Use a dedicated NovelAI token (not your personal account) for the
       server's runtime credentials
 - [ ] Run the container as a non-root user (the default `Dockerfile` already

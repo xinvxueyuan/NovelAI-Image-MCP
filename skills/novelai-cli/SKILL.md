@@ -66,8 +66,10 @@ All are optional; defaults shown.
 | `NOVELAI_DEFAULT_SCALE` | `5.0` | Default CFG scale |
 | `NOVELAI_DEFAULT_SAMPLER` | `k_euler_ancestral` | Default sampler |
 | `NOVELAI_TIMEOUT` | `120` | HTTP timeout (seconds) |
-| `MCP_TRANSPORT` | `stdio` | `serve` transport (`stdio` or `streamable-http`) |
-| `MCP_HOST` / `MCP_PORT` | `127.0.0.1` / `8000` | `serve` HTTP bind |
+| `MCP_TRANSPORT` | `stdio` | `serve` transport (`stdio` or `http`; `streamable-http` is a legacy alias) |
+| `MCP_HOST` / `MCP_PORT` / `MCP_PATH` | `127.0.0.1` / `8000` / `/mcp` | `serve` HTTP bind and endpoint path |
+| `MCP_AUTH_TOKEN` | — | When set, the HTTP transport requires `Authorization: Bearer <token>` |
+| `MCP_LOG_LEVEL` | — | `DEBUG`/`INFO`/`WARNING`/`ERROR`/`CRITICAL` |
 
 ### Commands
 
@@ -77,16 +79,20 @@ The CLI exposes six subcommands. Run `novelai-image-mcp --help` or
 #### `serve` — run the MCP server
 
 ```bash
-novelai-image-mcp serve                              # stdio (default)
-novelai-image-mcp serve --transport streamable-http  # → http://127.0.0.1:8000/mcp
-novelai-image-mcp serve -t streamable-http --host 0.0.0.0 --port 9000
+novelai-image-mcp serve                    # stdio (default)
+novelai-image-mcp serve --transport http   # → http://127.0.0.1:8000/mcp
+novelai-image-mcp serve -t http --host 0.0.0.0 --port 9000 --path /custom
 ```
 
 Flags:
 
-- `--transport, -t` — `stdio` (default) or `streamable-http`. Overrides `MCP_TRANSPORT`.
+- `--transport, -t` — `stdio` (default) or `http` (`streamable-http` still accepted). Overrides `MCP_TRANSPORT`.
 - `--host` — bind host for HTTP mode. Overrides `MCP_HOST`.
 - `--port` — bind port for HTTP mode. Overrides `MCP_PORT`.
+- `--path` — endpoint path for HTTP mode. Overrides `MCP_PATH`.
+
+All four default to the `MCP_*` settings, so the flags are only needed to
+override the environment.
 
 Use this when integrating with Claude Desktop, Cline, or a remote MCP client.
 For one-off image work, prefer the dedicated subcommands below — they avoid

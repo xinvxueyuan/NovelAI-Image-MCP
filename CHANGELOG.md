@@ -46,15 +46,72 @@ per-release section headings. This file is the human-curated companion.
 
 ### Added
 
-- _Nothing yet._
+- **MCP prompts**: `novelai_prompt_writer` turns a plain-language idea into a
+  NovelAI-style tag prompt, and `novelai_image_workflow` lays out the tool
+  sequence for a goal.
+- **MCP resources**: `novelai://models` (model ids + capability flags),
+  `novelai://samplers` (sampler / noise-schedule / UC-preset vocabulary),
+  `novelai://defaults` (the active generation defaults, no credentials) and the
+  `novelai://outputs/{name}` template, which reads a generated PNG back from the
+  output directory.
+- **Tool metadata**: every tool now publishes a `title`, a set of `tags`, and
+  MCP annotations (`readOnlyHint` / `destructiveHint` / `idempotentHint` /
+  `openWorldHint`).
+- **Structured output**: `suggest_tags` returns `TagSuggestion` objects and
+  `estimate_anlas_cost` returns an `AnlasEstimate`, so both carry an output
+  schema in addition to their content blocks.
+- **Tool-call logging middleware** (`ToolCallLoggingMiddleware`): logs each tool
+  name with its wall-clock duration.
+- **Optional HTTP bearer auth**: setting `MCP_AUTH_TOKEN` makes the HTTP
+  transport require `Authorization: Bearer <token>`. Unset (the default) keeps
+  the previous open behaviour; stdio is unaffected either way.
+- **Standard FastMCP entry points**: `fastmcp.json` at the repository root,
+  plus `apps/server/mcp_server.py` as the path-loadable entry shim, so
+  `fastmcp run`, `fastmcp inspect` and `fastmcp dev inspector` all work.
+- **New settings**: `MCP_LOG_LEVEL` (forwarded to FastMCP) and
+  `MCP_AUTH_TOKEN`.
 
 ### Changed
 
-- _Nothing yet._
+- **Framework → fastmcp 4.1.0 (stable)**: the `fastmcp==4.0.0b3` prerelease pin
+  and the matching `fastmcp-slim` constraint are gone; the requirement is now
+  `fastmcp>=4.1.0,<5` with `mcp>=2.3.0`.
+- **Idiomatic FastMCP structure**: tools, resources and prompts attach to the
+  shared `mcp` instance with module-level decorators instead of
+  `register(mcp)` closures; the `_mcp.py` import shim, `tools/_ctx.py` and the
+  `dev_server.py` entry are removed.
+- **Dependency injection**: components declare
+  `app: AppContext = Depends(get_app_context)` (or `client` / `settings`)
+  instead of reading `ctx.lifespan_context` behind a `cast`.
+- **Tool parameter tightening (schema change)**: `model`, `sampler`,
+  `noise_schedule`, `action`, `tool`, `emotion` and `factor` are enums
+  (`Model`, `Sampler`, `NoiseSchedule`, `Action`, `DirectorTool`, `Emotion`,
+  `Literal[2, 4]`), and numeric parameters carry documented bounds
+  (`n_samples` 1-8, `strength` 0.01-0.99, `information_extracted` 0.01-1.0, ...).
+  Tool names, parameter names and defaults are unchanged, and direct Python
+  callers may still pass plain strings — but MCP clients must refresh their
+  cached tool schemas.
+- **Error surface**: expected failures (NovelAI domain errors, validation
+  failures) are raised as `ToolError` with their real message; the server runs
+  with `mask_error_details=True`, so unexpected exceptions no longer leak
+  internal details to clients.
+- **Transport naming**: `http` is now the canonical `MCP_TRANSPORT` value;
+  `streamable-http` is accepted as a legacy alias for both the setting and
+  `serve --transport`.
+- **Documentation**: architecture, testing, configuration and transport pages
+  describe the decorator/DI structure, the new environment variables and the
+  standard FastMCP commands.
 
 ### Fixed
 
-- _Nothing yet._
+- **`MCP_PATH` had no effect**: the configured HTTP endpoint path is now passed
+  to FastMCP, so the server actually listens on it (default `/mcp` unchanged).
+- **Framework version reported as the server version**: `FastMCP` now receives
+  `version=__version__`, so `fastmcp inspect` shows `0.4.0` rather than the
+  fastmcp release it happens to run.
+- **HTTP authentication guidance was wrong**: the server never accepted a
+  NovelAI token as a bearer credential; the docs now describe the real model
+  (server-side `NOVELAI_TOKEN`, optional client-side `MCP_AUTH_TOKEN`).
 
 ## [0.3.0] — 2026-08-01
 

@@ -22,7 +22,11 @@ for full guides and API reference.
 ## Features
 
 - **11 MCP tools** covering the full NovelAI image API surface.
-- **Transports**: stdio (local agents) + streamable-http (remote / multi-client).
+- **2 prompts + 3 resources**: prompt templates for drafting and tool
+  sequencing, plus `novelai://models`, `novelai://samplers`,
+  `novelai://defaults` and `novelai://outputs/{name}`.
+- **Transports**: stdio (local agents) + HTTP (remote / multi-client), the
+  latter optionally protected by `MCP_AUTH_TOKEN`.
 - **Image return**: base64 `Image` content blocks (the agent *sees* the image)
   **and** PNG saved to disk (path returned as text).
 - **Async + sync**: async tool handlers + a `typer` CLI for direct invocation.
@@ -43,7 +47,7 @@ export NOVELAI_TOKEN=pst-...   # from https://novelai.net > Account
 novelai-image-mcp serve
 
 # 3. Or over HTTP
-MCP_TRANSPORT=streamable-http novelai-image-mcp serve
+MCP_TRANSPORT=http novelai-image-mcp serve
 #   → http://127.0.0.1:8000/mcp
 ```
 

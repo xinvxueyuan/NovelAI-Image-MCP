@@ -328,11 +328,12 @@ The server runs under one transport (set via `MCP_TRANSPORT` or `serve
 - **stdio** (default) — for local agents (Claude Desktop, Cline). One
   process per agent; the MCP client spawns the server and communicates over
   stdin/stdout. Pooled `NovelAIClient` lives for the agent's session.
-- **streamable-http** — for remote / multi-client / Docker. Listens on
-  `http://<MCP_HOST>:<MCP_PORT>/mcp` (default `127.0.0.1:8000/mcp`).
-  Authenticate by sending the NovelAI token in the `Authorization: Bearer
-  pst-...` header; the server still needs `NOVELAI_TOKEN` configured to talk
-  to NovelAI.
+- **http** — for remote / multi-client / Docker. Listens on
+  `http://<MCP_HOST>:<MCP_PORT><MCP_PATH>` (default `127.0.0.1:8000/mcp`).
+  `streamable-http` is accepted as a legacy alias for `MCP_TRANSPORT`.
+  The server authenticates to NovelAI with its own `NOVELAI_TOKEN`; clients
+  never send that token. To require clients to authenticate, set
+  `MCP_AUTH_TOKEN` and send `Authorization: Bearer <MCP_AUTH_TOKEN>`.
 
 This skill does not cover client-side wiring (`mcpServers` JSON); see the
 README's "Connect an agent" section for Claude Desktop / Cline / Docker

@@ -1,4 +1,4 @@
-# streamable-http transport
+# HTTP transport
 
 Exposes the MCP server over HTTP. Designed for remote deployments,
 multi-client scenarios, and production environments where the server runs
@@ -7,16 +7,16 @@ as a long-lived service.
 ## Run
 
 ```bash
-MCP_TRANSPORT=streamable-http uv run python -m novelai_image_mcp serve
+MCP_TRANSPORT=http uv run python -m novelai_image_mcp serve
 # or via the CLI flag:
-uv run python -m novelai_image_mcp serve --transport streamable-http
+uv run python -m novelai_image_mcp serve --transport http
 ```
 
 The server binds to `127.0.0.1:8000/mcp` by default. Override with
 `MCP_HOST` / `MCP_PORT` / `MCP_PATH`:
 
 ```bash
-MCP_TRANSPORT=streamable-http \
+MCP_TRANSPORT=http \
 MCP_HOST=0.0.0.0 \
 MCP_PORT=9000 \
 MCP_PATH=/mcp \
@@ -37,7 +37,7 @@ Default: <http://127.0.0.1:8000/mcp>.
 
 ### MCP client config (`mcpServers`)
 
-After `docker compose up --build` (or any other `streamable-http` deployment),
+After `docker compose up --build` (or any other HTTP deployment),
 point your MCP host at the URL with the `http` type:
 
 ```json
@@ -47,7 +47,7 @@ point your MCP host at the URL with the `http` type:
       "type": "http",
       "url": "http://127.0.0.1:8000/mcp",
       "headers": {
-        "Authorization": "Bearer pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        "Authorization": "Bearer <MCP_AUTH_TOKEN>"
       }
     }
   }
@@ -55,9 +55,14 @@ point your MCP host at the URL with the `http` type:
 ```
 
 Replace `http://127.0.0.1:8000/mcp` with your self-deployed endpoint (e.g.
-`https://mcp.example.com/mcp` behind a TLS-terminating reverse proxy). Swap
-the literal token placeholder for a host-managed secret reference if your
-MCP host (Claude Desktop, Cline, …) supports one.
+`https://mcp.example.com/mcp` behind a TLS-terminating reverse proxy).
+
+The `Authorization` header is **not** the NovelAI token: the server talks to
+NovelAI with its own `NOVELAI_TOKEN`. The header matters only when
+`MCP_AUTH_TOKEN` is set on the server, in which case it must match it
+(`Authorization: Bearer <MCP_AUTH_TOKEN>`). Without `MCP_AUTH_TOKEN` the
+endpoint accepts unauthenticated clients — put it behind TLS and a reverse
+proxy, or keep `MCP_HOST` on localhost.
 
 ### Custom Python agent
 

@@ -14,7 +14,7 @@
 图像生成** 能力以工具形式暴露给 AI 智能体（Claude Desktop、Cline、自定义 Agent、
 远程客户端）。
 
-基于 FastMCP 4（MCP SDK v2 `mcp>=2.0.0` 之上的 fastmcp 框架）构建。智能体可通过标准 MCP 工具接口完成
+基于 FastMCP 4（MCP SDK v2 `mcp>=2.3.0` 之上的 fastmcp 框架）构建。智能体可通过标准 MCP 工具接口完成
 生图（文生图 / 图生图 / 局部重绘）、放大、Director 工具（线稿、表情、去背景……）、
 ControlNet 标注、标签建议、Vibe 编码以及账户订阅查询。
 
@@ -23,7 +23,13 @@ ControlNet 标注、标签建议、Vibe 编码以及账户订阅查询。
 ## 特性
 
 - **11 个 MCP 工具**，覆盖 NovelAI 图像 API 全部能力。
-- **双传输**：stdio（本地 Agent）+ streamable-http（远程 / 多客户端）。
+- **2 个 prompt + 3 个资源**：`novelai_prompt_writer` / `novelai_image_workflow`
+  提供提示词与工具编排范本；`novelai://models`、`novelai://samplers`、
+  `novelai://defaults`、`novelai://outputs/{name}` 暴露模型与采样器词表、当前默认值，
+  并可回读已生成的 PNG。
+- **双传输**：stdio（本地 Agent）+ HTTP（远程 / 多客户端），HTTP 支持可选
+  Bearer Token（`MCP_AUTH_TOKEN`）。
+- **结构化结果**：枚举校验的工具 schema、MCP 工具注解、预期失败统一抛 `ToolError`。
 - **图像返回**：base64 `Image` 内容块（Agent 能“看到”图）**同时** 保存 PNG 到磁盘
   （返回路径）。
 - **异步 + 同步**：异步工具处理器 + `typer` CLI 直接调用。
@@ -81,7 +87,7 @@ cp .env.example .env
 uv run python -m novelai_image_mcp serve
 
 # 5. 或通过 HTTP 运行
-MCP_TRANSPORT=streamable-http uv run python -m novelai_image_mcp serve
+MCP_TRANSPORT=http uv run python -m novelai_image_mcp serve
 #   → http://127.0.0.1:8000/mcp
 ```
 
@@ -92,6 +98,20 @@ pip install novelai-image-mcp
 export NOVELAI_TOKEN=pst-...
 novelai-image-mcp serve
 ```
+
+### 标准 FastMCP 入口
+
+仓库自带 [`fastmcp.json`](fastmcp.json)（source 指向 `apps/server/mcp_server.py`），
+因此可以直接使用 FastMCP 官方命令（在仓库根执行，先 `uv sync`）：
+
+```bash
+uv run fastmcp run fastmcp.json                     # stdio 服务器
+uv run fastmcp inspect                              # 列出工具/prompt/资源
+uv run --directory apps/server fastmcp dev inspector mcp_server.py   # Inspector
+```
+
+`fastmcp.json` 有意不写 `environment` 块：workspace 虚拟环境里已安装本包，
+写了反而会让 FastMCP 每次额外建一个临时环境。
 
 ### 可选：Node 工具链（贡献者）
 
@@ -213,8 +233,10 @@ uv run python -m novelai_image_mcp --help
 | `NOVELAI_TOKEN` | — | 持久 API token（推荐认证方式） |
 | `NOVELAI_USERNAME` / `NOVELAI_PASSWORD` | — | access-key 登录（argon2id） |
 | `NOVELAI_OUTPUT_DIR` | `outputs` | 生成 PNG 的保存目录 |
-| `MCP_TRANSPORT` | `stdio` | `stdio` 或 `streamable-http` |
-| `MCP_HOST` / `MCP_PORT` | `127.0.0.1` / `8000` | streamable-http 用 |
+| `MCP_TRANSPORT` | `stdio` | `stdio` 或 `http`（`streamable-http` 为兼容别名） |
+| `MCP_HOST` / `MCP_PORT` / `MCP_PATH` | `127.0.0.1` / `8000` / `/mcp` | HTTP 传输用 |
+| `MCP_AUTH_TOKEN` | — | 设置后 HTTP 传输要求 `Authorization: Bearer <token>` |
+| `MCP_LOG_LEVEL` | — | `DEBUG`/`INFO`/`WARNING`/`ERROR`/`CRITICAL` |
 
 NovelAI API 文档：[image.novelai.net/docs][nai-docs]
 

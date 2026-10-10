@@ -182,7 +182,7 @@ Without looking, answer:
 2. **Run the server under the MCP Inspector** (the easiest debugging surface):
 
    ```bash
-   mcp dev apps/server/dev_server.py
+   uv run --directory apps/server fastmcp dev inspector mcp_server.py
    ```
 
    The Inspector opens in your browser. You can list tools, read their
@@ -194,14 +194,15 @@ Without looking, answer:
    - You should see your subscription tier, Anlas balance, and renewal date.
 
 4. **Call `generate_image`** with a short prompt. Watch the logs in the
-   terminal where you ran `mcp dev` — you'll see the curl_cffi HTTP request
+   terminal where you ran the Inspector — you'll see the curl_cffi HTTP request
    fly by.
 
-### Why `dev_server.py` and not `server.py`?
+### Why `mcp_server.py` and not `server.py`?
 
-`mcp dev` loads the entry point by file path, which breaks Python's relative
-import machinery (`from ._mcp import FastMCP`). `dev_server.py` is a thin
-shim that imports the package absolutely. This is a hard constraint — see
+`fastmcp run` / `fastmcp dev inspector` load the entry point by file path,
+which breaks Python's relative import machinery (`from .nai import ...`).
+`mcp_server.py` is a thin shim that imports the package absolutely (it is what
+`fastmcp.json` points at). This is a hard constraint — see
 AGENTS.md rule #4.
 
 ### Checkpoint
@@ -284,37 +285,47 @@ conventions.
 1. **Implement** in `tools/<name>.py`:
 
    ```python
-   from .._mcp import Context
-   from ..nai import NovelAIClient  # or whatever you need
-   from ._ctx import app_context as _app
+   from fastmcp.dependencies import Depends
 
-   def register(mcp: FastMCP) -> None:
-       @mcp.tool()
-       async def my_new_tool(ctx: Context, /* args */) -> list[Any]:
-           """One-line summary.
+   from ..deps import AppContext, get_app_context
+   from ..server import mcp
+   from ._errors import translate_errors
+   from ._meta import READ_ONLY_ANNOTATIONS
 
-           Detailed description. Args are documented in the docstring;
-           MCP uses it as the tool description shown to the LLM.
-           """
-           app = _app(ctx)
-           client = app.client
-           result = await client.my_method(...)
-           return [/* text or ImageContent blocks */]
+
+   @mcp.tool(title="...", tags={"novelai"}, annotations=READ_ONLY_ANNOTATIONS)
+   @translate_errors
+   async def my_new_tool(
+       /* args */,
+       app: AppContext = Depends(get_app_context),  # hidden from the schema
+   ) -> list[Any]:
+       """One-line summary.
+
+       Detailed description. Args are documented in the docstring;
+       MCP uses it as the tool description shown to the LLM.
+       """
+       client = app.client
+       result = await client.my_method(...)
+       return [/* text or Image blocks */]
    ```
 
-2. **Wire** it in `tools/__init__.py`:
+   `@translate_errors` turns `NovelAIError`/`ValueError` into a `ToolError`
+   with the real message; without it the client only sees a masked
+   "Error calling tool" (see Module 4 and `tools/_errors.py`).
+
+2. **Wire** it in `tools/__init__.py` — importing the module is the
+   registration step (the decorators attach to `mcp` at import time):
 
    ```python
-   from . import my_new_tool as _my_new_tool
-   # ...
-   _my_new_tool.register(mcp)
+   from . import account, enhance, generate, my_new_tool, tags
    ```
 
-3. **Test** in `tests/test_tools.py` — it's parameterized; add your tool's
-   name + sample args to the `ToolCallCase` list. The
-   `TestSerializationRegression` class is a must-extend if your tool returns
-   images — it drives the production `server.mcp` through `call_tool` to
-   confirm the fastmcp `Image` helper serializes to `ImageContent`.
+3. **Test** in `tests/test_tools.py` — call the tool directly with
+   `app=fake_app` to assert the request and returned blocks, and add a
+   `mcp_client` test when the schema/dependency wiring matters.
+   `TestSerializationRegression` is a must-extend if your tool returns
+   images: it drives the production `server.mcp` through `call_tool` so the
+   fastmcp `Image` helper has to serialize to `ImageContent`.
 
 4. **Document** in `apps/docs/source/tools/<name>.md`.
 
@@ -329,13 +340,16 @@ conventions.
 - ❌ Don't construct `httpx.AsyncClient()` directly — go through
   `app.client` (which was built by `create_novelai_client()` using
   `create_http_client()`).
+- ❌ Don't create a second `FastMCP` instance, and don't read
+  `ctx.lifespan_context` by hand — import `mcp` from `..server` and take
+  `AppContext` through `Depends(get_app_context)`.
 - ❌ Don't add a tool that does work without a test in `test_tools.py`.
 
 ### Checkpoint
 
 Add a trivial tool `get_server_time` that returns the current server time as
 text. Run `uv run --directory apps/server poe check` — it should pass with
-your new test. Run `mcp dev apps/server/dev_server.py` and call your new
+your new test. Run `uv run --directory apps/server fastmcp dev inspector mcp_server.py` and call your new
 tool from the Inspector.
 
 ⏱️ _2–4 hours for a real tool, 30 minutes for the trivial checkpoint_
@@ -360,7 +374,8 @@ a tool. So `_save_and_return` returns the helper as-is and fastmcp produces
 the `ImageContent` during result processing:
 
 ```python
-from .._mcp import Image
+from fastmcp.utilities.types import Image
+
 from ..output import save_image
 
 def _save_and_return(image: NovelAIImage, *, name: str, output_dir: str) -> list[Any]:
@@ -522,7 +537,7 @@ English. Never link to a not-yet-translated page from a translated toctree.
 
 ## Getting unstuck
 
-- **Stuck on a tool call?** Run `mcp dev apps/server/dev_server.py` and use
+- **Stuck on a tool call?** Run `fastmcp dev inspector apps/server/mcp_server.py` and use
   the Inspector — it shows the exact JSON-RPC traffic.
 - **Cloudflare resetting connections?** You bypassed
   `create_http_client()`. Go through `app.client`.

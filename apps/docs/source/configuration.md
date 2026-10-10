@@ -77,16 +77,25 @@ accepts the same parameters). They are overridable per tool call.
 
 | Variable | Default | Range | Notes |
 |---|---|---|---|
-| `MCP_TRANSPORT` | `stdio` | `stdio` \| `streamable-http` | How the server exposes itself to clients. |
-| `MCP_HOST` | `127.0.0.1` | any bind address | Bind host for `streamable-http`. |
-| `MCP_PORT` | `8000` | 1–65535 | Bind port for `streamable-http`. |
-| `MCP_PATH` | `/mcp` | path string | HTTP path for the streamable-http endpoint. Full URL: `http://${MCP_HOST}:${MCP_PORT}${MCP_PATH}`. |
+| `MCP_TRANSPORT` | `stdio` | `stdio` \| `http` (legacy alias `streamable-http`) | How the server exposes itself to clients. |
+| `MCP_HOST` | `127.0.0.1` | any bind address | Bind host for the HTTP transport. |
+| `MCP_PORT` | `8000` | 1–65535 | Bind port for the HTTP transport. |
+| `MCP_PATH` | `/mcp` | path string | HTTP path for the MCP endpoint. Full URL: `http://${MCP_HOST}:${MCP_PORT}${MCP_PATH}`. |
+| `MCP_AUTH_TOKEN` | *(empty)* | any token string | When set, the HTTP transport requires `Authorization: Bearer <token>`. Leave empty to keep the endpoint open (see the warning below). |
+| `MCP_LOG_LEVEL` | *(framework default)* | `DEBUG` \| `INFO` \| `WARNING` \| `ERROR` \| `CRITICAL` | Log level passed to FastMCP at startup. |
+
+:::{note}
+`http` is the canonical transport name; `streamable-http` is accepted as a
+legacy alias and selects the same transport. `MCP_PATH` is passed straight to
+FastMCP, so changing it moves the endpoint.
+:::
 
 :::{warning}
 The default `MCP_HOST=127.0.0.1` binds to **localhost only**. To expose the
-server to other machines on your LAN, set `MCP_HOST=0.0.0.0` — and put it
-behind TLS termination or an authenticated reverse proxy. The MCP
-streamable-http transport does **not** implement authentication.
+server to other machines on your LAN, set `MCP_HOST=0.0.0.0` — and either set
+`MCP_AUTH_TOKEN` or put it behind TLS termination / an authenticated reverse
+proxy. With `MCP_AUTH_TOKEN` empty the HTTP transport implements **no**
+authentication.
 :::
 
 ---
@@ -111,10 +120,13 @@ NOVELAI_DEFAULT_SAMPLER=k_euler_ancestral
 NOVELAI_OUTPUT_DIR=/app/outputs
 
 # ── Transport ──
-MCP_TRANSPORT=streamable-http
+MCP_TRANSPORT=http
 MCP_HOST=0.0.0.0
 MCP_PORT=8000
 MCP_PATH=/mcp
+# Require "Authorization: Bearer <token>" on the HTTP endpoint. Without it
+# the endpoint is open — front it with TLS + a reverse proxy instead.
+MCP_AUTH_TOKEN=change-me
 
 # ── Client ──
 NOVELAI_VIBE_CACHE_ENTRIES=128
@@ -138,4 +150,4 @@ Secret-aware env provider.
 
 - [`novelai_image_mcp.settings` API reference](api/settings.md)
 - [.env.example](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/.env.example)
-- [Transports](transports/index.md) — stdio vs streamable-http trade-offs
+- [Transports](transports/index.md) — stdio vs HTTP trade-offs

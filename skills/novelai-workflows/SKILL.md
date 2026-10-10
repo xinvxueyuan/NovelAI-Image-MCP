@@ -19,8 +19,8 @@ Use this skill when the user asks for a multi-step image pipeline or workflow re
   `NOVELAI_USERNAME` + `NOVELAI_PASSWORD`.
 - **Output directory** writable: `NOVELAI_OUTPUT_DIR` (default `outputs`), or
   pass `-o <dir>` per CLI invocation.
-- **MCP**: a connected MCP host (Claude Desktop, Cline, or `mcp dev
-  apps/server/dev_server.py`). **CLI**: `novelai-image-mcp` on `PATH` (or
+- **MCP**: a connected MCP host (Claude Desktop, Cline, or `fastmcp dev
+  inspector apps/server/mcp_server.py`). **CLI**: `novelai-image-mcp` on `PATH` (or
   `uvx novelai-image-mcp`, or
   `uv run --directory apps/server novelai-image-mcp`).
 - **Check Anlas balance before expensive chains** — call `get_subscription`
@@ -100,7 +100,7 @@ Use this skill when the user asks for a multi-step image pipeline or workflow re
    ```bash
    BASE=$(novelai-image-mcp generate -p "a girl reading under cherry blossoms" | tail -n1)
    ANNOT=$(novelai-image-mcp annotate "$BASE" -m hed)
-   # Then switch to an MCP host (or `mcp dev apps/server/dev_server.py`) for the img2img pass:
+   # Then switch to an MCP host (or `fastmcp dev inspector apps/server/mcp_server.py`) for the img2img pass:
    #   image_to_image(prompt="watercolor painting, soft pastels", image=<base64 of $ANNOT>, strength=0.6)
    ```
 

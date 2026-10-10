@@ -12,6 +12,12 @@ so they always reflect the current `main` branch.
 :hidden:
 
 server
+deps
+mcp_auth
+middleware
+prompts
+resources
+schemas
 settings
 tools
 client
@@ -19,7 +25,13 @@ client
 
 | Module | Description |
 |---|---|
-| [`server`](server.md) | FastMCP composition root + lifespan |
+| [`server`](server.md) | FastMCP composition root + lifespan + transport selection |
+| [`deps`](deps.md) | `AppContext` and the `Depends` providers |
+| [`mcp_auth`](mcp_auth.md) | Optional HTTP bearer-token auth (`MCP_AUTH_TOKEN`) |
+| [`middleware`](middleware.md) | Tool-call logging middleware |
+| [`prompts`](prompts.md) | The two prompt templates |
+| [`resources`](resources.md) | The `novelai://...` resources |
+| [`schemas`](schemas.md) | Structured-output models |
 | [`settings`](settings.md) | `NovelAISettings` + `MCPServerSettings` |
 | [`tools`](tools.md) | The 11 MCP tool functions |
 | [`nai` client](client.md) | The NovelAI HTTP client (`NovelAIClient` + enums + models) |

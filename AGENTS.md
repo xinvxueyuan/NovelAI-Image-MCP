@@ -8,9 +8,9 @@
 ## 项目是什么
 
 NovelAI Image MCP —— 一个基于 [fastmcp](https://github.com/PrefectHQ/fastmcp) 4
-（`fastmcp==4.0.0b3`，底层运行在 MCP SDK v2 `mcp>=2.0.0` 上）的模型上下文协议
-服务器，把 NovelAI 图像生成 API 暴露为 11 个 MCP 工具，
-供 Claude Desktop / Cline / 自研 agent 调用。Python 3.13，MIT 协议。
+（`fastmcp>=4.1.0,<5`，底层运行在 MCP SDK v2 `mcp>=2.3.0` 上）的模型上下文协议
+服务器，把 NovelAI 图像生成 API 暴露为 11 个 MCP 工具、2 个 prompt、3 个资源 +
+1 个资源模板，供 Claude Desktop / Cline / 自研 agent 调用。Python 3.13，MIT 协议。
 
 ## 仓库布局（uv + pnpm monorepo，Turbo 编排）
 
@@ -18,12 +18,19 @@ NovelAI Image MCP —— 一个基于 [fastmcp](https://github.com/PrefectHQ/fas
 apps/server/  → 可安装的 MCP 服务器包（PyPI: novelai-image-mcp）
   src/novelai_image_mcp/
     nai/         # NovelAI HTTP 客户端（必须走 create_http_client()）
-    tools/       # 11 个 MCP 工具的注册函数
-    server.py    # FastMCP 实例 + lifespan AppContext
+    tools/       # 11 个 MCP 工具（模块级 @mcp.tool 装饰器）
+    resources.py # novelai://models / samplers / defaults / outputs/{name}
+    prompts.py   # novelai_prompt_writer / novelai_image_workflow
+    middleware.py# 工具调用日志中间件
+    mcp_auth.py  # 可选 HTTP Bearer Token（MCP_AUTH_TOKEN）
+    deps.py      # AppContext + Depends 依赖提供者
+    schemas.py   # 结构化输出模型（AnlasEstimate / TagSuggestion）
+    server.py    # FastMCP 实例 + lifespan + 组件导入
     cli.py       # typer CLI（同步入口）
   tests/
-  dev_server.py  # mcp dev 入口（绕开相对导入问题）
+  mcp_server.py  # fastmcp run/dev 入口（绕开相对导入问题）
   pyproject.toml # 版本号唯一权威源 + ruff/pyright/pytest 配置
+fastmcp.json (根或 member) → fastmcp run 的声明式配置（source 指向 mcp_server.py）
 apps/docs/    → Sphinx 文档站（Furo + MyST）
 .github/      → workflows (ci/release/docs) + sync-version composite action
 pyproject.toml (根) → uv workspace 虚拟根（不可安装）
@@ -38,7 +45,9 @@ uv run --directory apps/server poe check             # format-check + lint + typ
 uv run reuse lint                                    # REUSE 合规
 uv run --directory apps/server poe serve             # 启动 stdio 服务器
 uv run --directory apps/server poe serve-http        # 启动 HTTP 服务器
-mcp dev apps/server/dev_server.py                    # MCP Inspector（交互调试）
+uv run fastmcp run fastmcp.json                      # 标准 FastMCP 入口（仓库根）
+uv run --directory apps/server poe inspect           # 组件/版本一览（fastmcp inspect）
+uv run --directory apps/server poe dev               # MCP Inspector（交互调试）
 pnpm docs:serve                                      # sphinx-autobuild 实时预览
 ```
 
@@ -61,14 +70,19 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
    `annotate()` 必须使用它。`create_http_client()` 用
    `httpx_curl_cffi.AsyncCurlTransport(impersonate="chrome")` 复刻 Chrome 的
    BoringSSL 指纹 + 完整 Chrome 150 请求头块（`BROWSER_HEADERS`）。
-3. **MCP 工具返回图像时返回 fastmcp 的 `Image` 辅助类（`from .._mcp import
-   Image`），由 fastmcp 自动转为 `ImageContent`**。`tools/generate.py` 与
-   `tools/enhance.py` 的 `_save_and_return` 已封装此逻辑：直接
+3. **MCP 工具返回图像时返回 fastmcp 的 `Image` 辅助类（`from
+   fastmcp.utilities.types import Image`），由 fastmcp 自动转为
+   `ImageContent`**。`tools/generate.py` 与 `tools/enhance.py` 的
+   `_save_and_return` 已封装此逻辑：直接
    `return [Image(data=..., format="png"), "saved ..."]`，fastmcp 在返回
    list 时会自动转换。不要手动拼 `ImageContent`，也不要返回裸 bytes。
-4. **`mcp dev` 用 `apps/server/dev_server.py` 作为入口**，不要直接指向
-   `server.py`——`mcp dev` 直接加载会破坏 `from ._mcp import FastMCP`
-   相对导入。
+   **资源不能返回 `Image`**（FastMCP 只接受 str/bytes/ResourceContent），
+   `novelai://outputs/{name}` 因此返回 bytes + `mime_type="image/png"`。
+4. **按文件路径加载的入口只能是 `apps/server/mcp_server.py`**（`fastmcp run`
+   / `fastmcp dev inspector` / `fastmcp.json` 的 `source` 都指向它）。
+   路径加载会把模块当成顶层模块执行，包内相对导入（`from .nai import ...`）
+   无法解析，所以不要把这些命令指向 `server.py` 或包内文件；改了 server
+   结构也不用改这个 shim（它只是 `from novelai_image_mcp.server import mcp`）。
 5. **提交消息必须 gitmoji + Conventional Commits**，例：
    `🐛 fix(generate): handle zero-seed randomization`。`commit-msg`
    hook 自动追加 `Signed-off-by` 实现 DCO。不要 `--no-verify` 提交 PR。
@@ -86,10 +100,19 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
 
 ## 关键约定
 
-- **新增 MCP 工具**：在 `tools/<name>.py` 写 `register(mcp: FastMCP)`
-  函数 → 在 `tools/__init__.py` 接线 → 在 `tests/test_tools.py` 扩展参数化
-  测试 → 在 `apps/docs/source/tools/<name>.md` 写文档 → 在 README/README-zh
-  工具表加行。
+- **新增 MCP 工具**：在 `tools/<name>.py` 用模块级
+  ``@mcp.tool(title=..., tags=..., annotations=...)`` + ``@translate_errors``
+  装饰函数（文件顶部 `from ..server import mcp`；参数用 `Depends(get_app_context)`
+  取 `AppContext`，不要自己读 `ctx.lifespan_context`）→ 确保
+  `tools/__init__.py` 导入该模块 → 在 `tests/test_tools.py` 扩展直接调用与
+  schema 测试 → 在 `apps/docs/source/tools/<name>.md` 写文档 → 在
+  README/README-zh 工具表加行。**预期失败必须抛 `ToolError`**（用
+  `translate_errors` 或显式 raise）：服务端开了 `mask_error_details=True`，
+  其他异常的消息会被屏蔽，而且在工具内部翻译才有正确消息（中间件拿到的
+  已经是屏蔽后的通用错误）。
+- **新增资源 / prompt**：资源放 `resources.py`（静态 `mcp.resource("novelai://...")`，
+  图像用 `novelai://outputs/{name}` 模板 + `mime_type="image/png"` 返回 bytes），
+  prompt 放 `prompts.py`；两者都在 `server.py` 底部随 `tools` 一起被导入。
 - **MCP Registry 发布**：`server.json` 是 registry 元数据唯一源。
   发布时由 `.github/actions/sync-version` 自动同步三处版本（顶层
   `.version`、PyPI 包条目的 `version`、OCI 包条目的 `identifier` 的
@@ -127,10 +150,14 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
   `identifier` 的 `:X.Y.Z` 后缀）与 pyproject 同步并提交，然后
   `gh workflow run publish-mcp.yml -f version=X.Y.Z` 补发（schema 校验与
   发布照常执行）。
-- **回归测试覆盖 fastmcp 序列化路径**：`TestSerializationRegression` 通过
-  `mcp.call_tool(...)` 直接调用生产 `server.mcp` 实例（fastmcp 完整执行管线，
-  自动把 `Image` 转为 `ImageContent`），确保返回的 content 块能被
-  `model_dump(mode="json")` 序列化。新增图像返回工具时务必扩展该测试类。
+- **测试用真实 FastMCP 管线**：conftest 的 `mcp_client` fixture 用
+  `fastmcp.Client(server.mcp)`（内存传输，lifespan 用替身 `NovelAIClient`，
+  不联网）驱动生产实例，覆盖 schema 校验、依赖注入、结果转换与
+  `ImageContent` 序列化（`TestSerializationRegression`）。**该 fixture 必须
+  与测试体跑在同一个事件循环上**（`pytest_asyncio.fixture(loop_scope="function")`），
+  否则内存传输会挂死：`asyncio_default_fixture_loop_scope = "session"` 会让
+  session 循环里建立的连接在 function 循环里被 await。
+  新增图像返回工具时扩展 `TestSerializationRegression`。
 - **`filterwarnings = ["error", ...]`**：pytest 把 warning 升级为 error。
   例外清单在 `apps/server/pyproject.toml`，目前只有
   `curl_cffi.utils.CurlCffiWarning`（Windows Proactor 事件循环缺
@@ -193,7 +220,9 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
 - ❌ 直接 `httpx.AsyncClient()` 调用 NovelAI API
 - ❌ 工具返回裸 bytes / 手动拼 `ImageContent`（用 fastmcp 的 `Image` 辅助类，`_save_and_return` 已封装）
 - ❌ 手改 `package.json` 版本号
-- ❌ `mcp dev` 入口指向 `server.py`（用 `dev_server.py`）
+- ❌ 把 `fastmcp run` / `fastmcp.json` 指向 `server.py`（用 `mcp_server.py`）
+- ❌ 在工具里 `raise ValueError` 指望客户端看到消息（用 `ToolError`）
+- ❌ 又开一个 `FastMCP` 实例来挂工具/资源/prompt（共享 `server.mcp`）
 - ❌ 在 PyPI 重发同版本
 - ❌ `git commit --no-verify` 提交 PR
 - ❌ 引用 lingchu-bot / NoneBot（本项目无该历史关联）
