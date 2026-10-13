@@ -16,9 +16,10 @@ from importlib.metadata import PackageNotFoundError
 # installed wheel's METADATA. Reading it from there keeps ``__version__``
 # in lock-step with the canonical pyproject value — even when the source
 # is used outside an install (Docker build stages, IDE introspection of
-# an un-synced checkout, etc.). The release workflow's ``sync-version``
-# composite action validates that the wheel version, the Node workspace
-# ``package.json`` versions, and the input version all agree.
+# an un-synced checkout, etc.). The release workflow validates that the
+# wheel version, the Node workspace ``package.json`` versions and
+# ``server.json`` all agree with this canonical value
+# (``apps/server/scripts/sync_versions.py --check``).
 try:
     __version__ = _metadata.version("novelai-image-mcp")
 except PackageNotFoundError:

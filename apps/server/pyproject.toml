@@ -287,9 +287,13 @@ combine-as-imports = true
 pythonVersion = "3.13"
 pythonPlatform = "All"
 typeCheckingMode = "standard"
+# Release tooling lives in scripts/ (outside the package so it never ships
+# in the wheel); pyright needs the path explicitly, pytest gets it from
+# [tool.pytest.ini_options] pythonpath.
+extraPaths = ["scripts"]
 # mcp_server.py is the src-layout entry shim FastMCP loads by path; it is
 # checked alongside the package so a broken re-export fails CI.
-include = ["src", "tests", "mcp_server.py"]
+include = ["src", "tests", "mcp_server.py", "scripts"]
 exclude = [
     ".trae",
     ".venv",
@@ -308,7 +312,7 @@ exclude = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
-pythonpath = [".", "src"]
+pythonpath = [".", "src", "scripts"]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib --strict-markers --strict-config --cov=src/novelai_image_mcp --cov-branch --cov-report=term-missing --cov-report=xml:test-results/coverage.xml --cov-fail-under=70"
 timeout = 60
@@ -339,10 +343,10 @@ exclude_lines = [
 [tool.poe.tasks]
 # The scope mirrors .husky/pre-commit's Python bucket (^apps/server/.*[.]py$),
 # which includes the container smoke test under docker/.
-lint = "ruff check src tests mcp_server.py docker"
-lint-fix = "ruff check --fix src tests mcp_server.py docker"
-format = "ruff format src tests mcp_server.py docker"
-format-check = "ruff format --check src tests mcp_server.py docker"
+lint = "ruff check src tests mcp_server.py docker scripts"
+lint-fix = "ruff check --fix src tests mcp_server.py docker scripts"
+format = "ruff format src tests mcp_server.py docker scripts"
+format-check = "ruff format --check src tests mcp_server.py docker scripts"
 typecheck = "pyright"
 test = "pytest"
 check.sequence = ["format-check", "lint", "typecheck", "test"]
@@ -355,3 +359,11 @@ run = "fastmcp run ../fastmcp.json"
 inspect = "fastmcp inspect mcp_server.py"
 dev = "fastmcp dev inspector mcp_server.py"
 reuse = "reuse lint"
+# Release tooling. ``sync-versions`` writes the canonical version
+# (apps/server/pyproject.toml) into every derived manifest; the release
+# workflow runs the same script with --check, so a tag whose manifests
+# disagree fails before anything is published. ``release-notes`` renders
+# release-notes/<version>.json into the GitHub Release body.
+sync-versions = "python scripts/sync_versions.py"
+check-versions = "python scripts/sync_versions.py --check"
+release-notes = "python scripts/release_notes.py"

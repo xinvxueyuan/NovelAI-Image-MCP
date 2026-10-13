@@ -115,10 +115,17 @@ jobs:
         # Scope to apps/server so ruff finds the [tool.ruff] config block
         # in apps/server/pyproject.toml (the workspace root pyproject.toml
         # is a virtual manifest with no ruff config).
-        run: uv run --directory apps/server ruff format --check src tests mcp_server.py docker
+        run: uv run --directory apps/server ruff format --check src tests mcp_server.py docker scripts
       - name: Ruff lint
         if: needs.changes.outputs.python == 'true'
-        run: uv run --directory apps/server ruff check src tests mcp_server.py docker
+        run: uv run --directory apps/server ruff check src tests mcp_server.py docker scripts
+
+      - name: Manifest version drift
+        # The canonical version (apps/server/pyproject.toml) must already be
+        # written into every derived manifest before a tag is pushed - the
+        # release workflow runs this same check on the tagged commit, and
+        # catching drift on the PR keeps main releasable at all times.
+        run: uv run --directory apps/server python scripts/sync_versions.py --check
       - name: REUSE compliance
         run: uv run reuse lint
       - name: Pyright

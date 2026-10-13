@@ -46,11 +46,29 @@ per-release section headings. This file is the human-curated companion.
 
 ### Added
 
-- _Nothing yet._
+- **`poe sync-versions` / `poe check-versions`**: the canonical version in
+  `apps/server/pyproject.toml` is propagated to the three `package.json`
+  files and to `server.json` (top-level `.version`, the PyPI entry's
+  `version`, and the OCI entry's `identifier` tag) by
+  `apps/server/scripts/sync_versions.py`. It replaces the
+  `.github/actions/sync-version` composite action and also repaired drift on
+  `main`, where the Node manifests were still pinned at `0.3.0` because the
+  old write-back only ever reached the release branches.
+- **JSON-authored release notes**: `release-notes/<version>.json` is rendered
+  into the GitHub Release body by `apps/server/scripts/release_notes.py`
+  (required keys enforced, unknown keys rejected, previewable locally); the
+  auto-generated commit list is appended below the authored announcement.
 
 ### Changed
 
-- _Nothing yet._
+- **Releases are tag-driven**: pushing `vX.Y.Z` for a commit that is already
+  on `main` runs the whole pipeline — build, PyPI, GHCR, GitHub Release, MCP
+  Registry. The `releases/X.Y.Z` trigger branch is gone, and the 11
+  historical release branches were deleted (their `vX.Y.Z` tags remain).
+- **Nothing is written back to the repository during a release**: the
+  workflow verifies that `pyproject.toml`, every manifest, the CHANGELOG
+  section and the release-notes document agree with the tag, so a published
+  artifact can never disagree with the commit it came from.
 
 ### Fixed
 
