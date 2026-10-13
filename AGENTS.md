@@ -32,7 +32,7 @@ apps/server/  → 可安装的 MCP 服务器包（PyPI: novelai-image-mcp）
   pyproject.toml # 版本号唯一权威源 + ruff/pyright/pytest 配置
 fastmcp.json (根或 member) → fastmcp run 的声明式配置（source 指向 mcp_server.py）
 apps/docs/    → Sphinx 文档站（Furo + MyST）
-.github/      → workflows (ci/release/docs) + sync-version composite action
+.github/      → workflows (ci/release/docs) + detect-changes composite action
 pyproject.toml (根) → uv workspace 虚拟根（不可安装）
 uv.lock       → 全仓库唯一锁文件
 ```
@@ -55,8 +55,10 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
 
 1. **版本号唯一源 = `apps/server/pyproject.toml` 的 `version` 字段**。
    不要手改 `package.json` / `apps/server/package.json` /
-   `apps/docs/package.json` 的版本号——release workflow 的
-   `.github/actions/sync-version` 会自动同步并回写 commit。
+   `apps/docs/package.json` / `server.json` 的版本号——用
+   `uv run --directory apps/server poe sync-versions` 生成，用
+   `poe check-versions` 校验；release workflow 在被打标签的 commit 上跑的
+   就是同一个 `--check`。
 2. **NovelAI HTTP 客户端必须通过 `nai/http.py` 的 `create_http_client()`**
    构造。不要直接 `httpx.AsyncClient()`——`image.novelai.net` 后的 Cloudflare
    WAF 会按 JA3/JA4 TLS 指纹识别非浏览器客户端并静默重置连接。自 2026 年起
@@ -88,9 +90,9 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
 5. **提交消息必须 gitmoji + Conventional Commits**，例：
    `🐛 fix(generate): handle zero-seed randomization`。`commit-msg`
    hook 自动追加 `Signed-off-by` 实现 DCO。不要 `--no-verify` 提交 PR。
-6. **不要在 `releases/*` 分支推送前忘记 `uv lock`**。release workflow 的
-   `build` job 用 `uv build --package novelai-image-mcp`，lock 与
-   pyproject 不一致会触发警告。
+6. **打标签前必须 `uv lock` + `poe sync-versions`**。release workflow 的
+   `build` job 用 `uv build --package novelai-image-mcp`；`validate` job 还会
+   校验 manifest、CHANGELOG 与发布说明，任何一处不一致都会在发布前失败。
 7. **不要在 PyPI 重发同版本**——PyPI 不允许覆盖。失败的发布用 yank +
    patch 版本（`0.1.x` → `0.1.x+1`）补救。
 8. **i18n 翻译页面放在 `apps/docs/source/<lang-code>/`**（如 `source/zh/`、
@@ -116,13 +118,12 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
   图像用 `novelai://outputs/{name}` 模板 + `mime_type="image/png"` 返回 bytes），
   prompt 放 `prompts.py`；两者都在 `server.py` 底部随 `tools` 一起被导入。
 - **MCP Registry 发布**：`server.json` 是 registry 元数据唯一源。
-  发布时由 `.github/actions/sync-version` 自动同步三处版本（顶层
-  `.version`、PyPI 包条目的 `version`、OCI 包条目的 `identifier` 的
-  `:X.Y.Z` 后缀）并断言一致 —— 人只需要改
-  `apps/server/pyproject.toml`。手动编辑 server.json（如新增包条目）后
-  仍需自行保证版本与 pyproject 一致。自动发布内联在 release.yml 的
-  `publish-mcp` job（见下文 GITHUB_TOKEN 陷阱），依赖已发布的 PyPI/GHCR
-  包做所有权验证。
+  版本由 `poe sync-versions` 同步三处（顶层 `.version`、PyPI 包条目的
+  `version`、OCI 包条目的 `identifier` 的 `:X.Y.Z` 后缀）——人只需要改
+  `apps/server/pyproject.toml`，再用 `poe check-versions` 确认一致。
+  自动发布内联在 release.yml 的 `publish-mcp` job
+  （`needs: [validate, publish-pypi, publish-ghcr]`），依赖已发布的
+  PyPI/GHCR 包做所有权验证。
   PyPI 验证靠 `apps/server/README.md` 的 `mcp-name:` 标记（注意：不是
   根 `README.md`！`apps/server/pyproject.toml` 的 `readme = "README.md"`
   解析为 `apps/server/README.md`，这才是 PyPI 包的 long description）；
@@ -134,24 +135,14 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
   (3) registry v0 搜索 API 把服务器载荷嵌套在 `.server` 下
   （`{"servers":[{"server":{"name":"..."}, "_meta":{...}}]}`），
   verify 步骤的 jq 必须用 `.servers[] | select(.server.name == ...)`。
-  **GITHUB_TOKEN 陷阱（已内联解决）**：release.yml 的 `github-release`
-  job 用 `GITHUB_TOKEN` 创建 `v*` tag，而 GitHub 安全机制规定用
-  `GITHUB_TOKEN` 创建的 tag **不会触发其他工作流**（防循环触发）。
-  因此 MCP Registry 发布**内联在 release.yml 的 `publish-mcp` job** 中
-  （`needs: [validate, publish-pypi, publish-ghcr]`），每次发布自动执行。
-  独立的 `publish-mcp.yml` 仅保留 `workflow_dispatch`，作为手动重跑工具
-  （修复 server.json 后补发用）——不要给它加回 `on: push: tags` 触发。
-  **sync-version 回写不可见陷阱（0.4.0 实测）**：release.yml 的 `validate`
-  job 内由 sync-version 回写 `server.json`/`package.json` 的提交
-  （`🔧 chore(release): sync manifest versions to X.Y.Z`）**对下游 job 不可见**
-  ——同一 workflow run 的后续 job（含内联 `publish-mcp`）按触发时的固定 commit
-  检出，读到的仍是同步前的 `server.json`（0.4.0 实测：核对步骤报
-  `server.json has '0.3.0', release is '0.4.0'`）。因此内联 publish-mcp
-  **首次执行大概率失败**，这不是异常；合规补发流程：在 `main` 上手动把
-  `server.json` 三处版本（顶层 `version`、PyPI 条目 `version`、OCI 条目
-  `identifier` 的 `:X.Y.Z` 后缀）与 pyproject 同步并提交，然后
-  `gh workflow run publish-mcp.yml -f version=X.Y.Z` 补发（schema 校验与
-  发布照常执行）。
+  **为什么内联而不是独立工作流**：一次 tag push 要原子地把所有产物发出去，
+  独立的 tag 触发工作流只会重复同一套校验；`publish-mcp.yml` 仅保留
+  `workflow_dispatch`，作为修复 server.json 后的手动补发工具——不要给它
+  加回 `on: push: tags` 触发。
+  **不再有 write-back（旧陷阱已消失）**：release workflow 只校验、不写仓库，
+  因此 0.4.0 那个「sync-version 回写对下游 job 不可见」的陷阱随设计消失。
+  若 registry 校验失败需要补发：在 `main` 上用 `poe sync-versions` 修好
+  `server.json` 并提交，然后 `gh workflow run publish-mcp.yml -f version=X.Y.Z`。
 - **测试用真实 FastMCP 管线**：conftest 的 `mcp_client` fixture 用
   `fastmcp.Client(server.mcp)`（内存传输，lifespan 用替身 `NovelAIClient`，
   不联网）驱动生产实例，覆盖 schema 校验、依赖注入、结果转换与
@@ -196,20 +187,26 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
 
 - 基线分支固定为 `main`：所有功能/修复分支从 `main` 创建，且仅作短期工作分支。
 - **线性历史**：合入 `main` 只允许 fast-forward 或 rebase 后的线性提交；禁止 merge commit，禁止长期分叉分支（如长期存在的 `feat/*`）。
-- **发版一律在 `main` 执行**：版本号（`apps/server/pyproject.toml`）与 `CHANGELOG.md` 的修改必须落在 `main` 上，再从 `main` 切出并推送 `releases/X.Y.Z` 触发发布。
+- **发版一律在 `main` 执行**：版本号（`apps/server/pyproject.toml`）、`CHANGELOG.md`、`release-notes/X.Y.Z.json` 与各 manifest 的修改都必须落在 `main` 上，发布由**标签**触发（`git push origin vX.Y.Z`）。tag 必须指向 `main` 上已有的 commit（workflow 校验祖先关系），不再使用发布分支。
 
 要点：
 
 1. 编辑 `apps/server/pyproject.toml`：`version = "X.Y.Z"`（唯一手改处）。
 2. 编辑 `CHANGELOG.md`：把 `[Unreleased]` 改名为 `[X.Y.Z] — YYYY-MM-DD`，
    新建空 `[Unreleased]` 占位段。
-3. `uv lock` 刷新锁文件。
-4. `uv run --directory apps/server poe check` + `uv run reuse lint` 通过。
-5. `git commit -m "🏷️ chore(release): X.Y.Z"` 后创建并推送
-   `releases/X.Y.Z` 分支，触发 `.github/workflows/release.yml`：
-   `validate → build → publish-pypi → publish-ghcr → github-release`。
-6. `gh run watch` 监控。`github-release` job 自动创建 `vX.Y.Z` tag 与
-   GitHub Release（含 auto-generated notes + wheel/sdist 资产）。
+3. 新写 `release-notes/X.Y.Z.json`（JSON 发布说明，格式见
+   `release-notes/README.md`）；本地预览：
+   `uv run --directory apps/server poe release-notes --version X.Y.Z`。
+4. `uv run --directory apps/server poe sync-versions` 把版本写进
+   `package.json` ×3 与 `server.json` ×3 处，然后 `uv lock`。
+5. `poe check` + `uv run reuse lint` + `poe check-versions` 全绿。
+6. `git commit -m "🏷️ chore(release): X.Y.Z"` → `git push` → 打标签并推送：
+   `git tag -a vX.Y.Z -m "vX.Y.Z"` 与 `git push origin vX.Y.Z`。标签推送即
+   触发 `.github/workflows/release.yml`：
+   `validate → build → publish-pypi → publish-ghcr → github-release /
+   publish-mcp`。手动重跑：`gh workflow run release.yml -f version=X.Y.Z`。
+7. `gh run watch` 监控。GitHub Release 针对已存在的 tag 创建，正文来自
+   `release-notes/X.Y.Z.json`（下方附 auto-generated commit 列表）。
 
 ## 项目记忆与历史决策
 

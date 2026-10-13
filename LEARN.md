@@ -427,24 +427,22 @@ Release / MCP Registry.
 ```text
 Edit pyproject.toml version ─────┐
 Edit CHANGELOG.md [Unreleased]   │
-uv lock                          │
-poe check + reuse lint           │
-git commit -m "🏷️ chore(release): X.Y.Z"
-git checkout -b releases/X.Y.Z   │
-git push -u origin releases/X.Y.Z
+Author release-notes/X.Y.Z.json  │
+poe sync-versions + uv lock      │
+poe check + reuse lint + check-versions
+git commit -m "🏷️ chore(release): X.Y.Z" + git push
                                  ▼
-                .github/workflows/release.yml
-                  ├─ validate   (checks version sync, CHANGELOG format)
+        git tag -a vX.Y.Z && git push origin vX.Y.Z
+                                 ▼
+                .github/workflows/release.yml   (tag push)
+                  ├─ validate   (tag on main? pyproject/manifests/CHANGELOG
+                  │              agree? render release-notes/X.Y.Z.json)
                   ├─ build      (uv build --package novelai-image-mcp)
                   ├─ publish-pypi   (trusted publishing via OIDC)
-                  ├─ publish-ghcr   (docker buildx + push)
-                  └─ github-release (gh release create vX.Y.Z + assets)
-                                 │
-                                 ▼  creates vX.Y.Z tag
-                .github/workflows/publish-mcp.yml  (tag-push triggered)
-                  ├─ validate server.json against schema
-                  ├─ mcp-publisher login github-oidc
-                  └─ mcp-publisher publish
+                  ├─ publish-ghcr   (docker buildx + push + cosign)
+                  ├─ github-release (gh release create vX.Y.Z --verify-tag
+                  │                  --notes-file RELEASE_NOTES.md + assets)
+                  └─ publish-mcp    (mcp-publisher login github-oidc + publish)
                                  │
                                  ▼
                 registry.modelcontextprotocol.io
@@ -454,12 +452,16 @@ git push -u origin releases/X.Y.Z
 ### Hard rules
 
 - **Version source of truth** is `apps/server/pyproject.toml`. Don't edit
-  `package.json` versions manually — `.github/actions/sync-version` does it
-  and rewrites the commit.
+  `package.json` / `server.json` versions by hand — `poe sync-versions`
+  writes them and `poe check-versions` (what the release `validate` job
+  runs) verifies them. The workflow never writes back to the repository.
+- **Releases are tag-driven**: the tag must point at a commit already on
+  `main`, and `release-notes/X.Y.Z.json` must exist for it. There is no
+  release branch any more.
 - **PyPI doesn't allow republish** of the same version. If a release fails
   after PyPI upload, yank + bump patch (`0.1.x` → `0.1.x+1`).
-- **Always `uv lock` before pushing** `releases/*` — the `build` job will
-  warn if lockfile is stale.
+- **Always `uv lock` before tagging** — the `build` job warns on a stale
+  lockfile and `poe check-versions` fails on manifest drift.
 - **Commit messages** must be gitmoji + Conventional Commits (e.g.
   `🐛 fix(generate): handle zero-seed randomization`). The `commit-msg`
   hook auto-appends `Signed-off-by` for DCO. Never `--no-verify`.
