@@ -65,8 +65,21 @@ def fake_client(nai_image: NovelAIImage) -> Any:
 
     Individual tests override specific `return_value` / `side_effect` values
     on the mock's methods (`generate`, `upscale`, `director`, ...).
+
+    The mock is built with `spec=NovelAIClient` on purpose, and it also makes
+    the double stricter (an unknown method raises instead of silently
+    returning another mock). A bare `AsyncMock` is not an instance of
+    `NovelAIClient`, and FastMCP's dependency resolution then never hands it
+    to the tool: the tool receives an unconfigured sibling mock, so every
+    `return_value` set here is ignored for the tools that depend on
+    `get_client` (`suggest_tags`, `encode_vibe`, the account tools). Spec'ing
+    the mock makes it pass `isinstance` and the resolver passes it through
+    unchanged. Symptom to watch for: a tool that works when its body is called
+    directly but returns junk through `mcp_client`.
     """
-    client = AsyncMock()
+    from novelai_image_mcp.nai import NovelAIClient
+
+    client = AsyncMock(spec=NovelAIClient)
     client.generate.return_value = (nai_image,)
     client.upscale.return_value = nai_image
     client.director.return_value = nai_image

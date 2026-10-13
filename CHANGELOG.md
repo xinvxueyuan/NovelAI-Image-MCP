@@ -46,7 +46,20 @@ per-release section headings. This file is the human-curated companion.
 
 ### Added
 
-- _Nothing yet._
+- **Tool output-contract regression test**: `TestToolOutputContract` drives
+  every registered tool through the real FastMCP pipeline (in-memory client,
+  production registration, dependency injection, result conversion) and asserts
+  that a tool advertising an `outputSchema` also returns
+  `structured_content`. It pins the failure mode that made the image tools
+  unusable on MCP SDK v2 hosts in 0.4.0
+  ([#27](https://github.com/xinvxueyuan/NovelAI-Image-MCP/issues/27)).
+- The `fake_client` test double is now `AsyncMock(spec=NovelAIClient)`. A bare
+  mock is not an instance of the client, and FastMCP's dependency resolution
+  then never handed it to the `Depends(get_client)` tools — the tool received
+  an unconfigured sibling mock, so every configured return value was ignored
+  (`suggest_tags`, `encode_vibe`, the account tools). The spec also makes the
+  double stricter: an unknown method now raises instead of silently returning
+  another mock.
 
 ### Changed
 

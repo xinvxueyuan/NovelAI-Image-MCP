@@ -469,3 +469,91 @@ class TestSerializationRegression:
             {"width": 832, "height": 1216, "steps": 28, "opus": True},
         )
         assert result.structured_content == {"anlas": 0, "opus_free_sample": True}
+
+
+class TestToolOutputContract:
+    """Every advertised output schema must be backed by structured content.
+
+    A tool can declare ``outputSchema`` and still return content blocks only:
+    fastmcp silently drops ``structured_content`` when the result is not
+    JSON-serializable, which is what the ``Image`` helper did under fastmcp
+    4.0.0b3 (the version behind release 0.4.0). MCP SDK v2 clients validate
+    the result against the declared schema -- ``validate_tool_result`` in the
+    Python SDK, ``validateToolResult`` in the TypeScript one -- and raise
+
+        Tool <name> has an output schema but did not return structured content
+
+    before the caller sees anything, so all three image tools were unusable on
+    those hosts while this suite stayed green (issue #27).
+    """
+
+    #: Image-returning tools: the ``Image`` helper cannot be JSON-serialized.
+    IMAGE_TOOLS = (
+        "generate_image",
+        "image_to_image",
+        "inpaint",
+        "upscale_image",
+        "director_tool",
+        "annotate_image",
+    )
+
+    @staticmethod
+    def _calls() -> dict[str, dict[str, Any]]:
+        """Smallest valid argument set for every registered tool."""
+        image = _b64()
+        return {
+            "generate_image": {
+                "prompt": "1girl",
+                "width": 64,
+                "height": 64,
+                "steps": 1,
+            },
+            "image_to_image": {"prompt": "restyle", "image": image},
+            "inpaint": {
+                "prompt": "redraw",
+                "image": image,
+                "mask": image,
+                "model": "nai-diffusion-5-full-inpainting",
+            },
+            "upscale_image": {"image": image, "factor": 4},
+            "director_tool": {"tool": "lineart", "image": image},
+            "annotate_image": {"image": image, "model": "hed"},
+            "suggest_tags": {"prompt": "1girl"},
+            "encode_vibe": {"reference": image},
+            "get_subscription": {},
+            "get_user_data": {},
+            "estimate_anlas_cost": {"width": 832, "height": 1216, "steps": 28},
+        }
+
+    async def test_declared_schema_is_backed_by_structured_content(
+        self, mcp_client: Any
+    ) -> None:
+        """An advertised ``outputSchema`` implies ``structured_content``."""
+        calls = self._calls()
+        declared = {
+            tool.name: tool.output_schema for tool in await mcp_client.list_tools()
+        }
+        assert set(declared) == set(calls), (
+            "keep TestToolOutputContract._calls in step with the registry: every "
+            "tool must be exercised against its declared output schema"
+        )
+
+        for name, arguments in calls.items():
+            result = await mcp_client.call_tool(name, arguments)
+            if declared[name] is not None:
+                assert result.structured_content is not None, (
+                    f"{name} advertises an outputSchema but returned no "
+                    "structured_content; strict MCP clients reject such a result"
+                )
+
+    async def test_image_tools_return_image_and_text_blocks(
+        self, mcp_client: Any
+    ) -> None:
+        """Image tools keep returning the image plus its saved path."""
+        from mcp_types import ImageContent, TextContent
+
+        calls = self._calls()
+        for name in self.IMAGE_TOOLS:
+            result = await mcp_client.call_tool(name, calls[name])
+            assert any(isinstance(b, ImageContent) for b in result.content), name
+            assert any(isinstance(b, TextContent) for b in result.content), name
