@@ -56,6 +56,17 @@ per-release section headings. This file is the human-curated companion.
 
 - _Nothing yet._
 
+### Security
+
+- **Transitive advisories patched** (all dev/build-time or auth-stack
+  dependencies, no API change): `PyJWT` 2.13.0 → 2.15.1 and `urllib3` 2.7.0 →
+  2.8.0 in `uv.lock`; `smol-toml` → 1.9.1, `katex` → 0.19.0 and
+  `brace-expansion` → 5.0.12 in `pnpm-lock.yaml`. The two npm packages whose
+  parents still pin a vulnerable version (`markdownlint-cli2` requires
+  `smol-toml=1.8.0`; `micromark-extension-math` requires `katex ^0.16.0`) are
+  forced through `pnpm-workspace.yaml` overrides, alongside the existing
+  `js-yaml` / `markdown-it` floors.
+
 ## [0.5.0] — 2026-10-10
 
 ### Added
