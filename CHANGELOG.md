@@ -46,6 +46,24 @@ per-release section headings. This file is the human-curated companion.
 
 ### Added
 
+- _Nothing yet._
+
+### Changed
+
+- _Nothing yet._
+
+### Fixed
+
+- _Nothing yet._
+
+### Security
+
+- _Nothing yet._
+
+## [0.5.1] — 2026-10-13
+
+### Added
+
 - **Tool output-contract regression test**: `TestToolOutputContract` drives
   every registered tool through the real FastMCP pipeline (in-memory client,
   production registration, dependency injection, result conversion) and asserts
