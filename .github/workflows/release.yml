@@ -111,7 +111,7 @@ jobs:
 
       - name: ⚡ Setup uv
         # pinned from astral-sh/setup-uv@v8.3.2
-        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
         with:
           python-version: "3.13"
           enable-cache: true
@@ -124,7 +124,7 @@ jobs:
 
       - name: 📤 Upload artifacts
         # pinned from actions/upload-artifact@v7.0.1
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: python-distributions
           path: dist/
@@ -142,7 +142,7 @@ jobs:
     steps:
       - name: 📥 Download artifacts
         # pinned from actions/download-artifact@v5.0.0
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: python-distributions
           path: dist/
@@ -199,7 +199,7 @@ jobs:
 
       - name: 🐳 Set up Buildx
         # pinned from docker/setup-buildx-action@v3.11.1
-        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
 
       - name: 🔨 Build & push
         # Build context is the repo root so uv can resolve the workspace graph;
@@ -210,7 +210,7 @@ jobs:
         # source of the single manifest digest that all tags resolve to.
         # pinned from docker/build-push-action@v6.18.0
         id: build
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc
         with:
           context: .
           file: ./apps/server/Dockerfile
@@ -280,7 +280,7 @@ jobs:
 
       - name: 📥 Download artifacts
         # pinned from actions/download-artifact@v5.0.0
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: python-distributions
           path: dist/
