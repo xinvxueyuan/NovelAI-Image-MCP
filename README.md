@@ -329,7 +329,7 @@ commits automatically).
 [python-badge]: https://img.shields.io/badge/python-3.13+-blue.svg
 [uv-badge]: https://img.shields.io/badge/uv-managed-261230.svg
 [reuse-badge]: https://api.reuse.software/badge/github.com/xinvxueyuan/NovelAI-Image-MCP
-[deepwiki-badge]: https://deepwiki.com/badge.svg
+[deepwiki-badge]: https://img.shields.io/badge/DeepWiki-Ask%20DeepWiki-blue
 [skills-badge]: https://skills.sh/b/xinvxueyuan/NovelAI-Image-MCP
 [product-hunt-badge]: https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1206099&theme=light&t=1784973837616
 [lifto-badge]: https://liftoapp.com/badges/featured-light.svg
