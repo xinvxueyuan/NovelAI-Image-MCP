@@ -15,6 +15,17 @@ removal, declutter, colorize, or emotion transfer.
 | `emotion` | `str \| None` | `None` | Emotion name (required for `emotion` tool). |
 | `emotion_level` | `int` | `0` | 0–5. 0 = normal intensity, 5 = weakest. |
 
+:::{warning}
+`emotion` and `emotion_level` are **experimental**: they are served only to
+requests that opt in through the insiders header
+(`X-MCP-Insiders: experimental-tools=true`). Without that opt-in, passing
+either one fails with a `ToolError`; a non-default `emotion_level` alone counts
+as passing it. Both parameters stay visible in the tool schema either way,
+because a schema is published when the server starts and cannot vary per
+request. See
+[Insiders header, routing and audit](../development/insiders-and-routing.md).
+:::
+
 ## Returns
 
 `list[ContentBlock]` — base64 `Image` of the transformed image + saved-path text.
@@ -35,8 +46,9 @@ removal, declutter, colorize, or emotion transfer.
 The `emotion` parameter accepts these values:
 
 ```text
-happy, sad, angry, surprised, neutral, excited, nervous, thinking, wink,
-pleased, smirk, awe, laughing, grumpy, embarrassed, screaming
+neutral, happy, sad, angry, scared, surprised, tired, excited, nervous,
+thinking, confused, shy, disgusted, smug, bored, laughing, irritated,
+aroused, embarrassed, worried, love, determined, hurt, playful
 ```
 
 Use `Emotion` enum introspection to list them at runtime:

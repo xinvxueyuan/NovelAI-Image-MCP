@@ -21,14 +21,13 @@ result = await ctx.session.call_tool("upscale_image", {
 The output PNG is at 4× the source resolution. A 832×1216 input becomes
 3328×4864.
 
-## 2. Choose `factor`
+## 2. `factor` is fixed at 4
 
-| `factor` | Use case |
-|---|---|
-| `2` | Web display, quick preview, modest resolution bump. |
-| `4` | Print, large-format display, archival storage. |
+NovelAI's standalone upscaler exposes a single 4× step, so `factor` accepts
+only `4` — there is no 2× mode. Generate at a lower resolution and upscale
+once instead of looking for a smaller step.
 
-Higher factors cost more Anlas and produce much larger files. Use
+The Anlas cost scales with the source resolution. Use
 [`estimate_anlas_cost`](../tools/account.md#estimate_anlas_cost) first if
 you're upscaling a batch.
 

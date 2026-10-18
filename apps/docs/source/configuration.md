@@ -95,8 +95,34 @@ FastMCP, so changing it moves the endpoint.
 The default `MCP_HOST=127.0.0.1` binds to **localhost only**. To expose the
 server to other machines on your LAN, set `MCP_HOST=0.0.0.0` — and either set
 `MCP_AUTH_TOKEN` or put it behind TLS termination / an authenticated reverse
-proxy. With `MCP_AUTH_TOKEN` empty the HTTP transport implements **no**
-authentication.
+proxy. With both `MCP_AUTH_TOKEN` and `MCP_ROUTE_TOKENS` unset the HTTP
+transport installs no auth middleware at all — the endpoint accepts
+unauthenticated clients.
+:::
+
+## Insiders, routing and audit
+
+The `X-MCP-Insiders` opt-in surface is inert unless a request sends the header.
+These variables configure the header names it reads and the side effects it
+switches on; the full contract is in
+[Insiders header, routing and audit](development/insiders-and-routing.md).
+
+| Variable | Default | Notes |
+|---|---|---|
+| `MCP_INSIDERS_HEADER` | `X-MCP-Insiders` | Name of the per-request opt-in header. Lookup is case-insensitive. |
+| `MCP_MODEL_HEADERS` | `["X-MCP-Model", "X-MCP-Model-Name"]` | JSON list. Ordered candidates for the declared model; the first non-empty header wins. |
+| `MCP_AGENT_HEADERS` | `["X-MCP-Agent-ID", "X-MCP-Agent", "X-MCP-Agent-Source"]` | JSON list. Ordered candidates for the agent, and the first route source. |
+| `MCP_CLIENT_HEADERS` | `["X-MCP-Client", "X-MCP-Client-Session-Id"]` | JSON list. Ordered candidates for the client; the first name containing `session` supplies the session. |
+| `MCP_INSIDERS_DISABLED_FEATURES` | `[]` | JSON list. Operator kill switch: a feature listed here stays off no matter what a client sends. |
+| `MCP_ROUTE_SCOPED_OUTPUT` | `true` | While routing is active, write images under `<NOVELAI_OUTPUT_DIR>/<sanitised route>/`. |
+| `MCP_AUDIT_LOG_PATH` | *(unset)* | Audit JSONL destination; unset means `<NOVELAI_OUTPUT_DIR>/audit.jsonl`. |
+| `MCP_ROUTE_TOKENS` | *(unset)* | JSON object `{"<route>": "<token>"}`. Route-bound bearer tokens; a token that disagrees with the route the request declares is rejected with `401`. |
+
+:::{warning}
+The five list/dict variables above are **JSON**:
+`MCP_AGENT_HEADERS='["X-MCP-Agent-ID"]'` works, a comma-separated value
+raises a settings error, and an empty value is not valid JSON — comment the
+line out instead of leaving it blank.
 :::
 
 ---

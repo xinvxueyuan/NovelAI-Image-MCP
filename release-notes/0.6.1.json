@@ -1,0 +1,31 @@
+{
+  "version": "0.6.1",
+  "date": "2026-10-19",
+  "summary": "A documentation release. The three READMEs are rebuilt around the agent skills the repository ships, so a reader can see that installing a skill is a first-class way to drive the project rather than a footnote.",
+  "highlights": [
+    {
+      "title": "The skills are the front door",
+      "body": "Quick start now installs the skills first and the server second. The skills get their own section with the install command, a decision diagram and a table grouping them the way `skills.sh.json` does (CLI, MCP Tools, Workflows). The repository-layout block lists `skills/` and `skills.sh.json`."
+    },
+    {
+      "title": "The configuration table is complete",
+      "body": "Ten `NOVELAI_*` defaults were missing: the default model, width, height, steps, scale and sampler, the upscale model, the timeout and both base URLs. The JSON form of the three routing-header lists is given below the table, since those variables must be JSON."
+    },
+    {
+      "title": "The three languages cannot drift apart",
+      "body": "All three READMEs carry the same 39 headings, and `pnpm readme:check` fails if a code block, a table identifier or a configuration default stops matching. The Mermaid diagram and every code block are byte-identical across languages."
+    }
+  ],
+  "sections": [
+    {
+      "title": "📝 Documentation",
+      "items": [
+        "`README.md`, `.github/docs/README-zh.md` and `.github/docs/README-ja.md` rebuilt around the agent skills, with the same 39 headings in each language.",
+        "Quick start reordered: install the skills, then install the server from source, then from PyPI.",
+        "New Agent skills section: install command, decision diagram and a table grouped by CLI / MCP Tools / Workflows.",
+        "Configuration table completed with ten `NOVELAI_*` defaults, read from a running interpreter rather than recalled."
+      ]
+    }
+  ],
+  "upgrade_notes": "No runtime behaviour changes. The package contents are identical to 0.6.0; only the documentation changed. The one intentional behaviour change from 0.6.0 still applies: `director_tool`'s `emotion` and `emotion_level` require the `X-MCP-Insiders` opt-in."
+}

@@ -29,19 +29,28 @@ uv run --directory apps/server pytest --junitxml=test-results/pytest.xml
 
 ```text
 apps/server/tests/
-├── conftest.py             # Shared fixtures (png_bytes, settings, fake_client, fake_app, mcp_client)
-├── _helpers.py             # Constants + helpers (PNG_BYTES)
-├── test_cli.py             # CLI subcommands
-├── test_client.py          # NovelAIClient HTTP layer (uses respx)
-├── test_mcp_auth.py        # Optional bearer-token auth (unit + live HTTP)
-├── test_middleware.py      # Tool-call logging middleware
-├── test_models.py          # Pydantic models
-├── test_output.py          # save_image + resolve_output_path
-├── test_payload.py         # build_generation_payload
-├── test_prompts.py         # novelai_* prompt templates
-├── test_resources.py       # novelai://... resources and templates
-├── test_server.py          # FastMCP lifespan, metadata + transport selection
-└── test_tools.py           # Each MCP tool's happy path + error cases
+├── conftest.py               # Shared fixtures (png_bytes, settings, fake_client, fake_app, mcp_client)
+├── _helpers.py               # Constants + helpers (PNG_BYTES)
+├── test_audit.py             # Append-only audit trail: record shape, redaction, header cap
+├── test_cli.py               # CLI subcommands
+├── test_client.py            # NovelAIClient HTTP layer (uses respx)
+├── test_errors.py            # Error-body parsing + code/explanation propagation
+├── test_features.py          # Insiders feature registry + resolution rules
+├── test_http.py              # Chrome TLS + header fingerprint factory (create_http_client)
+├── test_insiders.py          # X-MCP-Insiders header parser
+├── test_insiders_http.py     # End-to-end HTTP: real server + real headers (routing, audit, scoped output, emotion gate)
+├── test_mcp_auth.py          # Optional bearer-token auth (unit + live HTTP)
+├── test_middleware.py        # Tool-call logging middleware
+├── test_models.py            # Pydantic models
+├── test_output.py            # save_image + resolve_output_path
+├── test_payload.py           # build_generation_payload
+├── test_prompts.py           # novelai_* prompt templates
+├── test_release_tooling.py   # Release tooling in scripts/ (version sync, release notes)
+├── test_resources.py         # novelai://... resources and templates
+├── test_routing.py           # Header-driven routing context + route sanitisation
+├── test_server.py            # FastMCP lifespan, metadata + transport selection
+├── test_settings.py          # Settings surface + insiders/routing dependency providers
+└── test_tools.py             # Each MCP tool's happy path + error cases
 ```
 
 ## Fixtures

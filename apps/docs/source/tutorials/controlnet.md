@@ -1,9 +1,9 @@
 # Tutorial: ControlNet preprocessors
 
 Use NovelAI's ControlNet preprocessors to extract a structural map from a
-reference image — depth, line art, semantic segmentation. In v0.1.0 the
-extracted annotation is returned as a standalone image you can save or
-inspect; feeding it back into a generation is a v0.2 feature.
+reference image — depth, line art, semantic segmentation. The extracted
+annotation is returned as a standalone image you can save or inspect;
+`generate_image` cannot consume it as a ControlNet condition yet.
 
 ## Workflow overview
 
@@ -56,14 +56,14 @@ for model in ("midas", "hed", "fake_scribble"):
 uv run python -m novelai_image_mcp annotate ./photo.png --model midas
 ```
 
-## 4. Limitations in v0.1.0
+## 4. Current limitations
 
 :::{warning}
 **Generation does not consume annotations yet.** `generate_image` accepts
 text prompts, character prompts, and vibe references — but not a
-ControlNet condition. The `controlnet_condition` / `controlnet_model`
-parameters planned for v0.2 will let `generate_image` use an extracted
-annotation as a structural condition.
+ControlNet condition. There are no `controlnet_condition` / `controlnet_model`
+parameters on `generate_image` yet, so an extracted annotation cannot drive a
+generation.
 :::
 
 :::{tip}

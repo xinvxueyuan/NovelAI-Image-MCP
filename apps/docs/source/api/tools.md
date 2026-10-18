@@ -1,8 +1,10 @@
 # `novelai_image_mcp.tools`
 
-The 11 MCP tool functions. Each tool is `async`, takes an MCP `Context` as
-its first parameter, and returns a `list` of MCP content blocks
-(`Image` + text path).
+The 11 MCP tool functions. Each tool is `async` and returns a `list` of MCP
+content blocks (`Image` + text path). Dependencies — the `NovelAIClient`, the
+`NovelAISettings` and the per-request routing context — arrive as
+`Depends(...)` providers (`deps.py`), so they are resolved per request and
+never appear in the tool's input schema.
 
 :::{admonition} See also
 :class: tip

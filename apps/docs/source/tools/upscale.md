@@ -1,8 +1,8 @@
 # `upscale_image`
 
 Upscale an image 4× using NovelAI's standalone upscaler. The upscaler runs
-on a V5 model (``NOVELAI_UPSCALE_MODEL``) regardless of the model that
-how it was produced.
+on the V5 model configured by `NOVELAI_UPSCALE_MODEL`, regardless of the model
+that produced the input image.
 
 ## Parameters
 
@@ -19,7 +19,7 @@ how it was produced.
 
 - The upscaler is a separate NovelAI endpoint — it does **not** run a
   diffusion loop, so it's faster than re-generating at a higher resolution.
-- Anlas cost scales with source resolution and `factor`. Use
+- Anlas cost scales with the source resolution (the step is fixed at 4×). Use
   [`estimate_anlas_cost`](account.md#estimate_anlas_cost) *before* a big
   batch.
 - The output preserves the input's color profile and aspect ratio. You

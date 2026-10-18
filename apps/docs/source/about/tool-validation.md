@@ -22,13 +22,15 @@ In **2026**, NovelAI consolidated most third-party API access to
 `/ai/augment-image`, `/ai/encode-vibe`, `/ai/generate-image/suggest-tags`,
 and `/user/*` (account / subscription / data) endpoints. The host
 `api.novelai.net` (the Primary API) was **not** fully retired: its `/ai/`
-routes remain available for third-party use, and `/ai/upscale` +
-`/ai/annotate-image` were not migrated to `image.novelai.net` (they 404
-there). The Primary API docs (<https://api.novelai.net/docs/>) state that
-third-party users may use its `/ai/` routes. As of 0.1.3,
-`NOVELAI_LEGACY_IMAGE_BASE_URL` (default: `https://api.novelai.net`) routes
-these two endpoints correctly. The `api.novelai.net` URLs in the per-tool
-evidence and fix history below should be read in this context.
+routes remain available for third-party use. `/ai/annotate-image` is the one
+endpoint that never moved, and `NOVELAI_LEGACY_IMAGE_BASE_URL` (default:
+`https://api.novelai.net`) still routes it. `/ai/upscale` **did** move: it now
+lives on `image.novelai.net` and accepts only the V5 line (V3 / V4 / V4.5 are
+rejected with *"doesn't support standalone upscaling"*); the old
+`api.novelai.net/ai/upscale` path returns 404. See
+[API surface alignment](../development/api-alignment.md) for the live
+verification. The `api.novelai.net` URLs in the per-tool evidence and fix
+history below should be read in this context.
 :::
 
 ---
@@ -309,9 +311,9 @@ image and a base64 mask as input.
 Uses `_save_and_return` in
 [`tools/enhance.py`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/server/src/novelai_image_mcp/tools/enhance.py)
 → serialization bug fixed (Fix 1). The tool additionally calls
-`https://api.novelai.net/user/ai-upscale-image` (account endpoint), which was
-blocked by Cloudflare's TLS fingerprinting — now fixed by Chrome TLS
-impersonation (Fix 2). Serialization path is verified by
+`https://image.novelai.net/ai/upscale` (V5 models only), which was blocked by
+Cloudflare's TLS fingerprinting — now fixed by Chrome TLS impersonation
+(Fix 2). Serialization path is verified by
 `TestSerializationRegression::test_upscale_image_serializes_through_real_path`.
 
 ---

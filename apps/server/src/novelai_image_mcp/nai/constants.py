@@ -7,11 +7,11 @@ class Endpoint(StrEnum):
     """NovelAI API path constants.
 
     Most paths are rooted at ``https://image.novelai.net`` (the consolidated
-    third-party host). Two exceptions — ``UPSCALE`` and ``ANNOTATE`` — were not
-    migrated to ``image.novelai.net`` and remain on the Primary API at
-    ``https://api.novelai.net``. The Primary API's docs
-    (https://api.novelai.net/docs/) state that third-party users may use its
-    ``/ai/`` routes. See ``NovelAIClient.legacy_image_base_url``.
+    third-party host), ``UPSCALE`` (``/ai/upscale``, V5 models only) included.
+    ``ANNOTATE`` is the one exception: ``/ai/annotate-image`` was never migrated
+    and remains on the Primary API at ``https://api.novelai.net``. The Primary
+    API's docs (https://api.novelai.net/docs/) state that third-party users may
+    use its ``/ai/`` routes. See ``NovelAIClient.legacy_image_base_url``.
 
     The ``/ai/generate-image`` family is split by model generation:
 

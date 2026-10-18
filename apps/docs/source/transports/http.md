@@ -60,9 +60,9 @@ Replace `http://127.0.0.1:8000/mcp` with your self-deployed endpoint (e.g.
 The `Authorization` header is **not** the NovelAI token: the server talks to
 NovelAI with its own `NOVELAI_TOKEN`. The header matters only when
 `MCP_AUTH_TOKEN` is set on the server, in which case it must match it
-(`Authorization: Bearer <MCP_AUTH_TOKEN>`). Without `MCP_AUTH_TOKEN` the
-endpoint accepts unauthenticated clients — put it behind TLS and a reverse
-proxy, or keep `MCP_HOST` on localhost.
+(`Authorization: Bearer <MCP_AUTH_TOKEN>`). Without `MCP_AUTH_TOKEN` (and
+without `MCP_ROUTE_TOKENS`) the endpoint accepts unauthenticated clients — put
+it behind TLS and a reverse proxy, or keep `MCP_HOST` on localhost.
 
 ### Custom Python agent
 

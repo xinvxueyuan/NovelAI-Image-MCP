@@ -39,10 +39,12 @@ class NovelAISettings(BaseSettings):
 
     # ── Endpoints ──
     # ``image.novelai.net`` is the consolidated host for most third-party API
-    # traffic (generation, director, account, etc.). ``legacy_image_base_url``
-    # points at the Primary API (``api.novelai.net``) which still hosts
-    # ``/ai/upscale`` and ``/ai/annotate-image`` — these two endpoints were not
-    # migrated to ``image.novelai.net`` and 404 there. The Primary API's own
+    # traffic (generation, director, account, upscaling, ...).
+    # ``legacy_image_base_url`` points at the Primary API
+    # (``api.novelai.net``), which is still the home of
+    # ``/ai/annotate-image`` — the one endpoint that was never migrated and
+    # 404s on ``image.novelai.net``. ``/ai/upscale`` *did* move: it is served
+    # by ``image_base_url`` and accepts only the V5 line. The Primary API's own
     # docs (https://api.novelai.net/docs/) state that third-party users may use
     # its ``/ai/`` routes.
     image_base_url: str = "https://image.novelai.net"

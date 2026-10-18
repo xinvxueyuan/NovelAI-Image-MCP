@@ -60,6 +60,17 @@ per-release section headings. This file is the human-curated companion.
 
 - _Nothing yet._
 
+## [0.6.1] — 2026-10-19
+
+### Changed
+
+- **The three READMEs are rebuilt around the agent skills**: quick start now
+  leads with installing the skills, the skills get their own section with the
+  install command, a decision diagram and a table grouped by the sections
+  `skills.sh.json` declares, and the configuration table gains the ten
+  `NOVELAI_*` defaults that were missing. All three languages carry the same 39
+  headings; `pnpm readme:check` enforces that they stay in step.
+
 ## [0.6.0] — 2026-10-19
 
 ### Added

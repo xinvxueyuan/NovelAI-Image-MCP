@@ -101,12 +101,12 @@ vibe2 = await ctx.session.call_tool("encode_vibe", {
 # vibe1 == vibe2
 ```
 
-## 6. Vibe transfer only (v0.1.0)
+## 6. Vibe transfer only
 
-`generate_image` accepts vibe references but not ControlNet conditions in
-v0.1.0. To combine a structural map with a style, extract the annotation
-with `annotate_image` and apply it via `director_tool` for now; full
-ControlNet conditioning is planned for v0.2.
+`generate_image` accepts vibe references but not ControlNet conditions. To
+combine a structural map with a style, extract the annotation with
+`annotate_image` and apply it via `director_tool` for now; ControlNet
+conditioning on `generate_image` is not implemented yet.
 
 ```python
 # Step 1: extract depth from a pose reference (saved to disk)
@@ -121,26 +121,29 @@ style_vibe = await ctx.session.call_tool("encode_vibe", {
     "information_extracted": 0.2,
 })
 
-# Step 3: generate with the vibe (v0.1.0 supports references, not controlnet)
+# Step 3: generate with the vibe (references are supported, controlnet is not)
 result = await ctx.session.call_tool("generate_image", {
     "prompt": "1girl, standing in a meadow",
     "references": [style_vibe],
 })
 ```
 
-The result carries the painting's style; structural conditioning will
-arrive in v0.2.
+The result carries the painting's style; structural conditioning on
+`generate_image` is not implemented yet.
 
 ## 7. Pitfalls
 
 :::{warning}
-**V3 models do not support vibes.** `encode_vibe` with a V3 model id
-raises `ValueError`. Check with `is_v4_model()` (takes a `Model` enum):
+**V5 models do not support vibes.** `encode_vibe` with a V5 model id raises a
+`ToolError`. V3 / Furry models are outside the supported set as well, but the
+rejection is enforced by the API rather than locally — check with
+`supports_vibe()` (takes a `Model` enum) instead of relying on an error:
 
 ```python
-from novelai_image_mcp.nai import is_v4_model, Model
-is_v4_model(Model.V4_5)  # True
-is_v4_model(Model.V3)    # False
+from novelai_image_mcp.nai import supports_vibe, Model
+supports_vibe(Model.V4_5)  # True
+supports_vibe(Model.V3)    # False
+supports_vibe(Model.V5)    # False
 ```
 :::
 

@@ -72,9 +72,11 @@ without an API call.
 ## Tips
 
 :::{warning}
-**V3 models and V5 do not support vibes.** Calling `encode_vibe` with a V3
-or V5 model id raises `ValueError`. Use `supports_vibe()` from
-`novelai_image_mcp.nai` to check before encoding.
+**V5 does not support vibes.** Calling `encode_vibe` with a V5 model id raises a
+`ToolError`. V3 / Furry models are outside the supported set too —
+`supports_vibe()` from `novelai_image_mcp.nai` returns `False` for them — but
+the rejection is enforced by the API, not locally, so check the predicate
+before encoding rather than relying on an error.
 :::
 
 :::{tip}

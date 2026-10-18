@@ -42,6 +42,30 @@ quickstart
 configuration
 ```
 
+```{toctree}
+:maxdepth: 2
+:caption: ツールリファレンス
+:hidden:
+
+tools/index
+```
+
+```{toctree}
+:maxdepth: 1
+:caption: チュートリアル
+:hidden:
+
+tutorials/index
+```
+
+```{toctree}
+:maxdepth: 1
+:caption: 開発
+:hidden:
+
+development/index
+```
+
 ---
 
 ## クイックリンク

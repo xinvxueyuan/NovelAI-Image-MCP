@@ -35,7 +35,7 @@ upstream). V5 additionally accepts English/Japanese natural-language prompts.
 | `auto_smea` | `bool` | `False` | Auto-select SMEA based on resolution. |
 | `straight_alpha` | `bool` | `False` | True alpha channel (V5 only; pair with `transparent background` / `has alpha`). |
 | `prefer_brownian` | `bool` | `True` | Prefer Brownian noise schedule (V4+). |
-| `noise_schedule` | `str` | `"karras"` | Noise schedule (`karras`, `exponential`, `polyexponential`). |
+| `noise_schedule` | `str` | `"karras"` | Noise schedule (`native`, `karras`, `exponential`, `polyexponential`). |
 | `character_prompts` | `list[dict] \| None` | `None` | V4+ / V5 multi-character composition. |
 | `references` | `list[str] \| None` | `None` | V4/V4.5 vibe tokens (base64 vibe strings from `encode_vibe`); rejected on V5. |
 

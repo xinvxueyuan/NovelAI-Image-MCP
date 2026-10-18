@@ -9,12 +9,12 @@ lifespan state.
 
 | Tool | Group | Description |
 |---|---|---|
-| [`generate_image`](generate.md#generate_image) | generation | Text-to-image (V3 / V4 / V4.5, character prompts, vibes) |
+| [`generate_image`](generate.md#generate_image) | generation | Text-to-image (V3 / V4 / V4.5 / V5, character prompts, vibes) |
 | [`image_to_image`](generate.md#image_to_image) | generation | Image-to-image with strength / noise |
 | [`inpaint`](generate.md#inpaint) | generation | Local redraw (requires inpaint model + mask) |
 | [`upscale_image`](upscale.md#upscale_image) | enhance | 4× upscaling (V5 model) |
 | [`director_tool`](director.md#director_tool) | enhance | line art / sketch / bg-removal / declutter / colorize / emotion |
-| [`annotate_image`](annotate.md#annotate_image) | enhance | ControlNet preprocessing (hed, midas, scribble, mlsd, uniformer) |
+| [`annotate_image`](annotate.md#annotate_image) | enhance | ControlNet preprocessing (hed, midas, fake_scribble, mlsd, uniformer) |
 | [`suggest_tags`](tags.md#suggest_tags) | tags | Prompt tag suggestions |
 | [`encode_vibe`](vibe.md#encode_vibe) | tags | Encode a reference image into a vibe token |
 | [`get_subscription`](account.md#get_subscription) | account | Account subscription + Anlas balance |
@@ -50,7 +50,8 @@ from pathlib import Path
 image_b64 = base64.b64encode(Path("input.png").read_bytes()).decode("ascii")
 ```
 
-The CLI handles this automatically — it accepts file paths via `--image ./input.png`.
+The CLI handles this automatically — `upscale`, `director` and `annotate` take
+the input file as a positional argument (e.g. `upscale ./input.png`).
 
 ### Validation
 

@@ -111,7 +111,8 @@ MCP — it can be used standalone from any async Python code.
 `novelai_image_mcp.tools` is a thin adapter between the fastmcp `FastMCP`
 tool decorator and `NovelAIClient`. Each tool:
 
-1. Extracts `AppContext` from the MCP context (`tools/_ctx.py`).
+1. Receives `AppContext` through a `Depends(get_app_context)` parameter
+   (`deps.py`), so it stays out of the input schema.
 2. Builds a `GenerationRequest` (or equivalent) from tool parameters.
 3. Calls the corresponding `NovelAIClient` method.
 4. Persists the result via `output.save_image`.
@@ -167,9 +168,9 @@ demand. Filenames include the tool name + ISO timestamp + sample index
 The server supports stdio (default) and HTTP, selected at startup via
 `MCP_TRANSPORT` (`http` is canonical, `streamable-http` is an accepted
 alias). Both share the same `lifespan`, the same tools, and the same
-`NovelAIClient` — only the framing differs. Setting `MCP_AUTH_TOKEN` makes
-the HTTP transport require a bearer token; stdio is unaffected. See
-[Transports](../transports/index.md).
+`NovelAIClient` — only the framing differs. Setting `MCP_AUTH_TOKEN` (or
+`MCP_ROUTE_TOKENS`) makes the HTTP transport require a bearer token; stdio is
+unaffected. See [Transports](../transports/index.md).
 
 ## Containerization
 
