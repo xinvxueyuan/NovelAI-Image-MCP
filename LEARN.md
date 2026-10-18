@@ -329,8 +329,8 @@ conventions.
 
 4. **Document** in `apps/docs/source/tools/<name>.md`.
 
-5. **README** — add a row to the tools table in both `README.md` and
-   `README-zh.md`.
+5. **README** — add a row to the tools table in `README.md`,
+   `.github/docs/README-zh.md`, and `.github/docs/README-ja.md`.
 
 ### Hard rules to remember
 

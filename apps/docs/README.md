@@ -1,5 +1,13 @@
 # NovelAI Image MCP — Documentation Site
 
+## Languages
+
+Project overview in your language (this page remains in English).
+
+| English | 简体中文 | 日本語 |
+|---|---|---|
+| [English](../../README.md) | [简体中文](../../.github/docs/README-zh.md) | [日本語](../../.github/docs/README-ja.md) |
+
 Sphinx + MyST + Furo documentation site for the NovelAI Image MCP project.
 
 ## Build

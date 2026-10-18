@@ -102,6 +102,15 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
    `tutorials/` 章节。未翻译的章节用户切换到英文查看即可。新增语言时同步
    更新 `conf.py` 的 `AVAILABLE_LANGUAGES` 与 `docs.yml` 的 matrix。
 
+## README 多语言约定
+
+主 README：根 `README.md`（英文）、`.github/docs/README-zh.md`（简体中文）、
+`.github/docs/README-ja.md`（日文）。根 `README-zh.md` 仅保留旧链接入口。
+所有 README 使用纯文本 Markdown 表格切换项目概览，列名为 `English` /
+`简体中文` / `日本語`；包 README 不代表包指南已有翻译。完整译文同步所有章节、
+工具表、配置表和代码块，迁移目录后修正相对链接。运行 `pnpm readme:check`、
+`pnpm readme:test` 与 `pnpm exec markdownlint-cli2`；详见贡献指南的 Repository READMEs。
+
 ## 关键约定
 
 - **新增 MCP 工具**：在 `tools/<name>.py` 用模块级
@@ -110,7 +119,8 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
   取 `AppContext`，不要自己读 `ctx.lifespan_context`）→ 确保
   `tools/__init__.py` 导入该模块 → 在 `tests/test_tools.py` 扩展直接调用与
   schema 测试 → 在 `apps/docs/source/tools/<name>.md` 写文档 → 在
-  README/README-zh 工具表加行。**预期失败必须抛 `ToolError`**（用
+  根 `README.md` 与 `.github/docs/README-zh.md`、
+  `.github/docs/README-ja.md` 工具表加行。**预期失败必须抛 `ToolError`**（用
   `translate_errors` 或显式 raise）：服务端开了 `mask_error_details=True`，
   其他异常的消息会被屏蔽，而且在工具内部翻译才有正确消息（中间件拿到的
   已经是屏蔽后的通用错误）。

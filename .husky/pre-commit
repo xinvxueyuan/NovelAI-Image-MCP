@@ -53,6 +53,7 @@ fi
 # apps/server source actually changes (docs conf.py changes don't need pyright
 # or pytest, since they're outside the server's [tool.pyright] / testpaths).
 MD_STAGED=$(printf '%s\n' "$STAGED" | grep -E '\.md$' || true)
+README_CHECK_STAGED=$(printf '%s\n' "$STAGED" | grep -E '(^|/)README.*\.md$|^\.github/scripts/check-readmes\.(mjs|test\.mjs)$|^package\.json$|^\.markdownlint-cli2\.jsonc$|^\.husky/pre-commit$' || true)
 PY_SERVER_STAGED=$(printf '%s\n' "$STAGED" | grep -E '^apps/server/.*\.py$' || true)
 
 echo "🚀 Running pre-commit checks..."
@@ -93,6 +94,18 @@ elif [ -n "$MD_STAGED" ]; then
     echo "⚠️  pnpm not found — skipping markdownlint."
 fi
 
+# ── Phase 2b: README checker (README/checker changes) ───────────────
+if [ -n "$README_CHECK_STAGED" ]; then
+    if [ -n "$PNPM_RUNNER" ]; then
+        echo "📚 Running README checks..."
+        if ! "$PNPM_RUNNER" readme:check || ! "$PNPM_RUNNER" readme:test; then
+            echo "❌ README checks failed. Fix the issues and re-stage."
+            exit 1
+        fi
+    else
+        echo "⚠️  pnpm not found — skipping README checks."
+    fi
+fi
 # ── Phase 3: Pyright (only on apps/server .py changes) ─────────────
 # Scope to apps/server via --directory so pyright picks up the
 # [tool.pyright] config from apps/server/pyproject.toml (include = ["src",

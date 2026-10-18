@@ -45,7 +45,7 @@ runs:
           PYTHON=true
         fi
         # Markdown: .md (covers README, apps/docs/source/**, .github/**)
-        if echo "$FILES" | grep -qE '\.md$'; then
+        if echo "$FILES" | grep -qE '\.md$|^\.github/scripts/|^\.github/workflows/ci\.yml$|^\.github/actions/detect-changes/|^package\.json$|^\.markdownlint-cli2\.jsonc$|^\.husky/pre-commit$'; then
           MARKDOWN=true
         fi
         # Docker: apps/server/Dockerfile / docker-compose.yml / docker/** / .dockerignore

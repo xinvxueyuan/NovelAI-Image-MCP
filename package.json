@@ -33,7 +33,9 @@
     "server:serve": "turbo run serve --filter=@novelai-image-mcp/server",
     "markdownlint": "markdownlint-cli2",
     "markdownlint:fix": "markdownlint-cli2 --fix",
-    "check": "turbo run lint typecheck test",
+    "readme:check": "node .github/scripts/check-readmes.mjs",
+    "readme:test": "node --test .github/scripts/check-readmes.test.mjs",
+    "check": "turbo run lint typecheck test && pnpm readme:check && pnpm readme:test && pnpm exec markdownlint-cli2",
     "prepare": "husky"
   },
   "devDependencies": {

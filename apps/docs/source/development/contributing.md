@@ -204,6 +204,28 @@ lives under `apps/docs/source/<lang-code>/` (e.g., `source/zh/`,
      -c apps/docs/source -D language=<code> -W --keep-going
    ```
 
+### Repository READMEs
+
+The canonical project overview is `README.md` (English). Its complete
+translations live at `.github/docs/README-zh.md` (Simplified Chinese) and
+`.github/docs/README-ja.md` (Japanese), separately from the Sphinx source
+trees. The root `README-zh.md` is a compatibility entry point, not a second
+translation to maintain.
+
+Every README includes a text-only Markdown table linking to all three
+project overviews, with the columns `English`, `简体中文`, and `日本語`.
+Use relative links appropriate to the file's directory; the published
+`apps/server/README.md` uses absolute GitHub URLs so links also work on
+PyPI. Package and release-note READMEs label these as project-overview
+links, not translations of the package or release-note guide itself.
+
+Keep all sections, tool/configuration tables, and fenced examples in sync
+across the three full overviews. Translate prose, not executable examples;
+rebase local file links for `.github/docs/`. Preserve the server package's
+`mcp-name:` marker. Run `pnpm readme:check`, `pnpm readme:test`, and
+`pnpm exec markdownlint-cli2` before submitting; CI and the local
+pre-commit hook run the same README checker.
+
 ### Keeping translations in sync
 
 When English source changes, update the translated page in the same PR

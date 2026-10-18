@@ -1,5 +1,11 @@
 # NovelAI Image MCP
 
+## Languages
+
+| English | 简体中文 | 日本語 |
+|---|---|---|
+| [English](README.md) | [简体中文](.github/docs/README-zh.md) | [日本語](.github/docs/README-ja.md) |
+
 [![CI][ci-badge]][ci-workflow]
 [![Docs][docs-badge]][docs]
 [![License: MIT][mit-badge]][license]
