@@ -60,6 +60,29 @@ per-release section headings. This file is the human-curated companion.
 
 - _Nothing yet._
 
+## [0.6.2] — 2026-10-19
+
+### Added
+
+- **The documentation site is fully translated into Chinese and Japanese**: both
+  languages went from four pages to all 48, so the language selector no longer
+  leads to a fragment of the site. Every page is a full translation, not a stub,
+  and every page is structurally identical to its English source — the same
+  headings in the same order, the same code blocks byte for byte, the same table
+  rows and admonitions. Code, commands, paths, URLs, identifiers and default
+  values are left untranslated.
+
+### Changed
+
+- **`configuration.md` is up to date in both languages**: the Chinese and
+  Japanese versions predated the insiders variables and the MCP transport
+  section, so the configuration page listed a configuration surface that no
+  longer matched the server.
+- **Link fragments now name the target heading's slug in the page's own
+  language.** A fragment that matches neither the MyST slug nor the rendered id
+  degrades to a plain link: the build stays silent and the link is dead, so both
+  the warning-free build and the rendered hrefs were checked.
+
 ## [0.6.1] — 2026-10-19
 
 ### Changed

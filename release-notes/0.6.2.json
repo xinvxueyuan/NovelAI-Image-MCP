@@ -1,0 +1,31 @@
+{
+  "version": "0.6.2",
+  "date": "2026-10-19",
+  "summary": "The documentation site is now fully translated. Chinese and Japanese each go from four pages to all 48, so switching language no longer lands you on a fragment of the site.",
+  "highlights": [
+    {
+      "title": "Every page, in all three languages",
+      "body": "The tools, tutorials, transports, API, development and about sections existed only in English. Both translated sites now carry all 48 pages, and each page is structurally identical to its English source: the same headings in the same order, the same code blocks byte for byte, the same table rows and admonitions. Code, commands, paths, URLs, identifiers and default values stay untranslated."
+    },
+    {
+      "title": "Anchors that survive translation",
+      "body": "A link fragment has to name the target heading's slug in the language of the page, and that slug changes when the heading is translated. The failure is not always loud: a fragment matching neither the MyST slug nor the rendered id degrades to a plain link, the build stays silent, and the link is simply dead. Every page was therefore checked twice — a warning-free build, and rendered hrefs that land on ids which actually exist."
+    },
+    {
+      "title": "Two stale configuration pages repaired",
+      "body": "The Chinese and Japanese `configuration.md` predated the insiders variables and the MCP transport section, so they described a configuration surface the server no longer had."
+    }
+  ],
+  "sections": [
+    {
+      "title": "📚 Documentation",
+      "items": [
+        "Chinese and Japanese each translated from 4 pages to all 48; no stubs, no untranslated sections.",
+        "Structure verified per page against the English source: heading order, code blocks (including fence languages and the Mermaid diagram), table rows and admonitions.",
+        "`configuration.md` updated in both languages with the insiders variables and the MCP transport section.",
+        "Link fragments corrected to each language's heading slugs; rendered hrefs verified against real ids."
+      ]
+    }
+  ],
+  "upgrade_notes": "No runtime behaviour changes; this release contains documentation only. The intentional behaviour change from 0.6.0 still applies: `director_tool`'s `emotion` and `emotion_level` require the `X-MCP-Insiders` opt-in."
+}
