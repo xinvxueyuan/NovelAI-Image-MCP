@@ -32,7 +32,7 @@ interface.
 ## Features
 
 - **11 MCP tools** covering the full NovelAI image API surface.
-- **2 prompts + 3 resources**: house-style prompt drafting and tool sequencing
+- **2 prompts + 3 resources + 1 resource template**: house-style prompt drafting and tool sequencing
   (`novelai_prompt_writer`, `novelai_image_workflow`), plus `novelai://models`,
   `novelai://samplers`, `novelai://defaults` and `novelai://outputs/{name}` for
   discovering the model/sampler vocabulary and reading generated PNGs back.

@@ -30,7 +30,7 @@ ControlNet 标注、标签建议、Vibe 编码以及账户订阅查询。
 ## 特性
 
 - **11 个 MCP 工具**，覆盖 NovelAI 图像 API 全部能力。
-- **2 个 prompt + 3 个资源**：`novelai_prompt_writer` / `novelai_image_workflow`
+- **2 个 prompt + 3 个资源 + 1 个资源模板**：`novelai_prompt_writer` / `novelai_image_workflow`
   提供提示词与工具编排范本；`novelai://models`、`novelai://samplers`、
   `novelai://defaults`、`novelai://outputs/{name}` 暴露模型与采样器词表、当前默认值，
   并可回读已生成的 PNG。
@@ -315,7 +315,7 @@ MIT —— 见 [LICENSE][license]。逐文件 SPDX 标注见
 [Developer Certificate of Origin][dco]（`commit-msg`
 钩子会自动添加 `Signed-off-by`）。
 
-## Links
+## 链接
 
 [ci-badge]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/ci.yml/badge.svg
 [ci-workflow]: https://github.com/xinvxueyuan/NovelAI-Image-MCP/actions/workflows/ci.yml

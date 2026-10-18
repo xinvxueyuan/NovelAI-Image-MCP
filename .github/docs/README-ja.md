@@ -26,7 +26,7 @@ FastMCP 4（MCP SDK v2 の上に構築された fastmcp フレームワーク、
 ## 特徴
 
 - **11 個の MCP ツール**で NovelAI 画像 API の全機能をカバー。
-- **2 個の prompt + 3 個のリソース**：ハウススタイルのプロンプト作成とツールの順序付け（`novelai_prompt_writer`、`novelai_image_workflow`）に加え、モデル／サンプラーの語彙を調べ、生成した PNG を読み戻すための `novelai://models`、`novelai://samplers`、`novelai://defaults`、`novelai://outputs/{name}`。
+- **2 個の prompt + 3 個のリソース + 1 個のリソーステンプレート**：ハウススタイルのプロンプト作成とツールの順序付け（`novelai_prompt_writer`、`novelai_image_workflow`）に加え、モデル／サンプラーの語彙を調べ、生成した PNG を読み戻すための `novelai://models`、`novelai://samplers`、`novelai://defaults`、`novelai://outputs/{name}`。
 - **2 種類のトランスポート**：stdio（ローカルエージェント）+ HTTP（リモート／マルチクライアント）。後者はベアラートークン（`MCP_AUTH_TOKEN`）で任意に保護可能。
 - **構造化された結果**：列挙型で検証されるツールスキーマ、MCP ツールアノテーション、想定される失敗に対する `ToolError`。
 - **画像の二重返却**：base64 の `Image` コンテンツブロック（エージェントが画像を*見る*）と、ディスクに保存される PNG（パスをテキストで返却）。

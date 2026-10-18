@@ -44,8 +44,8 @@ runs:
         if echo "$FILES" | grep -qE '\.py$|(^|/)(pyproject\.toml|uv\.lock|\.python-version|ruff\.toml|\.ruff\.toml)$'; then
           PYTHON=true
         fi
-        # Markdown: .md (covers README, apps/docs/source/**, .github/**)
-        if echo "$FILES" | grep -qE '\.md$|^\.github/scripts/|^\.github/workflows/ci\.yml$|^\.github/actions/detect-changes/|^package\.json$|^\.markdownlint-cli2\.jsonc$|^\.husky/pre-commit$'; then
+        # Markdown/docs infrastructure: README tooling and license metadata also need static checks.
+        if echo "$FILES" | grep -qE '\.md$|^\.github/scripts/|^\.github/workflows/ci\.yml$|^\.github/actions/detect-changes/|^REUSE\.toml$|^package\.json$|^\.markdownlint-cli2\.jsonc$|^\.husky/pre-commit$'; then
           MARKDOWN=true
         fi
         # Docker: apps/server/Dockerfile / docker-compose.yml / docker/** / .dockerignore

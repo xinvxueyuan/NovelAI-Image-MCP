@@ -30,7 +30,7 @@ for full guides and API reference.
 ## Features
 
 - **11 MCP tools** covering the full NovelAI image API surface.
-- **2 prompts + 3 resources**: prompt templates for drafting and tool
+- **2 prompts + 3 resources + 1 resource template**: prompt templates for drafting and tool
   sequencing, plus `novelai://models`, `novelai://samplers`,
   `novelai://defaults` and `novelai://outputs/{name}`.
 - **Transports**: stdio (local agents) + HTTP (remote / multi-client), the
