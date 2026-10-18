@@ -28,6 +28,10 @@ FastMCP 4（MCP SDK v2 の上に構築された fastmcp フレームワーク、
 - **11 個の MCP ツール**で NovelAI 画像 API の全機能をカバー。
 - **2 個の prompt + 3 個のリソース + 1 個のリソーステンプレート**：ハウススタイルのプロンプト作成とツールの順序付け（`novelai_prompt_writer`、`novelai_image_workflow`）に加え、モデル／サンプラーの語彙を調べ、生成した PNG を読み戻すための `novelai://models`、`novelai://samplers`、`novelai://defaults`、`novelai://outputs/{name}`。
 - **2 種類のトランスポート**：stdio（ローカルエージェント）+ HTTP（リモート／マルチクライアント）。後者はベアラートークン（`MCP_AUTH_TOKEN`）で任意に保護可能。
+- **オプトインのルーティングと監査（HTTP）**：`X-MCP-Insiders` を送ったクライアントは、
+  ルートごとの出力ディレクトリ、ルート名のロガー、追記専用の JSONL 監査ログを得られます
+  （プロンプトと資格情報がそのまま書かれることはありません）。このヘッダーを送らなければ
+  挙動は変わりません。詳しくは[インサイダーヘッダー・ルーティング・監査][insiders-docs]。
 - **構造化された結果**：列挙型で検証されるツールスキーマ、MCP ツールアノテーション、想定される失敗に対する `ToolError`。
 - **画像の二重返却**：base64 の `Image` コンテンツブロック（エージェントが画像を*見る*）と、ディスクに保存される PNG（パスをテキストで返却）。
 - **非同期 + 同期**：非同期ツールハンドラーと、直接呼び出し用の `typer` CLI。
@@ -240,8 +244,40 @@ Skills と CLI／MCP ツールは相互補完的です。3 つすべてをイン
 | `MCP_TRANSPORT` | `stdio` | `stdio` または `http`（`streamable-http` は旧来の別名） |
 | `MCP_HOST` / `MCP_PORT` / `MCP_PATH` | `127.0.0.1` / `8000` / `/mcp` | HTTP トランスポート用 |
 | `MCP_AUTH_TOKEN` | — | 設定すると HTTP トランスポートに `Authorization: Bearer <token>` が必要 |
+| `MCP_ROUTE_TOKENS` | — | JSON `{"<route>": "<token>"}`、ルートに紐づくベアラートークン（ルート不一致は 401） |
+| `MCP_INSIDERS_HEADER` | `X-MCP-Insiders` | クライアントがオプトインに使うヘッダー名（HTTP のみ） |
+| `MCP_MODEL_HEADERS` / `MCP_AGENT_HEADERS` / `MCP_CLIENT_HEADERS` | see below | JSON リスト。ルーティング候補ヘッダーで、最初の非空値が採用されます |
+| `MCP_INSIDERS_DISABLED_FEATURES` | `[]` | 運用側の強制オフスイッチ（JSON リスト）。クライアントより優先されます |
+| `MCP_ROUTE_SCOPED_OUTPUT` | `true` | ルーティング有効時、画像を `<output>/<route>/` に書き出します |
+| `MCP_AUDIT_LOG_PATH` | `<output>/audit.jsonl` | 追記専用 JSONL 監査ログ |
 | `MCP_LOG_LEVEL` | — | `DEBUG`／`INFO`／`WARNING`／`ERROR`／`CRITICAL` |
 
+list / dict 型の設定は **JSON** として読み込まれます：`MCP_MODEL_HEADERS='["X-MCP-Model"]'` は有効ですが、
+`A,B` は設定エラーになり、空値も有効な JSON ではありません。
+
+### インサイダーヘッダーとルーティング
+
+HTTP では、クライアントがリクエスト単位で実験的な挙動をオプトインし、そのリクエストが
+どのルート・モデル・エージェント・セッションに属するかを宣言できます：
+
+```text
+X-MCP-Insiders: true
+X-MCP-Agent-ID: team-a
+X-MCP-Model: nai-diffusion-5-full
+```
+
+サーバーはそのリクエストの画像を `<NOVELAI_OUTPUT_DIR>/team-a/` に書き出し、
+`novelai_image_mcp.audit.team-a` ロガーに 1 行を出力し、監査 JSONL に 1 件を追記します
+（レコードにはプロンプトの長さと切り詰めた SHA-256 のみが残り、プロンプト本文・資格情報
+ヘッダー・画像ペイロードが書かれることはありません）。
+
+**このヘッダーを送らなければ何も変わりません** —— ルート別ディレクトリも監査ファイルも
+作られず、ツールが増減することもありません —— ただし意図的な例外が 1 つあります：
+`director_tool` の `emotion` と `emotion_level` はオプトインが必要になり、なければ
+`ToolError` になります（CHANGELOG 参照）。ルーティングヘッダーはクライアントが送るもので
+偽装できるため、信頼できるゲートウェイの背後でのみオプトインを許可してください。
+
+完全な契約：[インサイダーヘッダー・ルーティング・監査][insiders-docs]。
 NovelAI API リファレンス：[image.novelai.net/docs][nai-docs]
 
 ## 開発
@@ -314,6 +350,7 @@ MIT — [LICENSE][license] を参照してください。ファイルごとの S
 [skills-site]: https://skills.sh
 [skills-docs]: https://xinvxueyuan.github.io/NovelAI-Image-MCP/skills.html
 [tools-docs]: https://xinvxueyuan.github.io/NovelAI-Image-MCP/tools/index.html
+[insiders-docs]: https://xinvxueyuan.github.io/NovelAI-Image-MCP/development/insiders-and-routing.html
 [nai-docs]: https://image.novelai.net/docs/index.html
 [dockerfile]: ../../apps/server/Dockerfile
 [docker-compose]: ../../docker-compose.yml

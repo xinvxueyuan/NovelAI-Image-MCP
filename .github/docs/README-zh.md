@@ -267,10 +267,10 @@ npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP
 | `MCP_AUTH_TOKEN` | — | 设置后 HTTP 传输要求 `Authorization: Bearer <token>` |
 | `MCP_ROUTE_TOKENS` | — | JSON `{"<route>": "<token>"}`，按路由绑定的 Bearer Token（路由不匹配返回 401） |
 | `MCP_INSIDERS_HEADER` | `X-MCP-Insiders` | 客户端 opt-in 用的头名（仅 HTTP） |
-| `MCP_MODEL_HEADERS` / `MCP_AGENT_HEADERS` / `MCP_CLIENT_HEADERS` | 见下 | JSON 列表，路由候选头，首个非空者生效 |
+| `MCP_MODEL_HEADERS` / `MCP_AGENT_HEADERS` / `MCP_CLIENT_HEADERS` | see below | JSON 列表，路由候选头，首个非空者生效 |
 | `MCP_INSIDERS_DISABLED_FEATURES` | `[]` | 运维侧强制关闭开关（JSON 列表），优先级高于客户端 |
 | `MCP_ROUTE_SCOPED_OUTPUT` | `true` | 路由生效时把图像写到 `<输出目录>/<route>/` |
-| `MCP_AUDIT_LOG_PATH` | `<输出目录>/audit.jsonl` | append-only JSONL 审计流水 |
+| `MCP_AUDIT_LOG_PATH` | `<output>/audit.jsonl` | append-only JSONL 审计流水 |
 | `MCP_LOG_LEVEL` | — | `DEBUG`/`INFO`/`WARNING`/`ERROR`/`CRITICAL` |
 
 list / dict 类型的配置按 **JSON** 读取：`MCP_MODEL_HEADERS='["X-MCP-Model"]'` 可用，
