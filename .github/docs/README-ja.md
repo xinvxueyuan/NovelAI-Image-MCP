@@ -17,58 +17,46 @@
 
 [![NovelAI Image MCP - MCP server for integrating NovelAI Image generation into AI | Product Hunt][product-hunt-badge]][product-hunt] [![Featured on Lifto][lifto-badge]][lifto]
 
-[MCP（Model Context Protocol）][mcp] サーバーとして、AI エージェント（Claude Desktop、Cline、カスタムエージェント、リモートクライアント）向けのツールとして **NovelAI の画像生成** を公開します。
+**NovelAI の画像生成** を AI エージェント（Claude Desktop、Cline、カスタムエージェント、リモートクライアント）向けに公開する [MCP（Model Context Protocol）][mcp] サーバーです。同期 CLI と 3 つの [skills.sh][skills-site] パッケージも同梱し、エージェントがどちらの入口も扱えるようにします。
 
-FastMCP 4（MCP SDK v2 の上に構築された fastmcp フレームワーク、`mcp>=2.3.0`）を基盤としており、標準 MCP ツールインターフェースを通じて、画像生成（txt2img / img2img / inpaint）、アップスケール、Director ツール（線画、表情、背景削除など）の実行、ControlNet による注釈付け、タグ候補の提案、vibe のエンコード、アカウントのサブスクリプション照会をエージェントから利用できます。
+FastMCP 4（MCP SDK v2 `mcp>=2.3.0` 上の fastmcp フレームワーク）を基盤とし、txt2img / img2img / inpaint、4 倍アップスケール、Director ツール（線画、表情、背景削除など）、ControlNet による注釈付け、タグ候補の提案、vibe のエンコード、アカウントのサブスクリプション照会を、標準 MCP ツールインターフェース経由で提供します。
 
 > 📖 **ドキュメント**：[xinvxueyuan.github.io/NovelAI-Image-MCP][docs]
+
+## 3 つの利用方法
+
+いずれも同じ非同期 `NovelAIClient` を包んでおり、違いは呼び出し方だけです。
+
+- **MCP ツール** —— 対話的なエージェントセッション（Claude Desktop、Cline など）。
+  エージェントは base64 の `Image` コンテンツブロックを認識できます。
+- **CLI** —— シェルスクリプト、CI ジョブ、単発コマンド。PNG を保存してパスを出力し、
+  画像ブロックは返しません。
+- **エージェントスキル** —— エージェントに前の 2 つの使い方を教える可搬な手順。
+  画像を認識するかはスキルが駆動する入口に依存します。
 
 ## 特徴
 
 - **11 個の MCP ツール**で NovelAI 画像 API の全機能をカバー。
-- **2 個の prompt + 3 個のリソース + 1 個のリソーステンプレート**：ハウススタイルのプロンプト作成とツールの順序付け（`novelai_prompt_writer`、`novelai_image_workflow`）に加え、モデル／サンプラーの語彙を調べ、生成した PNG を読み戻すための `novelai://models`、`novelai://samplers`、`novelai://defaults`、`novelai://outputs/{name}`。
-- **2 種類のトランスポート**：stdio（ローカルエージェント）+ HTTP（リモート／マルチクライアント）。後者はベアラートークン（`MCP_AUTH_TOKEN`）で任意に保護可能。
-- **オプトインのルーティングと監査（HTTP）**：`X-MCP-Insiders` を送ったクライアントは、
-  ルートごとの出力ディレクトリ、ルート名のロガー、追記専用の JSONL 監査ログを得られます
-  （プロンプトと資格情報がそのまま書かれることはありません）。このヘッダーを送らなければ
-  挙動は変わりません。詳しくは[インサイダーヘッダー・ルーティング・監査][insiders-docs]。
+- **2 個の prompt + 3 個のリソース + 1 個のリソーステンプレート**：`novelai_prompt_writer` / `novelai_image_workflow` がプロンプト作成とツールの順序付けを担い、`novelai://models`、`novelai://samplers`、`novelai://defaults`、`novelai://outputs/{name}` がモデル／サンプラーの語彙と現在の既定値を公開し、生成済み PNG を読み戻せます。
+- **3 つのエージェントスキル**（`novelai-cli`、`novelai-mcp-tools`、`novelai-workflows`）。CLI / MCP Tools / Workflows にグループ化され、`npx skills add` 1 コマンドで導入できます。
+- **同期 `typer` CLI**：MCP ホストの外でスクリプト化するための 6 つのサブコマンド。
+- **2 種類のトランスポート**：stdio（ローカルエージェント）+ HTTP（リモート／マルチクライアント）。後者はベアラートークン（`MCP_AUTH_TOKEN`）で任意に保護できます。
+- **オプトインのルーティングと監査（HTTP）**：`X-MCP-Insiders` を送ったクライアントは、ルートごとの出力ディレクトリ、ルート名のロガー、追記専用の JSONL 監査ログを得られます（プロンプトと資格情報がそのまま書かれることはありません）。このヘッダーを送らなければ挙動は変わりません。詳しくは[インサイダーヘッダー・ルーティング・監査][insiders-docs]。
 - **構造化された結果**：列挙型で検証されるツールスキーマ、MCP ツールアノテーション、想定される失敗に対する `ToolError`。
 - **画像の二重返却**：base64 の `Image` コンテンツブロック（エージェントが画像を*見る*）と、ディスクに保存される PNG（パスをテキストで返却）。
-- **非同期 + 同期**：非同期ツールハンドラーと、直接呼び出し用の `typer` CLI。
 - **モノレポ**：Turbo が uv workspace（Python）+ pnpm workspace（Node ツールチェーン）をオーケストレーション。MIT ライセンス、Docker 対応、GitHub Pages ドキュメント。
-
-## リポジトリ構成
-
-これは **uv + pnpm モノレポ**です。
-
-```text
-NovelAI-Image-MCP/
-├── apps/
-│   ├── server/                 # MCP server (the installable PyPI package)
-│   │   ├── src/novelai_image_mcp/   # 11 MCP tools + NovelAI HTTP client
-│   │   ├── tests/
-│   │   ├── docker/              # smoke-test entrypoint
-│   │   ├── Dockerfile           # built with repo root as context
-│   │   └── pyproject.toml       # ruff / pyright / pytest config
-│   └── docs/                    # Sphinx documentation site
-│       ├── source/              # MyST Markdown + conf.py
-│       ├── Makefile
-│       └── pyproject.toml
-├── .github/                     # workflows, CODEOWNERS, issue templates
-├── pyproject.toml               # uv workspace root (virtual)
-├── uv.lock                      # single shared lockfile
-├── pnpm-workspace.yaml          # pnpm workspace declaration
-├── pnpm-lock.yaml               # Node toolchain lockfile
-├── turbo.json                   # cross-workspace task graph
-├── package.json                 # root scripts + dev toolchain
-└── docker-compose.yml           # local container orchestration
-```
-
-開発者ガイドは [`CONTRIBUTING.md`][contributing]、完全なドキュメントのソースは [`apps/docs/source/`][docs-source] を参照してください。
 
 ## クイックスタート
 
-### ソースからインストール（開発用）
+### 1. エージェントスキルをインストール
+
+```bash
+npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP
+```
+
+`--yes` は対話的な選択をスキップし、`--global` は `~/.agents/skills/` に導入してマシン上の全プロジェクトで使えるようにします。`--global` を外すと現在のプロジェクトの `.agents/skills/` に入ります。各スキルの内容は[エージェントスキル](#エージェントスキル)を参照してください。
+
+### 2. サーバーをインストール（ソースから、開発用）
 
 ```bash
 # 1. Clone
@@ -91,25 +79,13 @@ MCP_TRANSPORT=http uv run python -m novelai_image_mcp serve
 #   → http://127.0.0.1:8000/mcp
 ```
 
-### PyPI からインストール（ランタイムのみ）
+### 3. サーバーをインストール（PyPI、ランタイムのみ）
 
 ```bash
 pip install novelai-image-mcp
 export NOVELAI_TOKEN=pst-...
 novelai-image-mcp serve
 ```
-
-### 標準 FastMCP エントリーポイント
-
-リポジトリには、source が `apps/server/mcp_server.py` を指す [`fastmcp.json`](../../fastmcp.json) が含まれているため、標準の FastMCP ツールも利用できます（`uv sync` の後、リポジトリのルートから実行してください）。
-
-```bash
-uv run fastmcp run fastmcp.json                     # stdio server
-uv run fastmcp inspect                              # list tools/prompts/resources
-uv run --directory apps/server fastmcp dev inspector mcp_server.py   # Inspector
-```
-
-`fastmcp.json` に `environment` ブロックがないのは意図的です。workspace の仮想環境にはすでにパッケージがインストールされており、`environment` エントリがあると FastMCP は実行のたびに別の使い捨て環境を構築するためです。
 
 ### オプション：Node ツールチェーン（コントリビューター向け）
 
@@ -171,7 +147,7 @@ MCP サーバーは、`mcpServers` の下で設定する 2 種類のトランス
 
 ### http（リモート／Docker デプロイ）
 
-`docker compose up --build` の後（サーバーは `http://HOST:8000/mcp` でリッスンします）。
+`docker compose up --build` の後（サーバーは `http://HOST:8000/mcp` でリッスンします）：
 
 ```json
 {
@@ -189,30 +165,102 @@ MCP サーバーは、`mcpServers` の下で設定する 2 種類のトランス
 
 `http://127.0.0.1:8000/mcp` を自分でデプロイしたエンドポイント（例：TLS 終端リバースプロキシの背後にある `https://mcp.example.com/mcp`）に置き換えてください。MCP ホストが対応している場合（Claude Desktop、Cline などでは各自のシークレット UI から利用可能）、リテラルのトークンプレースホルダーをホスト管理のシークレット参照に置き換えます。
 
-## CLI（同期、スクリプト用）
+### 標準 FastMCP エントリーポイント
+
+リポジトリには、source が `apps/server/mcp_server.py` を指す [`fastmcp.json`](../../fastmcp.json) が含まれているため、標準の FastMCP ツールも利用できます（`uv sync` の後、リポジトリのルートから実行してください）：
 
 ```bash
-uv run python -m novelai_image_mcp generate --prompt "a cat, masterpiece" --width 832 --height 1216
-uv run python -m novelai_image_mcp upscale --image ./in.png --factor 4
-uv run python -m novelai_image_mcp info          # subscription / Anlas balance
-uv run python -m novelai_image_mcp --help
+uv run fastmcp run fastmcp.json                     # stdio server
+uv run fastmcp inspect                              # list tools/prompts/resources
+uv run --directory apps/server fastmcp dev inspector mcp_server.py   # Inspector
 ```
 
-## Skills（ポータブルなエージェント手順）
+`fastmcp.json` に `environment` ブロックがないのは意図的です。workspace の仮想環境にはすでにパッケージがインストールされており、`environment` エントリがあると FastMCP は実行のたびに別の使い捨て環境を構築するためです。
 
-このプロジェクトには 3 つの [skills.sh][skills-site] パッケージが含まれており、AI エージェント（Claude Code、Codex、GitHub Copilot、Cursor など）に、ドキュメントを貼り付けなくても CLI と MCP ツールを操作する方法を教えます。
+## CLI（同期、スクリプト用）
+
+CLI には 6 つのサブコマンドがあります：`serve`、`generate`、`upscale`、`director`、`annotate`、`info`。
+
+```bash
+# Run the MCP server (stdio by default; -t http for the HTTP transport)
+novelai-image-mcp serve
+
+# Text-to-image — prints one absolute PNG path per generated image
+novelai-image-mcp generate --prompt "a cat, masterpiece" --width 832 --height 1216
+
+# 4x upscale (V5 model only)
+novelai-image-mcp upscale --image ./in.png --factor 4
+
+# Director tools: lineart | sketch | bg-removal | declutter | colorize | emotion
+novelai-image-mcp director lineart ./photo.png --defry 5
+
+# ControlNet annotation: hed | midas | fake_scribble | mlsd | uniformer
+novelai-image-mcp annotate ./photo.png --model hed
+
+# Subscription / Anlas balance
+novelai-image-mcp info
+
+novelai-image-mcp --help
+```
+
+導入は `pip install novelai-image-mcp`、一時的な実行は `uvx novelai-image-mcp <command>`、モノレポ内では `uv run --directory apps/server novelai-image-mcp <command>` です。画像を生成するコマンドはすべて PNG を `NOVELAI_OUTPUT_DIR`（既定 `outputs`）に保存し、そのパスを出力します。`-o` / `--output-dir` は 1 回の呼び出しだけディレクトリを上書きします。フラグの全一覧は [`novelai-cli` スキル][skills-docs] にあります。
+
+## エージェントスキル
+
+`skills/` に 3 つの [skills.sh][skills-site] パッケージが同梱されています。AI エージェント（Claude Code、Codex、GitHub Copilot、Cursor など）に CLI と MCP ツールの扱い方を教えるので、ドキュメントを会話に貼り付ける必要はありません。
 
 ```bash
 npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP
 ```
 
-| Skill | 教える内容 |
-|---|---|
-| `novelai-cli` | シェルスクリプト用の Typer CLI コマンド（serve、generate、upscale、director、annotate、info） |
-| `novelai-mcp-tools` | 11 個の MCP ツール — モデル選択、パラメーター、返却形式、Anlas コスト |
-| `novelai-workflows` | 複数ステップのクリエイティブパイプライン（txt2img→upscale、annotate→img2img、Director 編集） |
+```mermaid
+graph TD
+    Q{How will you drive NovelAI?}
+    Q -->|"Interactive session with an MCP host"| MCP["MCP tools<br/>11 tools over stdio / http"]
+    Q -->|"Shell script, CI job, one-off command"| CLI["CLI<br/>novelai-image-mcp generate ..."]
+    Q -->|"Let an agent pick the right one"| SK["Agent skills<br/>novelai-cli / novelai-mcp-tools / novelai-workflows"]
+    SK --> MCP
+    SK --> CLI
+```
 
-Skills と CLI／MCP ツールは相互補完的です。3 つすべてをインストールすると、エージェントはコンテキストに応じて適切なモードを選択します。詳細は [Agent skills のドキュメント][skills-docs] を参照してください。
+| スキル | グループ | 内容 |
+|---|---|---|
+| `novelai-cli` | CLI | シェルスクリプト用の Typer CLI コマンド（serve、generate、upscale、director、annotate、info） |
+| `novelai-mcp-tools` | MCP Tools | 11 個の MCP ツール — モデル選択、パラメーター、返却形式、Anlas コスト |
+| `novelai-workflows` | Workflows | 複数ステップのクリエイティブパイプライン（txt2img→upscale、annotate→img2img、Director 編集） |
+
+スキルと CLI／MCP ツールは二者択一ではなく相互補完です。3 つすべてを導入すると、エージェントがタスクに合うモードを選びます。各スキルは他の 2 つを指すだけで、内容を重複させません。グループの説明と入口の比較表は [エージェントスキルのドキュメント][skills-docs] を参照してください。
+
+## リポジトリ構成
+
+これは **uv + pnpm モノレポ**です。
+
+```text
+NovelAI-Image-MCP/
+├── apps/
+│   ├── server/                 # MCP server (the installable PyPI package)
+│   │   ├── src/novelai_image_mcp/   # 11 MCP tools + NovelAI HTTP client
+│   │   ├── tests/
+│   │   ├── docker/              # smoke-test entrypoint
+│   │   ├── Dockerfile           # built with repo root as context
+│   │   └── pyproject.toml       # ruff / pyright / pytest config
+│   └── docs/                    # Sphinx documentation site
+│       ├── source/              # MyST Markdown + conf.py
+│       ├── Makefile
+│       └── pyproject.toml
+├── skills/                      # skills.sh packages (novelai-cli, ...)
+├── skills.sh.json               # skill groupings for skills.sh
+├── .github/                     # workflows, CODEOWNERS, issue templates
+├── pyproject.toml               # uv workspace root (virtual)
+├── uv.lock                      # single shared lockfile
+├── pnpm-workspace.yaml          # pnpm workspace declaration
+├── pnpm-lock.yaml               # Node toolchain lockfile
+├── turbo.json                   # cross-workspace task graph
+├── package.json                 # root scripts + dev toolchain
+└── docker-compose.yml           # local container orchestration
+```
+
+開発者ガイドは [`CONTRIBUTING.md`][contributing]、完全なドキュメントのソースは [`apps/docs/source/`][docs-source] を参照してください。
 
 ## ツール
 
@@ -241,6 +289,15 @@ Skills と CLI／MCP ツールは相互補完的です。3 つすべてをイン
 | `NOVELAI_TOKEN` | — | 永続 API トークン（推奨認証） |
 | `NOVELAI_USERNAME` / `NOVELAI_PASSWORD` | — | access-key ログイン（argon2id） |
 | `NOVELAI_OUTPUT_DIR` | `outputs` | 生成した PNG の保存先 |
+| `NOVELAI_DEFAULT_MODEL` | `nai-diffusion-4-5-full` | ツール呼び出しでモデルを省略したときのモデル id |
+| `NOVELAI_DEFAULT_WIDTH` / `NOVELAI_DEFAULT_HEIGHT` | `832` / `1216` | 既定の画像サイズ |
+| `NOVELAI_DEFAULT_STEPS` | `28` | 既定のサンプリングステップ数（1–50） |
+| `NOVELAI_DEFAULT_SCALE` | `5.0` | 既定の CFG スケール（≤20） |
+| `NOVELAI_DEFAULT_SAMPLER` | `k_euler_ancestral` | 既定のサンプラー |
+| `NOVELAI_UPSCALE_MODEL` | `nai-diffusion-5-full` | 単体 4 倍アップスケーラーが使うモデル（V5 系のみ） |
+| `NOVELAI_TIMEOUT` | `120` | HTTP タイムアウト（秒） |
+| `NOVELAI_IMAGE_BASE_URL` | `https://image.novelai.net` | 生成とアカウントのエンドポイントを担う統合 API ホスト |
+| `NOVELAI_LEGACY_IMAGE_BASE_URL` | `https://api.novelai.net` | Primary API ホスト。`/ai/annotate-image` だけが今も使用 |
 | `MCP_TRANSPORT` | `stdio` | `stdio` または `http`（`streamable-http` は旧来の別名） |
 | `MCP_HOST` / `MCP_PORT` / `MCP_PATH` | `127.0.0.1` / `8000` / `/mcp` | HTTP トランスポート用 |
 | `MCP_AUTH_TOKEN` | — | 設定すると HTTP トランスポートに `Authorization: Bearer <token>` が必要 |
@@ -250,15 +307,19 @@ Skills と CLI／MCP ツールは相互補完的です。3 つすべてをイン
 | `MCP_INSIDERS_DISABLED_FEATURES` | `[]` | 運用側の強制オフスイッチ（JSON リスト）。クライアントより優先されます |
 | `MCP_ROUTE_SCOPED_OUTPUT` | `true` | ルーティング有効時、画像を `<output>/<route>/` に書き出します |
 | `MCP_AUDIT_LOG_PATH` | `<output>/audit.jsonl` | 追記専用 JSONL 監査ログ |
-| `MCP_LOG_LEVEL` | — | `DEBUG`／`INFO`／`WARNING`／`ERROR`／`CRITICAL` |
+| `MCP_LOG_LEVEL` | — | `DEBUG`/`INFO`/`WARNING`/`ERROR`/`CRITICAL` |
 
-list / dict 型の設定は **JSON** として読み込まれます：`MCP_MODEL_HEADERS='["X-MCP-Model"]'` は有効ですが、
-`A,B` は設定エラーになり、空値も有効な JSON ではありません。
+list / dict 型の設定は **JSON** として読み込まれます：`MCP_MODEL_HEADERS='["X-MCP-Model"]'` は有効ですが、`A,B` は設定エラーになり、空値も有効な JSON ではありません。
+
+ルーティング候補ヘッダーの既定値（JSON リスト、最初の非空ヘッダーが採用）：
+
+- `MCP_MODEL_HEADERS` — `["X-MCP-Model", "X-MCP-Model-Name"]`
+- `MCP_AGENT_HEADERS` — `["X-MCP-Agent-ID", "X-MCP-Agent", "X-MCP-Agent-Source"]`
+- `MCP_CLIENT_HEADERS` — `["X-MCP-Client", "X-MCP-Client-Session-Id"]`
 
 ### インサイダーヘッダーとルーティング
 
-HTTP では、クライアントがリクエスト単位で実験的な挙動をオプトインし、そのリクエストが
-どのルート・モデル・エージェント・セッションに属するかを宣言できます：
+HTTP では、クライアントがリクエスト単位で実験的な挙動をオプトインし、そのリクエストがどのルート・モデル・エージェント・セッションに属するかを宣言できます：
 
 ```text
 X-MCP-Insiders: true
@@ -266,18 +327,12 @@ X-MCP-Agent-ID: team-a
 X-MCP-Model: nai-diffusion-5-full
 ```
 
-サーバーはそのリクエストの画像を `<NOVELAI_OUTPUT_DIR>/team-a/` に書き出し、
-`novelai_image_mcp.audit.team-a` ロガーに 1 行を出力し、監査 JSONL に 1 件を追記します
-（レコードにはプロンプトの長さと切り詰めた SHA-256 のみが残り、プロンプト本文・資格情報
-ヘッダー・画像ペイロードが書かれることはありません）。
+サーバーはそのリクエストの画像を `<NOVELAI_OUTPUT_DIR>/team-a/` に書き出し、`novelai_image_mcp.audit.team-a` ロガーに 1 行を出力し、監査 JSONL に 1 件を追記します（レコードにはプロンプトの長さと切り詰めた SHA-256 のみが残り、プロンプト本文・資格情報ヘッダー・画像ペイロードが書かれることはありません）。
 
-**このヘッダーを送らなければ何も変わりません** —— ルート別ディレクトリも監査ファイルも
-作られず、ツールが増減することもありません —— ただし意図的な例外が 1 つあります：
-`director_tool` の `emotion` と `emotion_level` はオプトインが必要になり、なければ
-`ToolError` になります（CHANGELOG 参照）。ルーティングヘッダーはクライアントが送るもので
-偽装できるため、信頼できるゲートウェイの背後でのみオプトインを許可してください。
+**このヘッダーを送らなければ何も変わりません** —— ルート別ディレクトリも監査ファイルも作られず、ツールが増減することもありません —— ただし意図的な例外が 1 つあります：`director_tool` の `emotion` と `emotion_level` はオプトインが必要になり、なければ `ToolError` になります（CHANGELOG 参照）。ルーティングヘッダーはクライアントが送るもので偽装できるため、信頼できるゲートウェイの背後でのみオプトインを許可してください。
 
 完全な契約：[インサイダーヘッダー・ルーティング・監査][insiders-docs]。
+
 NovelAI API リファレンス：[image.novelai.net/docs][nai-docs]
 
 ## 開発
@@ -320,7 +375,7 @@ Sphinx ドキュメントサイトは Furo + MyST Markdown で構築され、`ma
 
 ## ライセンス
 
-MIT — [LICENSE][license] を参照してください。ファイルごとの SPDX アノテーションは [REUSE.toml][reuse-toml] にあります。コントリビューションは [Developer Certificate of Origin][dco] の対象です（`commit-msg` フックがコミットに自動で署名します）。
+MIT — [LICENSE][license] を参照してください。ファイルごとの SPDX アノテーションは [REUSE.toml][reuse-toml] にあります。コントリビューションは [Developer Certificate of Origin][dco] の対象です（`commit-msg` フックがコミットに `Signed-off-by` を自動で付与します）。
 
 ## リンク
 

@@ -17,17 +17,30 @@
 
 [![NovelAI Image MCP - MCP server for integrating NovelAI Image generation into AI | Product Hunt][product-hunt-badge]][product-hunt] [![Featured on Lifto][lifto-badge]][lifto]
 
-An [MCP (Model Context Protocol)][mcp] server that
-exposes **NovelAI image generation** as tools for AI agents (Claude Desktop,
-Cline, custom agents, remote clients).
+An [MCP (Model Context Protocol)][mcp] server that exposes **NovelAI image
+generation** to AI agents (Claude Desktop, Cline, custom agents, remote
+clients), plus a sync CLI and three [skills.sh][skills-site] packages that teach
+those agents how to drive either surface.
 
-Built on FastMCP 4 (the fastmcp framework over the MCP SDK v2 `mcp>=2.3.0`), it lets an agent generate
-images (txt2img / img2img / inpaint), upscale, run Director tools (line art,
-emotion, background removal, …), annotate with ControlNet, suggest tags, encode
-vibes, and query account subscription — all through the standard MCP tool
+Built on FastMCP 4 (the fastmcp framework over the MCP SDK v2 `mcp>=2.3.0`),
+it covers txt2img / img2img / inpaint, 4× upscale, Director tools (line art,
+emotion, background removal, …), ControlNet annotation, tag suggestions, vibe
+encoding and account subscription — all through the standard MCP tool
 interface.
 
 > 📖 **Documentation**: [xinvxueyuan.github.io/NovelAI-Image-MCP][docs]
+
+## Three ways to drive it
+
+All three wrap the same async `NovelAIClient`; they differ in how you invoke
+it.
+
+- **MCP tools** — interactive agent sessions (Claude Desktop, Cline, …). The
+  agent sees base64 `Image` content blocks.
+- **CLI** — shell scripting, CI jobs, one-off commands. Saves a PNG and prints
+  its path; no image blocks.
+- **Agent skills** — portable instructions that tell an agent how to use the
+  other two. They inherit the mode they drive.
 
 ## Features
 
@@ -36,6 +49,10 @@ interface.
   (`novelai_prompt_writer`, `novelai_image_workflow`), plus `novelai://models`,
   `novelai://samplers`, `novelai://defaults` and `novelai://outputs/{name}` for
   discovering the model/sampler vocabulary and reading generated PNGs back.
+- **Three agent skills** (`novelai-cli`, `novelai-mcp-tools`,
+  `novelai-workflows`) grouped as CLI / MCP Tools / Workflows, installable with
+  one `npx skills add` command.
+- **A sync `typer` CLI** with six subcommands for scripting outside an MCP host.
 - **Two transports**: stdio (local agents) + HTTP (remote / multi-client), the
   latter optionally protected by a bearer token (`MCP_AUTH_TOKEN`).
 - **Opt-in routing and audit (HTTP)**: a client that sends `X-MCP-Insiders`
@@ -47,43 +64,23 @@ interface.
   `ToolError` for expected failures.
 - **Dual image return**: base64 `Image` content blocks (the agent *sees* the image)
   **and** PNG saved to disk (path returned as text).
-- **Async + sync**: async tool handlers + a `typer` CLI for direct invocation.
 - **Monorepo**: uv workspace (Python) + pnpm workspace (Node tooling) orchestrated
   by Turbo; MIT-licensed, Docker-ready, GitHub Pages docs.
 
-## Repository layout
-
-This is a **uv + pnpm monorepo**:
-
-```text
-NovelAI-Image-MCP/
-├── apps/
-│   ├── server/                 # MCP server (the installable PyPI package)
-│   │   ├── src/novelai_image_mcp/   # 11 MCP tools + NovelAI HTTP client
-│   │   ├── tests/
-│   │   ├── docker/              # smoke-test entrypoint
-│   │   ├── Dockerfile           # built with repo root as context
-│   │   └── pyproject.toml       # ruff / pyright / pytest config
-│   └── docs/                    # Sphinx documentation site
-│       ├── source/              # MyST Markdown + conf.py
-│       ├── Makefile
-│       └── pyproject.toml
-├── .github/                     # workflows, CODEOWNERS, issue templates
-├── pyproject.toml               # uv workspace root (virtual)
-├── uv.lock                      # single shared lockfile
-├── pnpm-workspace.yaml          # pnpm workspace declaration
-├── pnpm-lock.yaml               # Node toolchain lockfile
-├── turbo.json                   # cross-workspace task graph
-├── package.json                 # root scripts + dev toolchain
-└── docker-compose.yml           # local container orchestration
-```
-
-See [`CONTRIBUTING.md`][contributing] for the developer guide and
-[`apps/docs/source/`][docs-source] for the full documentation source.
-
 ## Quick start
 
-### Install from source (development)
+### 1. Install the agent skills
+
+```bash
+npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP
+```
+
+`--yes` skips the interactive picker; `--global` installs to
+`~/.agents/skills/` so every project on the machine can use them. Drop
+`--global` to install into the current project's `.agents/skills/` instead.
+See [Agent skills](#agent-skills) for what each skill covers.
+
+### 2. Install the server (from source, development)
 
 ```bash
 # 1. Clone
@@ -106,29 +103,13 @@ MCP_TRANSPORT=http uv run python -m novelai_image_mcp serve
 #   → http://127.0.0.1:8000/mcp
 ```
 
-### Install from PyPI (runtime only)
+### 3. Install the server (PyPI, runtime only)
 
 ```bash
 pip install novelai-image-mcp
 export NOVELAI_TOKEN=pst-...
 novelai-image-mcp serve
 ```
-
-### Standard FastMCP entry points
-
-The repository ships a [`fastmcp.json`](fastmcp.json) whose source points at
-`apps/server/mcp_server.py`, so plain FastMCP tooling works too (run from the
-repository root, after `uv sync`):
-
-```bash
-uv run fastmcp run fastmcp.json                     # stdio server
-uv run fastmcp inspect                              # list tools/prompts/resources
-uv run --directory apps/server fastmcp dev inspector mcp_server.py   # Inspector
-```
-
-`fastmcp.json` has no `environment` block on purpose: the workspace virtualenv
-already has the package installed, and an `environment` entry would make
-FastMCP build a second, throwaway environment for every run.
 
 ### Optional: Node tooling (contributors)
 
@@ -217,35 +198,119 @@ the literal token placeholder for a host-managed secret reference if your
 MCP host supports one (Claude Desktop, Cline, etc. expose this via their
 own secrets UI).
 
-## CLI (sync, for scripting)
+### Standard FastMCP entry points
+
+The repository ships a [`fastmcp.json`](fastmcp.json) whose source points at
+`apps/server/mcp_server.py`, so plain FastMCP tooling works too (run from the
+repository root, after `uv sync`):
 
 ```bash
-uv run python -m novelai_image_mcp generate --prompt "a cat, masterpiece" --width 832 --height 1216
-uv run python -m novelai_image_mcp upscale --image ./in.png --factor 4
-uv run python -m novelai_image_mcp info          # subscription / Anlas balance
-uv run python -m novelai_image_mcp --help
+uv run fastmcp run fastmcp.json                     # stdio server
+uv run fastmcp inspect                              # list tools/prompts/resources
+uv run --directory apps/server fastmcp dev inspector mcp_server.py   # Inspector
 ```
 
-## Skills (portable agent instructions)
+`fastmcp.json` has no `environment` block on purpose: the workspace virtualenv
+already has the package installed, and an `environment` entry would make
+FastMCP build a second, throwaway environment for every run.
 
-The project ships three [skills.sh][skills-site] packages that teach AI
-agents (Claude Code, Codex, GitHub Copilot, Cursor, …) how to drive the CLI
-and MCP tools without you pasting docs:
+## CLI (sync, for scripting)
+
+The CLI exposes six subcommands: `serve`, `generate`, `upscale`, `director`,
+`annotate`, `info`.
+
+```bash
+# Run the MCP server (stdio by default; -t http for the HTTP transport)
+novelai-image-mcp serve
+
+# Text-to-image — prints one absolute PNG path per generated image
+novelai-image-mcp generate --prompt "a cat, masterpiece" --width 832 --height 1216
+
+# 4x upscale (V5 model only)
+novelai-image-mcp upscale --image ./in.png --factor 4
+
+# Director tools: lineart | sketch | bg-removal | declutter | colorize | emotion
+novelai-image-mcp director lineart ./photo.png --defry 5
+
+# ControlNet annotation: hed | midas | fake_scribble | mlsd | uniformer
+novelai-image-mcp annotate ./photo.png --model hed
+
+# Subscription / Anlas balance
+novelai-image-mcp info
+
+novelai-image-mcp --help
+```
+
+Install it with `pip install novelai-image-mcp`, run it ad hoc with
+`uvx novelai-image-mcp <command>`, or from the monorepo with
+`uv run --directory apps/server novelai-image-mcp <command>`. Every
+image-producing command saves a PNG to `NOVELAI_OUTPUT_DIR` (default
+`outputs`) and prints its path; `-o` / `--output-dir` overrides the
+directory for one invocation. The full flag list lives in the
+[`novelai-cli` skill][skills-docs].
+
+## Agent skills
+
+Three [skills.sh][skills-site] packages ship in `skills/`. They teach AI
+agents (Claude Code, Codex, GitHub Copilot, Cursor, …) how to drive the CLI and
+the MCP tools, so you do not have to paste docs into the conversation.
 
 ```bash
 npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP
 ```
 
-| Skill | What it teaches |
-|---|---|
-| `novelai-cli` | Typer CLI commands (serve, generate, upscale, director, annotate, info) for shell scripting |
-| `novelai-mcp-tools` | The 11 MCP tools — model selection, parameters, return shape, Anlas cost |
-| `novelai-workflows` | Multi-step creative pipelines (txt2img→upscale, annotate→img2img, Director edits) |
+```mermaid
+graph TD
+    Q{How will you drive NovelAI?}
+    Q -->|"Interactive session with an MCP host"| MCP["MCP tools<br/>11 tools over stdio / http"]
+    Q -->|"Shell script, CI job, one-off command"| CLI["CLI<br/>novelai-image-mcp generate ..."]
+    Q -->|"Let an agent pick the right one"| SK["Agent skills<br/>novelai-cli / novelai-mcp-tools / novelai-workflows"]
+    SK --> MCP
+    SK --> CLI
+```
 
-Skills and the CLI/MCP tools are complementary — install all three and your
-agent picks the right mode based on context. See the
-[Agent skills docs][skills-docs]
-for details.
+| Skill | Group | What it teaches |
+|---|---|---|
+| `novelai-cli` | CLI | Typer CLI commands (serve, generate, upscale, director, annotate, info) for shell scripting |
+| `novelai-mcp-tools` | MCP Tools | The 11 MCP tools — model selection, parameters, return shape, Anlas cost |
+| `novelai-workflows` | Workflows | Multi-step creative pipelines (txt2img→upscale, annotate→img2img, Director edits) |
+
+Skills and the CLI/MCP tools are complementary, not either/or: install all
+three and the agent picks the mode that fits the task. Each skill points at the
+other two instead of repeating them. See the [Agent skills docs][skills-docs]
+for the group descriptions and a mode-comparison table.
+
+## Repository layout
+
+This is a **uv + pnpm monorepo**:
+
+```text
+NovelAI-Image-MCP/
+├── apps/
+│   ├── server/                 # MCP server (the installable PyPI package)
+│   │   ├── src/novelai_image_mcp/   # 11 MCP tools + NovelAI HTTP client
+│   │   ├── tests/
+│   │   ├── docker/              # smoke-test entrypoint
+│   │   ├── Dockerfile           # built with repo root as context
+│   │   └── pyproject.toml       # ruff / pyright / pytest config
+│   └── docs/                    # Sphinx documentation site
+│       ├── source/              # MyST Markdown + conf.py
+│       ├── Makefile
+│       └── pyproject.toml
+├── skills/                      # skills.sh packages (novelai-cli, ...)
+├── skills.sh.json               # skill groupings for skills.sh
+├── .github/                     # workflows, CODEOWNERS, issue templates
+├── pyproject.toml               # uv workspace root (virtual)
+├── uv.lock                      # single shared lockfile
+├── pnpm-workspace.yaml          # pnpm workspace declaration
+├── pnpm-lock.yaml               # Node toolchain lockfile
+├── turbo.json                   # cross-workspace task graph
+├── package.json                 # root scripts + dev toolchain
+└── docker-compose.yml           # local container orchestration
+```
+
+See [`CONTRIBUTING.md`][contributing] for the developer guide and
+[`apps/docs/source/`][docs-source] for the full documentation source.
 
 ## Tools
 
@@ -275,6 +340,15 @@ All settings are environment variables (see `.env.example`). Key ones:
 | `NOVELAI_TOKEN` | — | Persistent API token (preferred auth) |
 | `NOVELAI_USERNAME` / `NOVELAI_PASSWORD` | — | Access-key login (argon2id) |
 | `NOVELAI_OUTPUT_DIR` | `outputs` | Where generated PNGs are saved |
+| `NOVELAI_DEFAULT_MODEL` | `nai-diffusion-4-5-full` | Model id used when a tool call omits one |
+| `NOVELAI_DEFAULT_WIDTH` / `NOVELAI_DEFAULT_HEIGHT` | `832` / `1216` | Default image size |
+| `NOVELAI_DEFAULT_STEPS` | `28` | Default sampling steps (1–50) |
+| `NOVELAI_DEFAULT_SCALE` | `5.0` | Default CFG scale (≤20) |
+| `NOVELAI_DEFAULT_SAMPLER` | `k_euler_ancestral` | Default sampler |
+| `NOVELAI_UPSCALE_MODEL` | `nai-diffusion-5-full` | Model for the standalone 4× upscaler (V5 line only) |
+| `NOVELAI_TIMEOUT` | `120` | HTTP timeout in seconds |
+| `NOVELAI_IMAGE_BASE_URL` | `https://image.novelai.net` | Consolidated API host for generation and account endpoints |
+| `NOVELAI_LEGACY_IMAGE_BASE_URL` | `https://api.novelai.net` | Primary API host; only `/ai/annotate-image` still uses it |
 | `MCP_TRANSPORT` | `stdio` | `stdio` or `http` (`streamable-http` is a legacy alias) |
 | `MCP_HOST` / `MCP_PORT` / `MCP_PATH` | `127.0.0.1` / `8000` / `/mcp` | For the HTTP transport |
 | `MCP_AUTH_TOKEN` | — | When set, the HTTP transport requires `Authorization: Bearer <token>` |
@@ -288,6 +362,12 @@ All settings are environment variables (see `.env.example`). Key ones:
 
 List- and dict-valued settings are read as **JSON**: `MCP_MODEL_HEADERS='["X-MCP-Model"]'`
 works, while `A,B` raises a settings error and an empty value is not valid JSON.
+
+Routing candidate defaults (JSON lists, first non-empty header wins):
+
+- `MCP_MODEL_HEADERS` — `["X-MCP-Model", "X-MCP-Model-Name"]`
+- `MCP_AGENT_HEADERS` — `["X-MCP-Agent-ID", "X-MCP-Agent", "X-MCP-Agent-Source"]`
+- `MCP_CLIENT_HEADERS` — `["X-MCP-Client", "X-MCP-Client-Session-Id"]`
 
 ### Insiders header and routing
 

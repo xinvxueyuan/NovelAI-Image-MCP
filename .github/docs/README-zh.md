@@ -17,68 +17,61 @@
 
 [![NovelAI Image MCP - MCP server for integrating NovelAI Image generation into AI | Product Hunt][product-hunt-badge]][product-hunt] [![Featured on Lifto][lifto-badge]][lifto]
 
-一个 [MCP（模型上下文协议）][mcp] 服务端，将 **NovelAI
-图像生成** 能力以工具形式暴露给 AI 智能体（Claude Desktop、Cline、自定义 Agent、
-远程客户端）。
+一个 [MCP（模型上下文协议）][mcp] 服务端，把 **NovelAI 图像生成** 能力暴露给
+AI 智能体（Claude Desktop、Cline、自定义 Agent、远程客户端）；同时提供同步 CLI，
+以及三个 [skills.sh][skills-site] 技能包，教这些智能体如何驱动上面两种入口。
 
-基于 FastMCP 4（MCP SDK v2 `mcp>=2.3.0` 之上的 fastmcp 框架）构建。智能体可通过标准 MCP 工具接口完成
-生图（文生图 / 图生图 / 局部重绘）、放大、Director 工具（线稿、表情、去背景……）、
-ControlNet 标注、标签建议、Vibe 编码以及账户订阅查询。
+服务端基于 FastMCP 4（MCP SDK v2 `mcp>=2.3.0` 之上的 fastmcp 框架）构建，
+覆盖文生图 / 图生图 / 局部重绘、4× 放大、Director 工具（线稿、表情、去背景……）、
+ControlNet 标注、标签建议、Vibe 编码与账户订阅查询，全部走标准 MCP 工具接口。
 
 > 📖 **在线文档**：[xinvxueyuan.github.io/NovelAI-Image-MCP][docs]
+
+## 三种使用方式
+
+三者都封装同一个异步 `NovelAIClient`，区别只在调用方式。
+
+- **MCP 工具** —— 交互式智能体会话（Claude Desktop、Cline 等），Agent 能看到
+  base64 `Image` 内容块。
+- **CLI** —— Shell 脚本、CI 任务、一次性命令；保存 PNG 并打印路径，不返回图像块。
+- **智能体技能** —— 可移植的指令，告诉智能体如何使用前两者；Agent 是否可见图像
+  取决于技能驱动的入口。
 
 ## 特性
 
 - **11 个 MCP 工具**，覆盖 NovelAI 图像 API 全部能力。
-- **2 个 prompt + 3 个资源 + 1 个资源模板**：`novelai_prompt_writer` / `novelai_image_workflow`
-  提供提示词与工具编排范本；`novelai://models`、`novelai://samplers`、
-  `novelai://defaults`、`novelai://outputs/{name}` 暴露模型与采样器词表、当前默认值，
-  并可回读已生成的 PNG。
+- **2 个 prompt + 3 个资源 + 1 个资源模板**：`novelai_prompt_writer` /
+  `novelai_image_workflow` 提供提示词与工具编排范本；`novelai://models`、
+  `novelai://samplers`、`novelai://defaults`、`novelai://outputs/{name}`
+  暴露模型与采样器词表、当前默认值，并可回读已生成的 PNG。
+- **三个智能体技能**（`novelai-cli`、`novelai-mcp-tools`、
+  `novelai-workflows`），按 CLI / MCP Tools / Workflows 分组，一条
+  `npx skills add` 命令即可安装。
+- **同步 `typer` CLI**：六个子命令，用于在 MCP 宿主之外编写脚本。
 - **双传输**：stdio（本地 Agent）+ HTTP（远程 / 多客户端），HTTP 支持可选
   Bearer Token（`MCP_AUTH_TOKEN`）。
 - **可选的路由与审计（HTTP）**：客户端发送 `X-MCP-Insiders` 后，可获得按路由划分的
   输出目录、按路由命名的 logger，以及 append-only 的 JSONL 审计流水（prompt 与凭证
   绝不落原文）。不发送该头时行为完全不变。详见[内测头、路由与审计][insiders-docs]。
 - **结构化结果**：枚举校验的工具 schema、MCP 工具注解、预期失败统一抛 `ToolError`。
-- **图像返回**：base64 `Image` 内容块（Agent 能“看到”图）**同时** 保存 PNG 到磁盘
+- **图像双返回**：base64 `Image` 内容块（Agent 能“看到”图）**同时** 保存 PNG 到磁盘
   （返回路径）。
-- **异步 + 同步**：异步工具处理器 + `typer` CLI 直接调用。
 - **单体仓库**：uv workspace（Python）+ pnpm workspace（Node 工具链）由 Turbo 编排；
-  MIT 许可，开箱即用的 Docker，GitHub Pages 文档。
-
-## 仓库结构
-
-这是一个 **uv + pnpm 单体仓库**：
-
-```text
-NovelAI-Image-MCP/
-├── apps/
-│   ├── server/                 # MCP server (the installable PyPI package)
-│   │   ├── src/novelai_image_mcp/   # 11 MCP tools + NovelAI HTTP client
-│   │   ├── tests/
-│   │   ├── docker/              # smoke-test entrypoint
-│   │   ├── Dockerfile           # built with repo root as context
-│   │   └── pyproject.toml       # ruff / pyright / pytest config
-│   └── docs/                    # Sphinx documentation site
-│       ├── source/              # MyST Markdown + conf.py
-│       ├── Makefile
-│       └── pyproject.toml
-├── .github/                     # workflows, CODEOWNERS, issue templates
-├── pyproject.toml               # uv workspace root (virtual)
-├── uv.lock                      # single shared lockfile
-├── pnpm-workspace.yaml          # pnpm workspace declaration
-├── pnpm-lock.yaml               # Node toolchain lockfile
-├── turbo.json                   # cross-workspace task graph
-├── package.json                 # root scripts + dev toolchain
-└── docker-compose.yml           # local container orchestration
-```
-
-完整开发指南见 [`CONTRIBUTING.md`][contributing]，文档源码见
-[`apps/docs/source/`][docs-source]。
+  MIT 许可，Docker 就绪，GitHub Pages 文档。
 
 ## 快速开始
 
-### 从源码安装（开发用）
+### 1. 安装智能体技能
+
+```bash
+npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP
+```
+
+`--yes` 跳过交互式选择；`--global` 安装到 `~/.agents/skills/`，
+本机所有项目都能用。去掉 `--global` 则安装到当前项目的 `.agents/skills/`。
+各技能覆盖的内容见[智能体技能](#智能体技能)。
+
+### 2. 安装服务端（从源码，开发用）
 
 ```bash
 # 1. Clone
@@ -101,27 +94,13 @@ MCP_TRANSPORT=http uv run python -m novelai_image_mcp serve
 #   → http://127.0.0.1:8000/mcp
 ```
 
-### 从 PyPI 安装（仅运行时）
+### 3. 安装服务端（PyPI，仅运行时）
 
 ```bash
 pip install novelai-image-mcp
 export NOVELAI_TOKEN=pst-...
 novelai-image-mcp serve
 ```
-
-### 标准 FastMCP 入口
-
-仓库自带 [`fastmcp.json`](../../fastmcp.json)（source 指向 `apps/server/mcp_server.py`），
-因此可以直接使用 FastMCP 官方命令（在仓库根执行，先 `uv sync`）：
-
-```bash
-uv run fastmcp run fastmcp.json                     # stdio server
-uv run fastmcp inspect                              # list tools/prompts/resources
-uv run --directory apps/server fastmcp dev inspector mcp_server.py   # Inspector
-```
-
-`fastmcp.json` 有意不写 `environment` 块：workspace 虚拟环境里已安装本包，
-写了反而会让 FastMCP 每次额外建一个临时环境。
 
 ### 可选：Node 工具链（贡献者）
 
@@ -206,33 +185,116 @@ MCP 服务端在 `mcpServers` 下支持两种传输（stdio + http）：
 引用（Claude Desktop、Cline 等通过各自的密钥管理 UI 暴露），可将字面量
 token 占位符替换为宿主定义的密钥引用。
 
-## CLI（同步，用于脚本）
+### 标准 FastMCP 入口
+
+仓库自带 [`fastmcp.json`](../../fastmcp.json)（source 指向
+`apps/server/mcp_server.py`），因此也可以直接使用 FastMCP 官方命令
+（在仓库根执行，先 `uv sync`）：
 
 ```bash
-uv run python -m novelai_image_mcp generate --prompt "a cat, masterpiece" --width 832 --height 1216
-uv run python -m novelai_image_mcp upscale --image ./in.png --factor 4
-uv run python -m novelai_image_mcp info          # subscription / Anlas balance
-uv run python -m novelai_image_mcp --help
+uv run fastmcp run fastmcp.json                     # stdio server
+uv run fastmcp inspect                              # list tools/prompts/resources
+uv run --directory apps/server fastmcp dev inspector mcp_server.py   # Inspector
 ```
 
-## 技能（可移植的智能体指令）
+`fastmcp.json` 有意不写 `environment` 块：workspace 虚拟环境里已安装本包，
+写了反而会让 FastMCP 每次额外建一个临时环境。
 
-本项目提供三个 [skills.sh][skills-site] 技能包，帮助 AI 智能体
-（Claude Code、Codex、GitHub Copilot、Cursor 等）直接使用 CLI 和 MCP 工具，
-无需手动粘贴文档：
+## CLI（同步，用于脚本）
+
+CLI 提供六个子命令：`serve`、`generate`、`upscale`、`director`、
+`annotate`、`info`。
+
+```bash
+# Run the MCP server (stdio by default; -t http for the HTTP transport)
+novelai-image-mcp serve
+
+# Text-to-image — prints one absolute PNG path per generated image
+novelai-image-mcp generate --prompt "a cat, masterpiece" --width 832 --height 1216
+
+# 4x upscale (V5 model only)
+novelai-image-mcp upscale --image ./in.png --factor 4
+
+# Director tools: lineart | sketch | bg-removal | declutter | colorize | emotion
+novelai-image-mcp director lineart ./photo.png --defry 5
+
+# ControlNet annotation: hed | midas | fake_scribble | mlsd | uniformer
+novelai-image-mcp annotate ./photo.png --model hed
+
+# Subscription / Anlas balance
+novelai-image-mcp info
+
+novelai-image-mcp --help
+```
+
+安装方式：`pip install novelai-image-mcp`；临时运行：
+`uvx novelai-image-mcp <command>`；在单体仓库内：
+`uv run --directory apps/server novelai-image-mcp <command>`。
+每个产图命令都会把 PNG 保存到 `NOVELAI_OUTPUT_DIR`（默认 `outputs`）
+并打印其路径；`-o` / `--output-dir` 可只对本次调用覆盖目录。完整参数列表见
+[`novelai-cli` 技能][skills-docs]。
+
+## 智能体技能
+
+`skills/` 下有三个 [skills.sh][skills-site] 技能包，教 AI 智能体
+（Claude Code、Codex、GitHub Copilot、Cursor 等）驱动 CLI 与 MCP 工具，
+无需把文档粘进对话。
 
 ```bash
 npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP
 ```
 
-| 技能 | 内容 |
-|---|---|
-| `novelai-cli` | 用于 Shell 脚本的 Typer CLI 命令（serve、generate、upscale、director、annotate、info） |
-| `novelai-mcp-tools` | 11 个 MCP 工具：模型选择、参数、返回结构与 Anlas 消耗 |
-| `novelai-workflows` | 多步骤创作流程（文生图→放大、标注→图生图、Director 编辑） |
+```mermaid
+graph TD
+    Q{How will you drive NovelAI?}
+    Q -->|"Interactive session with an MCP host"| MCP["MCP tools<br/>11 tools over stdio / http"]
+    Q -->|"Shell script, CI job, one-off command"| CLI["CLI<br/>novelai-image-mcp generate ..."]
+    Q -->|"Let an agent pick the right one"| SK["Agent skills<br/>novelai-cli / novelai-mcp-tools / novelai-workflows"]
+    SK --> MCP
+    SK --> CLI
+```
 
-技能与 CLI/MCP 工具互为补充。安装全部三个技能后，智能体会根据上下文选择合适的方式。
-详见[智能体技能文档][skills-docs]。
+| 技能 | 分组 | 内容 |
+|---|---|---|
+| `novelai-cli` | CLI | 用于 Shell 脚本的 Typer CLI 命令（serve、generate、upscale、director、annotate、info） |
+| `novelai-mcp-tools` | MCP Tools | 11 个 MCP 工具：模型选择、参数、返回结构与 Anlas 消耗 |
+| `novelai-workflows` | Workflows | 多步骤创作流程（文生图→放大、标注→图生图、Director 编辑） |
+
+技能与 CLI/MCP 工具互为补充，不是二选一：三个都装上，智能体会按任务挑合适的方式。
+每个技能只指向另外两个，不重复它们的内容。分组说明与入口对比表见
+[智能体技能文档][skills-docs]。
+
+## 仓库结构
+
+这是一个 **uv + pnpm 单体仓库**：
+
+```text
+NovelAI-Image-MCP/
+├── apps/
+│   ├── server/                 # MCP server (the installable PyPI package)
+│   │   ├── src/novelai_image_mcp/   # 11 MCP tools + NovelAI HTTP client
+│   │   ├── tests/
+│   │   ├── docker/              # smoke-test entrypoint
+│   │   ├── Dockerfile           # built with repo root as context
+│   │   └── pyproject.toml       # ruff / pyright / pytest config
+│   └── docs/                    # Sphinx documentation site
+│       ├── source/              # MyST Markdown + conf.py
+│       ├── Makefile
+│       └── pyproject.toml
+├── skills/                      # skills.sh packages (novelai-cli, ...)
+├── skills.sh.json               # skill groupings for skills.sh
+├── .github/                     # workflows, CODEOWNERS, issue templates
+├── pyproject.toml               # uv workspace root (virtual)
+├── uv.lock                      # single shared lockfile
+├── pnpm-workspace.yaml          # pnpm workspace declaration
+├── pnpm-lock.yaml               # Node toolchain lockfile
+├── turbo.json                   # cross-workspace task graph
+├── package.json                 # root scripts + dev toolchain
+└── docker-compose.yml           # local container orchestration
+```
+
+完整开发指南见 [`CONTRIBUTING.md`][contributing]，文档源码见
+[`apps/docs/source/`][docs-source]。
 
 ## 工具列表
 
@@ -262,6 +324,15 @@ npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP
 | `NOVELAI_TOKEN` | — | 持久 API token（推荐认证方式） |
 | `NOVELAI_USERNAME` / `NOVELAI_PASSWORD` | — | access-key 登录（argon2id） |
 | `NOVELAI_OUTPUT_DIR` | `outputs` | 生成 PNG 的保存目录 |
+| `NOVELAI_DEFAULT_MODEL` | `nai-diffusion-4-5-full` | 工具调用未指定模型时使用的模型 id |
+| `NOVELAI_DEFAULT_WIDTH` / `NOVELAI_DEFAULT_HEIGHT` | `832` / `1216` | 默认图像尺寸 |
+| `NOVELAI_DEFAULT_STEPS` | `28` | 默认采样步数（1–50） |
+| `NOVELAI_DEFAULT_SCALE` | `5.0` | 默认 CFG scale（≤20） |
+| `NOVELAI_DEFAULT_SAMPLER` | `k_euler_ancestral` | 默认采样器 |
+| `NOVELAI_UPSCALE_MODEL` | `nai-diffusion-5-full` | 独立 4× 放大器使用的模型（仅 V5 系列） |
+| `NOVELAI_TIMEOUT` | `120` | HTTP 超时（秒） |
+| `NOVELAI_IMAGE_BASE_URL` | `https://image.novelai.net` | 生成与账户端点的统一 API 主机 |
+| `NOVELAI_LEGACY_IMAGE_BASE_URL` | `https://api.novelai.net` | Primary API 主机；仅 `/ai/annotate-image` 仍在使用 |
 | `MCP_TRANSPORT` | `stdio` | `stdio` 或 `http`（`streamable-http` 为兼容别名） |
 | `MCP_HOST` / `MCP_PORT` / `MCP_PATH` | `127.0.0.1` / `8000` / `/mcp` | HTTP 传输用 |
 | `MCP_AUTH_TOKEN` | — | 设置后 HTTP 传输要求 `Authorization: Bearer <token>` |
@@ -269,12 +340,18 @@ npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP
 | `MCP_INSIDERS_HEADER` | `X-MCP-Insiders` | 客户端 opt-in 用的头名（仅 HTTP） |
 | `MCP_MODEL_HEADERS` / `MCP_AGENT_HEADERS` / `MCP_CLIENT_HEADERS` | see below | JSON 列表，路由候选头，首个非空者生效 |
 | `MCP_INSIDERS_DISABLED_FEATURES` | `[]` | 运维侧强制关闭开关（JSON 列表），优先级高于客户端 |
-| `MCP_ROUTE_SCOPED_OUTPUT` | `true` | 路由生效时把图像写到 `<输出目录>/<route>/` |
+| `MCP_ROUTE_SCOPED_OUTPUT` | `true` | 路由生效时把图像写到 `<output>/<route>/` |
 | `MCP_AUDIT_LOG_PATH` | `<output>/audit.jsonl` | append-only JSONL 审计流水 |
 | `MCP_LOG_LEVEL` | — | `DEBUG`/`INFO`/`WARNING`/`ERROR`/`CRITICAL` |
 
 list / dict 类型的配置按 **JSON** 读取：`MCP_MODEL_HEADERS='["X-MCP-Model"]'` 可用，
 写成 `A,B` 会报配置错误，空值也不是合法 JSON。
+
+路由候选头的默认值（JSON 列表，首个非空头生效）：
+
+- `MCP_MODEL_HEADERS` —— `["X-MCP-Model", "X-MCP-Model-Name"]`
+- `MCP_AGENT_HEADERS` —— `["X-MCP-Agent-ID", "X-MCP-Agent", "X-MCP-Agent-Source"]`
+- `MCP_CLIENT_HEADERS` —— `["X-MCP-Client", "X-MCP-Client-Session-Id"]`
 
 ### 内测头与路由
 
@@ -298,6 +375,7 @@ X-MCP-Model: nai-diffusion-5-full
 才授予该 opt-in。
 
 完整契约：[内测头、路由与审计][insiders-docs]。
+
 NovelAI API 文档：[image.novelai.net/docs][nai-docs]
 
 ## 开发
