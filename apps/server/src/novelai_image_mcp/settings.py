@@ -78,7 +78,14 @@ class NovelAISettings(BaseSettings):
 
 
 class MCPServerSettings(BaseSettings):
-    """MCP server transport, auth and logging (``MCP_*`` env vars)."""
+    """MCP server transport, auth, routing and logging (``MCP_*`` env vars).
+
+    List- and dict-valued fields are read from the environment as JSON
+    (``pydantic-settings`` decodes complex types with ``json.loads``):
+    ``MCP_MODEL_HEADERS='["X-MCP-Model"]'`` works, while a comma-separated
+    ``X-MCP-Model,X-MCP-Model-Name`` raises a settings error, and an empty
+    string is not a valid value for a ``dict`` field.
+    """
 
     model_config = SettingsConfigDict(
         env_prefix="MCP_",
@@ -100,6 +107,40 @@ class MCPServerSettings(BaseSettings):
     # ``Authorization: Bearer <token>`` header. stdio is unaffected.
     auth_token: str | None = None
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] | None = None
+
+    # ── Insiders opt-in surface ──
+    # The opt-in header is configurable so a deployment can move it out of a
+    # namespace it does not own. Lookup is case-insensitive because HTTP header
+    # names are.
+    insiders_header: str = "X-MCP-Insiders"
+    # Ordered routing candidates: the first header carrying a non-empty value
+    # supplies the corresponding field. JSON list in the environment, e.g.
+    # ``MCP_MODEL_HEADERS='["X-MCP-Model","X-MCP-Model-Name"]'``.
+    model_headers: list[str] = Field(
+        default_factory=lambda: ["X-MCP-Model", "X-MCP-Model-Name"],
+    )
+    agent_headers: list[str] = Field(
+        default_factory=lambda: [
+            "X-MCP-Agent-ID",
+            "X-MCP-Agent",
+            "X-MCP-Agent-Source",
+        ],
+    )
+    client_headers: list[str] = Field(
+        default_factory=lambda: ["X-MCP-Client", "X-MCP-Client-Session-Id"],
+    )
+    # Operator-level kill switch: a feature listed here is off no matter what a
+    # client sends in the insiders header. JSON list, e.g.
+    # ``MCP_INSIDERS_DISABLED_FEATURES='["model-routing"]'``.
+    insiders_disabled_features: list[str] = Field(default_factory=list)
+    # Audit trail destination; ``None`` means ``<output_dir>/audit.jsonl``.
+    audit_log_path: str | None = None
+    # When true, generated images are written under a per-route subdirectory.
+    route_scoped_output: bool = True
+    # Optional ``{route: token}`` map for route-bound authentication: the key is
+    # the route the token authenticates as. JSON object, e.g.
+    # ``MCP_ROUTE_TOKENS='{"team-a":"s3cret"}'``.
+    route_tokens: dict[str, str] | None = None
 
     @property
     def resolved_transport(self) -> Literal["stdio", "http"]:
