@@ -21,9 +21,13 @@ apps/server/  → 可安装的 MCP 服务器包（PyPI: novelai-image-mcp）
     tools/       # 11 个 MCP 工具（模块级 @mcp.tool 装饰器）
     resources.py # novelai://models / samplers / defaults / outputs/{name}
     prompts.py   # novelai_prompt_writer / novelai_image_workflow
-    middleware.py# 工具调用日志中间件
-    mcp_auth.py  # 可选 HTTP Bearer Token（MCP_AUTH_TOKEN）
-    deps.py      # AppContext + Depends 依赖提供者
+    middleware.py# 工具调用日志 + 分路审计 + 实验性工具双闸门控
+    mcp_auth.py  # 可选 HTTP Bearer Token（MCP_AUTH_TOKEN / MCP_ROUTE_TOKENS）
+    deps.py      # AppContext + Depends 依赖提供者（含 insiders / routing providers）
+    insiders.py  # X-MCP-Insiders 头解析（纯逻辑，无 I/O）
+    features.py  # INSIDERS_FEATURES 特性注册表 + resolve_features
+    routing.py   # 声明头 → RoutingContext（route 白名单 + 头脱敏）
+    audit.py     # append-only JSONL 审计（单次 os.write + O_APPEND）
     schemas.py   # 结构化输出模型（AnlasEstimate / TagSuggestion）
     server.py    # FastMCP 实例 + lifespan + 组件导入
     cli.py       # typer CLI（同步入口）
@@ -189,6 +193,60 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
   一个文件里；(4) REUSE.toml 的 `**/*.md` glob 已覆盖 `skills/` 目录，
   无需手动加 SPDX 头。
 
+## 内测头与分路（X-MCP-Insiders）
+
+HTTP 客户端用 `X-MCP-Insiders` 逐请求 opt-in，并用声明头自报路由 / 模型 / agent / 会话。
+**不发送该头时行为与今天一致**（唯一例外见「有意变更」）。完整契约见
+[`insiders-and-routing.md`](apps/docs/source/development/insiders-and-routing.md)。
+
+- 头语法：`true`/`1`/`on`/`yes` 开启并取默认；缺失 / 空 / `false`/`0`/`off`/`no` 关闭；
+  `model-routing=false` 单项覆盖；`model-routing` 裸键即开启；`k=v, k2=v2` 逐项覆盖。
+  键名大小写不敏感且 `-` 与 `_` 等价；未知键进 `unknown_keys`（只记录、永不生效）；
+  非法值进 `malformed`（该项忽略）；超过 4096 字符整头关闭。
+- 已注册特性（`features.py` 的 `INSIDERS_FEATURES`）：`model-routing`（默认开）、
+  `experimental-tools`（默认开）。**「默认开」指 opt-in 之后的状态；不带头则一个都不生效。**
+  优先级：注册默认 ⊕ 头内覆盖，再被 `MCP_INSIDERS_DISABLED_FEATURES` 强制关闭（最高）。
+- 声明头默认候选：agent=`X-MCP-Agent-ID`/`X-MCP-Agent`/`X-MCP-Agent-Source`；
+  client=`X-MCP-Client`/`X-MCP-Client-Session-Id`；model=`X-MCP-Model`/`X-MCP-Model-Name`。
+  可用 `MCP_MODEL_HEADERS`/`MCP_AGENT_HEADERS`/`MCP_CLIENT_HEADERS` 改名。
+- route 优先级：首个非空 agent → 首个非空 client → MCP 客户端自报名 →
+  无 HTTP 请求时 `stdio`，否则 `unknown`。route 必须过 `sanitize_route` 白名单
+  （`[A-Za-z0-9._-]{1,64}`；禁分隔符 / 上跳 / 非 ASCII / 空 / 超长）。
+- 分路日志 logger 名 `novelai_image_mcp.audit.<route>`。审计 JSONL **仅在 model-routing 生效时写**，
+  默认 `<NOVELAI_OUTPUT_DIR>/audit.jsonl`（`MCP_AUDIT_LOG_PATH` 可覆盖）。
+  审计中 prompt 只留 `length` + `sha256[:16]`、图像参数记为 `[redacted image]`、
+  超过 256 字符的字符串一律摘要化；凭证头（authorization / cookie / set-cookie /
+  proxy-authorization / `*-token`/`*-secret`/`*-password`/`*-passwd`/`*-key`/`*-credential(s)`）
+  永不落盘。**审计不可写只 `logger.error`，绝不让工具调用失败。**
+- 路由作用域产物：路由生效且 `MCP_ROUTE_SCOPED_OUTPUT`（默认 true）时写到
+  `<NOVELAI_OUTPUT_DIR>/<route>/`；`novelai://outputs/{name}` 在同一作用域解析。
+- 分路认证：`MCP_AUTH_TOKEN` 语义不变；`MCP_ROUTE_TOKENS`（JSON `{"<route>": "<token>"}`）是增量，
+  路由不匹配 **fail-closed 返回 401**（不是 ToolError）；声明头缺失时以 token 自身的 route 为准。
+
+### 扩展点（新增特性只改这些）
+
+- **新增平级子键** = 在 `features.py` 的 `INSIDERS_FEATURES` 加一行（`name` + `default_enabled` + `summary`）。
+  解析器、中间件、工具都不用动。
+- **新增受门控的工具** = 注册时加 `tags={"insiders"}`；`on_list_tools` 过滤与 `on_call_tool` 按名拒绝都由该 tag 派生。
+- **给现有工具加实验性参数** = 工具体内取 `Depends(get_effective_features)`，缺 `EXPERIMENTAL_TOOLS` 时抛 `ToolError`（见 `director_tool`）。
+
+❌ **不要给任何现有工具加 `insiders` tag** —— 那会让不发头的客户端直接失去该工具，
+违反「不带头时行为与今天一致」。门控机制照做，但生产注册表上刻意没有命中项
+（回归测试 `TestProductionRegistry` 会守住这条）。
+
+### 有意变更（唯一一处）
+
+`director_tool` 的 `emotion` / `emotion_level` 现在受 `experimental-tools` 门控：不 opt-in 时传任一参数抛
+`ToolError`（非默认的 `emotion_level` 也算传参）。这是**有意变更**，已记录在 CHANGELOG 的 `Changed` 段。
+FastMCP 的工具 schema 在启动时静态生成、无法按请求变化，所以这两个参数仍出现在 schema 里，校验放在工具体内。
+
+### 环境变量（JSON 陷阱）
+
+`MCP_MODEL_HEADERS` / `MCP_AGENT_HEADERS` / `MCP_CLIENT_HEADERS` /
+`MCP_INSIDERS_DISABLED_FEATURES` / `MCP_ROUTE_TOKENS` 是 list/dict 类型，**必须写 JSON**：
+`MCP_MODEL_HEADERS='["X-MCP-Model"]'` 可用，`A,B` 会 `SettingsError`，**空值也不是合法 JSON**。
+（同理 `MCP_LOG_LEVEL=` 这种空值对 Literal 字段会 ValidationError，所以 `.env.example` 里该行是注释掉的。）
+
 ## 发布流程
 
 完整流程见 [`apps/docs/source/development/releasing.md`](apps/docs/source/development/releasing.md)。
@@ -242,4 +300,7 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
 - ❌ 为翻译页面创建"翻译中"占位 stub —— 要么完整翻译，要么不创建
 - ❌ 在 SKILL.md frontmatter 中写 `metadata` 块（官方 scaffold 只有
   `name` + `description`）
+- ❌ 给**现有**工具加 `insiders` tag（会让不发头的客户端丢掉该工具）
+- ❌ 在 list/dict 环境变量里写逗号分隔值或留空（必须是 JSON）
+- ❌ 让审计写入失败影响到工具调用（审计不可写只记 `logger.error`）
 - ❌ SKILL.md 的 H1 用描述性标题而非 skill name

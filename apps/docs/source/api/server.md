@@ -12,9 +12,13 @@ for a narrative walkthrough of how the lifespan + tools wire together.
 :::
 
 ```{eval-rst}
+.. ``AppContext`` is defined in ``deps`` and re-exported here. Documenting the
+   re-export as well would make every bare ``AppContext`` cross-reference ambiguous, so
+   it is excluded from this page; its reference entry lives with ``deps``.
 .. automodule:: novelai_image_mcp.server
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: AppContext
    :no-value:
 ```

@@ -93,6 +93,57 @@ curl -X POST http://localhost:8000/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"1.0"}}}'
 ```
 
+## Insiders header and routing
+
+HTTP is the only transport that can carry the opt-in header, so the routing
+surface lives here. A client opts in per request with `X-MCP-Insiders` and
+declares its route with the routing headers:
+
+```json
+{
+  "mcpServers": {
+    "novelai-image-http": {
+      "type": "http",
+      "url": "http://127.0.0.1:8000/mcp",
+      "headers": {
+        "Authorization": "Bearer <MCP_AUTH_TOKEN>",
+        "X-MCP-Insiders": "true",
+        "X-MCP-Agent-ID": "team-a",
+        "X-MCP-Model": "nai-diffusion-5-full"
+      }
+    }
+  }
+}
+```
+
+With the header, the server resolves a route (here `team-a`), writes generated
+images under `<NOVELAI_OUTPUT_DIR>/team-a/`, emits one line to the
+`novelai_image_mcp.audit.team-a` logger and appends one record to the audit
+JSONL. Without it, nothing changes -- no scoped directory, no audit file.
+
+The opt-in also gates the experimental `emotion` / `emotion_level` parameters
+of `director_tool`; without it, passing either fails with a `ToolError`.
+
+See [Insiders header, routing and audit](../development/insiders-and-routing.md)
+for the header grammar, the candidate header lists, the audit record fields, the
+redaction rules and the extension points.
+
+### Route-bound tokens
+
+`MCP_AUTH_TOKEN` stays a single static token. `MCP_ROUTE_TOKENS` adds tokens
+bound to a route, so one gateway can hand different teams different secrets:
+
+```bash
+MCP_AUTH_TOKEN=static-token
+MCP_ROUTE_TOKENS='{"team-a":"token-for-team-a","team-b":"token-for-team-b"}'
+```
+
+A route token authenticates as its route and is rejected with `401` when the
+same request declares a *different* route through the routing headers. A request
+that declares no usable route is accepted and attributed to the token's route;
+only two different, both-present routes fail closed. When neither setting is
+configured, no auth middleware is installed and the endpoint behaves as before.
+
 ## Docker deployment
 
 The simplest production deployment:
@@ -127,8 +178,11 @@ The healthcheck probes the bind port (default `8000`) every 30 seconds.
 ## Production checklist
 
 :::{warning}
-**The MCP streamable-http transport does not implement authentication.**
-Before exposing the server to the internet, put it behind:
+**The transport itself ships no authentication.** `MCP_AUTH_TOKEN` (and
+`MCP_ROUTE_TOKENS`) add a bearer check in front of the MCP endpoint, but that
+is a single shared secret, not an identity provider -- and the routing headers
+are client-supplied and forgeable. Before exposing the server to the internet,
+put it behind:
 
 - TLS termination (Caddy, nginx, Traefik, AWS ALB)
 - An authentication layer (mTLS, OAuth proxy, API gateway)
@@ -163,5 +217,6 @@ For Kubernetes, replace the volume with a PersistentVolumeClaim.
 ## See also
 
 - [stdio transport](stdio.md)
+- [Insiders header, routing and audit](../development/insiders-and-routing.md)
 - [Configuration](../configuration.md#mcp-transport)
 - [Docker Compose file](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/docker-compose.yml)

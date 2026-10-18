@@ -38,6 +38,11 @@ interface.
   discovering the model/sampler vocabulary and reading generated PNGs back.
 - **Two transports**: stdio (local agents) + HTTP (remote / multi-client), the
   latter optionally protected by a bearer token (`MCP_AUTH_TOKEN`).
+- **Opt-in routing and audit (HTTP)**: a client that sends `X-MCP-Insiders`
+  gets per-route output directories, per-route loggers and an append-only JSONL
+  audit trail (prompts and credentials are never written verbatim). Without the
+  header nothing changes. See
+  [Insiders header, routing and audit][insiders-docs].
 - **Structured results**: enum-validated tool schemas, MCP tool annotations and
   `ToolError` for expected failures.
 - **Dual image return**: base64 `Image` content blocks (the agent *sees* the image)
@@ -273,7 +278,41 @@ All settings are environment variables (see `.env.example`). Key ones:
 | `MCP_TRANSPORT` | `stdio` | `stdio` or `http` (`streamable-http` is a legacy alias) |
 | `MCP_HOST` / `MCP_PORT` / `MCP_PATH` | `127.0.0.1` / `8000` / `/mcp` | For the HTTP transport |
 | `MCP_AUTH_TOKEN` | — | When set, the HTTP transport requires `Authorization: Bearer <token>` |
+| `MCP_ROUTE_TOKENS` | — | JSON `{"<route>": "<token>"}` route-bound bearer tokens (401 on route mismatch) |
+| `MCP_INSIDERS_HEADER` | `X-MCP-Insiders` | Header a client opts in with (HTTP only) |
+| `MCP_MODEL_HEADERS` / `MCP_AGENT_HEADERS` / `MCP_CLIENT_HEADERS` | see below | JSON lists of routing candidates, first non-empty wins |
+| `MCP_INSIDERS_DISABLED_FEATURES` | `[]` | Operator kill switch (JSON list), wins over any client |
+| `MCP_ROUTE_SCOPED_OUTPUT` | `true` | Write images under `<output>/<route>/` while routing is active |
+| `MCP_AUDIT_LOG_PATH` | `<output>/audit.jsonl` | Append-only JSONL audit trail |
 | `MCP_LOG_LEVEL` | — | `DEBUG`/`INFO`/`WARNING`/`ERROR`/`CRITICAL` |
+
+List- and dict-valued settings are read as **JSON**: `MCP_MODEL_HEADERS='["X-MCP-Model"]'`
+works, while `A,B` raises a settings error and an empty value is not valid JSON.
+
+### Insiders header and routing
+
+Over HTTP a client can opt in to experimental behaviour and declare which route,
+model, agent and session a request belongs to:
+
+```text
+X-MCP-Insiders: true
+X-MCP-Agent-ID: team-a
+X-MCP-Model: nai-diffusion-5-full
+```
+
+The server then writes that request's images under
+`<NOVELAI_OUTPUT_DIR>/team-a/`, emits one line to the
+`novelai_image_mcp.audit.team-a` logger, and appends one record to the audit
+JSONL (the record keeps a prompt's length and a truncated SHA-256, never the
+prompt, and never a credential header or an image payload).
+
+**Nothing changes without the header** -- no scoped directory, no audit file, no
+tool added or removed -- with one deliberate exception: `director_tool`'s
+`emotion` and `emotion_level` parameters now require the opt-in and fail with a
+`ToolError` otherwise (see the CHANGELOG). Routing headers are client-supplied
+and forgeable, so grant the opt-in only behind a trusted gateway.
+
+Full contract: [Insiders header, routing and audit][insiders-docs].
 
 NovelAI API reference: [image.novelai.net/docs][nai-docs]
 
@@ -354,6 +393,7 @@ commits automatically).
 [skills-site]: https://skills.sh
 [skills-docs]: https://xinvxueyuan.github.io/NovelAI-Image-MCP/skills.html
 [tools-docs]: https://xinvxueyuan.github.io/NovelAI-Image-MCP/tools/index.html
+[insiders-docs]: https://xinvxueyuan.github.io/NovelAI-Image-MCP/development/insiders-and-routing.html
 [nai-docs]: https://image.novelai.net/docs/index.html
 [dockerfile]: apps/server/Dockerfile
 [docker-compose]: docker-compose.yml

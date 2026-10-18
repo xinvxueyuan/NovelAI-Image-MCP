@@ -36,6 +36,9 @@ ControlNet 标注、标签建议、Vibe 编码以及账户订阅查询。
   并可回读已生成的 PNG。
 - **双传输**：stdio（本地 Agent）+ HTTP（远程 / 多客户端），HTTP 支持可选
   Bearer Token（`MCP_AUTH_TOKEN`）。
+- **可选的路由与审计（HTTP）**：客户端发送 `X-MCP-Insiders` 后，可获得按路由划分的
+  输出目录、按路由命名的 logger，以及 append-only 的 JSONL 审计流水（prompt 与凭证
+  绝不落原文）。不发送该头时行为完全不变。详见[内测头、路由与审计][insiders-docs]。
 - **结构化结果**：枚举校验的工具 schema、MCP 工具注解、预期失败统一抛 `ToolError`。
 - **图像返回**：base64 `Image` 内容块（Agent 能“看到”图）**同时** 保存 PNG 到磁盘
   （返回路径）。
@@ -262,8 +265,39 @@ npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP
 | `MCP_TRANSPORT` | `stdio` | `stdio` 或 `http`（`streamable-http` 为兼容别名） |
 | `MCP_HOST` / `MCP_PORT` / `MCP_PATH` | `127.0.0.1` / `8000` / `/mcp` | HTTP 传输用 |
 | `MCP_AUTH_TOKEN` | — | 设置后 HTTP 传输要求 `Authorization: Bearer <token>` |
+| `MCP_ROUTE_TOKENS` | — | JSON `{"<route>": "<token>"}`，按路由绑定的 Bearer Token（路由不匹配返回 401） |
+| `MCP_INSIDERS_HEADER` | `X-MCP-Insiders` | 客户端 opt-in 用的头名（仅 HTTP） |
+| `MCP_MODEL_HEADERS` / `MCP_AGENT_HEADERS` / `MCP_CLIENT_HEADERS` | 见下 | JSON 列表，路由候选头，首个非空者生效 |
+| `MCP_INSIDERS_DISABLED_FEATURES` | `[]` | 运维侧强制关闭开关（JSON 列表），优先级高于客户端 |
+| `MCP_ROUTE_SCOPED_OUTPUT` | `true` | 路由生效时把图像写到 `<输出目录>/<route>/` |
+| `MCP_AUDIT_LOG_PATH` | `<输出目录>/audit.jsonl` | append-only JSONL 审计流水 |
 | `MCP_LOG_LEVEL` | — | `DEBUG`/`INFO`/`WARNING`/`ERROR`/`CRITICAL` |
 
+list / dict 类型的配置按 **JSON** 读取：`MCP_MODEL_HEADERS='["X-MCP-Model"]'` 可用，
+写成 `A,B` 会报配置错误，空值也不是合法 JSON。
+
+### 内测头与路由
+
+通过 HTTP，客户端可以逐请求 opt-in 实验性行为，并声明该请求属于哪条路由、哪个模型、
+哪个 Agent 与哪个会话：
+
+```text
+X-MCP-Insiders: true
+X-MCP-Agent-ID: team-a
+X-MCP-Model: nai-diffusion-5-full
+```
+
+服务端随后把该请求的图像写到 `<NOVELAI_OUTPUT_DIR>/team-a/`，向
+`novelai_image_mcp.audit.team-a` logger 输出一行，并向审计 JSONL 追加一条记录
+（记录只保留 prompt 的长度与截断的 SHA-256，绝不保留 prompt 原文，也绝不写入凭证头或
+图像载荷）。
+
+**不发送该头时一切不变** —— 不产生路由子目录、不写审计文件、不增删任何工具 ——
+只有一个刻意例外：`director_tool` 的 `emotion` 与 `emotion_level` 参数现在需要 opt-in，
+否则抛 `ToolError`（见 CHANGELOG）。路由头由客户端提供、可以伪造，因此只在可信网关之后
+才授予该 opt-in。
+
+完整契约：[内测头、路由与审计][insiders-docs]。
 NovelAI API 文档：[image.novelai.net/docs][nai-docs]
 
 ## 开发
@@ -343,6 +377,7 @@ MIT —— 见 [LICENSE][license]。逐文件 SPDX 标注见
 [skills-site]: https://skills.sh
 [skills-docs]: https://xinvxueyuan.github.io/NovelAI-Image-MCP/skills.html
 [tools-docs]: https://xinvxueyuan.github.io/NovelAI-Image-MCP/tools/index.html
+[insiders-docs]: https://xinvxueyuan.github.io/NovelAI-Image-MCP/development/insiders-and-routing.html
 [nai-docs]: https://image.novelai.net/docs/index.html
 [dockerfile]: ../../apps/server/Dockerfile
 [docker-compose]: ../../docker-compose.yml

@@ -235,6 +235,12 @@ nitpick_ignore: list[tuple[str, str]] = [
     # multiple targets (typing.Any vs the local imports). Ignore the bare
     # name so autodoc doesn't warn on every ``Any`` annotation.
     ("py:class", "Any"),
+    # Relative RST references inside the insiders/features module docstrings
+    # (`features.INSIDERS_FEATURES`, `InsidersConfig.features`) do not resolve to a
+    # documented target; they are documentation cross-references, not API
+    # surface, so the bare forms are listed.
+    ("py:data", "features.INSIDERS_FEATURES"),
+    ("py:attr", "InsidersConfig.features"),
     # pydantic-settings ships its types through the pydantic inventory
     # (or doesn't expose them at all in intersphinx). These show up as
     # ``model_config`` keys on SettingsModel subclasses.
@@ -274,10 +280,13 @@ nitpick_ignore: list[tuple[str, str]] = [
     ("py:class", "CallNext"),
     ("py:class", "ToolResult"),
     ("py:class", "mt.CallToolRequestParams"),
+    ("py:class", "mt.ListToolsRequest"),
     # Token verification base class (fastmcp.server.auth, lazily imported at
     # runtime so it never reaches an intersphinx inventory).
     ("py:class", "TokenVerifier"),
     ("py:class", "fastmcp.server.auth.TokenVerifier"),
+    ("py:class", "fastmcp.server.auth.providers.jwt.StaticTokenVerifier"),
+    ("py:class", "AccessToken"),
     # pydantic config helper used by the structured-output models.
     ("py:class", "ConfigDict"),
 ]

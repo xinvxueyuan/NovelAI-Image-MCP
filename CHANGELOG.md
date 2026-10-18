@@ -58,6 +58,37 @@ per-release section headings. This file is the human-curated companion.
   into the GitHub Release body by `apps/server/scripts/release_notes.py`
   (required keys enforced, unknown keys rejected, previewable locally); the
   auto-generated commit list is appended below the authored announcement.
+- **Opt-in insiders surface (`X-MCP-Insiders`)**: an HTTP client can opt in per
+  request and declare which route, model, agent and session it belongs to. While
+  `model-routing` is active the server resolves a sanitised route from the
+  routing headers (`MCP_AGENT_HEADERS` / `MCP_CLIENT_HEADERS` /
+  `MCP_MODEL_HEADERS`, first non-empty wins, falling back to the MCP client's
+  advertised name), writes that request's images under
+  `<NOVELAI_OUTPUT_DIR>/<route>/` (`MCP_ROUTE_SCOPED_OUTPUT`, default on),
+  emits one line to a per-route logger (`novelai_image_mcp.audit.<route>`) and
+  appends one record to an append-only JSONL audit trail
+  (`MCP_AUDIT_LOG_PATH`, default `<NOVELAI_OUTPUT_DIR>/audit.jsonl`).
+  Records carry the route, model, agent, client, session, tool, duration,
+  outcome, active features and the sanitised header snapshot; prompts are
+  reduced to their length plus a truncated SHA-256 and image arguments are
+  redacted, so no prompt text, credential header or base64 payload is ever
+  written. Each record is one `os.write` on an `O_APPEND` descriptor, so
+  concurrent writers cannot interleave lines. An unwritable trail is logged at
+  `ERROR` and swallowed — auditing never fails a tool call.
+- **Route-bound bearer tokens (`MCP_ROUTE_TOKENS`)**: a JSON object
+  `{"<route>": "<token>"}` registers tokens bound to a route. Such a token
+  authenticates as its route and is rejected with `401` when the same request
+  declares a _different_ route through the routing headers; a request with no
+  usable declared route is accepted and attributed to the token's route, so only
+  two different, both-present routes fail closed. `MCP_AUTH_TOKEN` keeps its
+  original meaning and never takes part in route checking.
+- **Two-sided experimental-tool gate**: tools tagged `insiders` are hidden from
+  `tools/list` and refused _by name_ with a `ToolError` unless the client opted
+  in, so guessing a name is not a way around the listing filter. No shipped tool
+  carries the tag today, which is deliberate — tagging an existing tool would
+  remove it from every client that does not send the header.
+- **`MCP_INSIDERS_DISABLED_FEATURES`**: an operator kill switch (JSON list)
+  that forces features off regardless of what a client sends.
 
 ### Changed
 
@@ -69,10 +100,28 @@ per-release section headings. This file is the human-curated companion.
   workflow verifies that `pyproject.toml`, every manifest, the CHANGELOG
   section and the release-notes document agree with the tag, so a published
   artifact can never disagree with the commit it came from.
+- **`director_tool`'s `emotion` and `emotion_level` parameters are now gated**
+  by the `experimental-tools` feature. Passing either one without the
+  `X-MCP-Insiders` opt-in fails with a `ToolError`; a non-default
+  `emotion_level` alone counts as passing it, so the default call shape is
+  unaffected. **This is the only intentional behaviour change for a request that
+  does not send the header**: every other tool, resource, prompt and schema is
+  untouched, generated images keep the flat output layout, and no audit file is
+  written. Both parameters stay visible in the tool schema, because a FastMCP
+  schema is published when the server starts and cannot vary per request — the
+  check runs in the tool body instead.
 
 ### Fixed
 
-- _Nothing yet._
+- **`.env.example` could not be copied to `.env`**: the template ended with a
+  bare `MCP_LOG_LEVEL=`, and an empty value is not a valid literal for that
+  setting, so the documented "copy to `.env`" step failed at startup with
+  `ValidationError: Input should be 'DEBUG', 'INFO', 'WARNING', 'ERROR' or
+  'CRITICAL'`. The line is now commented out with a note, and the same trap is
+  documented for the list/dict settings (`MCP_MODEL_HEADERS`,
+  `MCP_AGENT_HEADERS`, `MCP_CLIENT_HEADERS`,
+  `MCP_INSIDERS_DISABLED_FEATURES`, `MCP_ROUTE_TOKENS`), where an empty value
+  is not valid JSON either.
 
 ### Security
 

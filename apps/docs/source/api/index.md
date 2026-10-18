@@ -15,6 +15,9 @@ server
 deps
 mcp_auth
 middleware
+routing
+insiders
+features
 prompts
 resources
 schemas
@@ -28,7 +31,10 @@ client
 | [`server`](server.md) | FastMCP composition root + lifespan + transport selection |
 | [`deps`](deps.md) | `AppContext` and the `Depends` providers |
 | [`mcp_auth`](mcp_auth.md) | Optional HTTP bearer-token auth (`MCP_AUTH_TOKEN`) |
-| [`middleware`](middleware.md) | Tool-call logging middleware |
+| [`middleware`](middleware.md) | Tool-call logging, routing audit and the experimental-tool gate |
+| [`routing`](routing.md) | Header-driven routing: route resolution and sanitisation |
+| [`insiders`](insiders.md) | The `X-MCP-Insiders` opt-in header parser |
+| [`features`](features.md) | The insiders feature registry and its resolution rules |
 | [`prompts`](prompts.md) | The two prompt templates |
 | [`resources`](resources.md) | The `novelai://...` resources |
 | [`schemas`](schemas.md) | Structured-output models |
