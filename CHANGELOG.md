@@ -46,6 +46,24 @@ per-release section headings. This file is the human-curated companion.
 
 ### Added
 
+- _Nothing yet._
+
+### Changed
+
+- _Nothing yet._
+
+### Fixed
+
+- _Nothing yet._
+
+### Security
+
+- _Nothing yet._
+
+## [0.6.0] — 2026-10-19
+
+### Added
+
 - **`poe sync-versions` / `poe check-versions`**: the canonical version in
   `apps/server/pyproject.toml` is propagated to the three `package.json`
   files and to `server.json` (top-level `.version`, the PyPI entry's

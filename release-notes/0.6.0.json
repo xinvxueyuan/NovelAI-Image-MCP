@@ -1,0 +1,48 @@
+{
+  "version": "0.6.0",
+  "date": "2026-10-19",
+  "summary": "An opt-in insiders surface: an HTTP client can declare which route, model and agent it is, and the server answers in kind. While it is active the server resolves a sanitised route from those declaration headers, keeps each source's images in its own directory, logs per route and appends a redacted audit record for every tool call. Sending no header changes nothing.",
+  "highlights": [
+    {
+      "title": "Requests that know where they came from",
+      "body": "`X-MCP-Insiders` is a feature-config namespace rather than a bare boolean, so sibling features can be added later without touching the parser, the middleware or the tools. `true` turns everything on at its defaults; `model-routing=false` turns one feature off. The routing headers (`X-MCP-Agent-ID`, `X-MCP-Client`, `X-MCP-Model` and friends, all renameable) are read in order, the first non-empty value wins, and the route falls back to the name the MCP client advertises."
+    },
+    {
+      "title": "An audit trail that is safe to keep",
+      "body": "One append-only JSONL record per tool call carries the route, model, agent, client, session, tool, duration, outcome, active features and produced artifacts. Prompts are reduced to a length plus a truncated SHA-256 and image arguments are redacted, so no prompt text, credential header or base64 payload is ever written. Each record is a single `os.write` on an `O_APPEND` descriptor, so concurrent writers cannot interleave lines, and an unwritable trail is logged and swallowed because auditing must never fail a tool call."
+    },
+    {
+      "title": "Route-bound tokens",
+      "body": "`MCP_ROUTE_TOKENS` binds a token to a route. Such a token is rejected with `401` when the same request declares a different route, and a request that declares none is attributed to the token's own route. `MCP_AUTH_TOKEN` keeps its original meaning and never takes part in route checking."
+    }
+  ],
+  "sections": [
+    {
+      "title": "🔐 Insiders surface",
+      "items": [
+        "`X-MCP-Insiders` with the `model-routing` (default on) and `experimental-tools` (default on) sub-keys; unknown keys are recorded but never activate anything, and a malformed value applies no override.",
+        "Route resolution from the declaration headers, with the route forced through a whitelist before it is ever used as a directory name.",
+        "Images are written under `<output_dir>/<route>/` (`MCP_ROUTE_SCOPED_OUTPUT`, default on), and `novelai://outputs/{name}` resolves inside the same scope.",
+        "Per-route logging (`novelai_image_mcp.audit.<route>`) and an append-only JSONL audit trail (`MCP_AUDIT_LOG_PATH`, default `<output_dir>/audit.jsonl`).",
+        "`MCP_INSIDERS_DISABLED_FEATURES`: an operator kill switch that forces features off regardless of what a client sends.",
+        "A two-sided experimental-tool gate: tools tagged `insiders` are hidden from `tools/list` and refused by name, so guessing a name is not a way around the filter."
+      ]
+    },
+    {
+      "title": "🛠️ Release tooling",
+      "items": [
+        "`poe sync-versions` / `poe check-versions` propagate and verify the canonical version across the three `package.json` files and `server.json`; they replace the `sync-version` composite action and repaired drift on `main`, where the Node manifests were still pinned at `0.3.0`.",
+        "`release-notes/<version>.json` is rendered into the GitHub Release body by `apps/server/scripts/release_notes.py`.",
+        "Releases are tag-driven: pushing `vX.Y.Z` for a commit already on `main` runs build, PyPI, GHCR, GitHub Release and the MCP Registry, and nothing is written back to the repository during a release."
+      ]
+    },
+    {
+      "title": "🐛 Fixed",
+      "items": [
+        "`.env.example` could not be used as a `.env`: a bare `MCP_LOG_LEVEL=` is not a valid value for a `Literal` field, so copying the file failed at startup. It is commented out with the reason, next to the same note for the JSON-only list/dict variables."
+      ]
+    }
+  ],
+  "upgrade_notes": "One intentional behaviour change: `director_tool`'s `emotion` and `emotion_level` parameters now require the opt-in. A client that sends no `X-MCP-Insiders` header and passes either parameter gets a `ToolError`. Everything else is unchanged without the header: the same 11 tools, the same flat output directory, no audit file. FastMCP derives tool schemas once at startup, so those two parameters remain in the advertised schema and the check happens in the tool body; that is the v1 boundary.\n\nThe insiders surface grants capability from a request header, which a client can forge. Run it behind a trusted gateway rather than exposing it directly.",
+  "footer": "The header contract, the audit record shape, the extension points and the trust model are documented in the [insiders and routing guide](https://xinvxueyuan.github.io/NovelAI-Image-MCP/development/insiders-and-routing.html)."
+}
