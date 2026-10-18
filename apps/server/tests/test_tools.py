@@ -9,7 +9,9 @@ conversion of returned helpers into MCP content blocks.
 
 from __future__ import annotations
 
+import asyncio
 import base64
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock
 
@@ -17,6 +19,7 @@ from _helpers import PNG_BYTES
 import pytest
 
 from novelai_image_mcp import server as server_module
+from novelai_image_mcp.features import EXPERIMENTAL_TOOLS
 from novelai_image_mcp.nai import (
     Action,
     ControlNetModel,
@@ -28,6 +31,7 @@ from novelai_image_mcp.nai import (
     NovelAIError,
     Sampler,
 )
+from novelai_image_mcp.routing import RoutingContext
 from novelai_image_mcp.schemas import AnlasEstimate, TagSuggestion
 from novelai_image_mcp.tools import account, enhance, generate, tags
 
@@ -58,6 +62,32 @@ def _assert_path_str(result: list[Any]) -> str:
     return next(item for item in result if isinstance(item, str))
 
 
+def _routing(*, enabled: bool = False, route: str = "alpha") -> RoutingContext:
+    """A routing context for direct (in-process) tool calls.
+
+    Direct calls bypass FastMCP's dependency injection, so every `Depends`
+    parameter has to be supplied by hand; routing is off unless a test asks for
+    it, which is also the production default for a client that sends no routing
+    headers.
+    """
+    if not enabled:
+        return RoutingContext.disabled()
+    return RoutingContext(enabled=True, route=route, transport="http")
+
+
+#: The feature set a request that opted into the experimental surface sees.
+_EXPERIMENTAL = frozenset({EXPERIMENTAL_TOOLS})
+
+
+async def _saved_pngs(directory: Path) -> list[Path]:
+    """Return the PNGs written directly under `directory`.
+
+    The scan runs in a worker thread: these tests are async, so a synchronous
+    `Path.glob` inside one would block the event loop (ASYNC230).
+    """
+    return await asyncio.to_thread(lambda: sorted(directory.glob("*.png")))
+
+
 class TestGenerateTools:
     async def test_generate_image_calls_client(
         self,
@@ -70,6 +100,8 @@ class TestGenerateTools:
             prompt="a cat, masterpiece",
             negative_prompt="lowres",
             seed=42,
+            routing=_routing(),
+            route_scoped_output=False,
             app=fake_app,
         )
         fake_client.generate.assert_awaited_once()
@@ -85,6 +117,8 @@ class TestGenerateTools:
         await generate.generate_image(
             prompt="a girl and a boy",
             character_prompts=[{"prompt": "girl", "x": 0.3, "y": 0.5}],
+            routing=_routing(),
+            route_scoped_output=False,
             app=fake_app,
         )
         request = fake_client.generate.await_args.args[0]
@@ -100,6 +134,8 @@ class TestGenerateTools:
             sampler=Sampler.EULER,
             noise_schedule=NoiseSchedule.EXPONENTIAL,
             uc_preset=2,
+            routing=_routing(),
+            route_scoped_output=False,
             app=fake_app,
         )
         request = fake_client.generate.await_args.args[0]
@@ -118,6 +154,8 @@ class TestGenerateTools:
                 prompt="a cat",
                 model=Model.V5,
                 references=["vibe"],
+                routing=_routing(),
+                route_scoped_output=False,
                 app=fake_app,
             )
 
@@ -128,6 +166,8 @@ class TestGenerateTools:
             prompt="a cat",
             model=Model.V5,
             straight_alpha=True,
+            routing=_routing(),
+            route_scoped_output=False,
             app=fake_app,
         )
         request = fake_client.generate.await_args.args[0]
@@ -140,6 +180,8 @@ class TestGenerateTools:
             prompt="restyle",
             image="base64-image-string",
             strength=0.5,
+            routing=_routing(),
+            route_scoped_output=False,
             app=fake_app,
         )
         request = fake_client.generate.await_args.args[0]
@@ -154,6 +196,8 @@ class TestGenerateTools:
             image="base64-image",
             mask="base64-mask",
             model=Model.V4_5_INPAINT,
+            routing=_routing(),
+            route_scoped_output=False,
             app=fake_app,
         )
         request = fake_client.generate.await_args.args[0]
@@ -167,7 +211,12 @@ class TestGenerateTools:
 
         fake_client.generate.side_effect = NovelAIError("rate limited")
         with pytest.raises(ToolError, match="rate limited"):
-            await generate.generate_image(prompt="a cat", app=fake_app)
+            await generate.generate_image(
+                prompt="a cat",
+                routing=_routing(),
+                route_scoped_output=False,
+                app=fake_app,
+            )
 
 
 class TestEnhanceTools:
@@ -178,7 +227,13 @@ class TestEnhanceTools:
         nai_image: NovelAIImage,
     ) -> None:
         fake_client.upscale.return_value = nai_image
-        result = await enhance.upscale_image(image=_b64(), factor=4, app=fake_app)
+        result = await enhance.upscale_image(
+            image=_b64(),
+            factor=4,
+            routing=_routing(),
+            route_scoped_output=False,
+            app=fake_app,
+        )
         # The standalone upscaler needs a V5 model; the tool takes it from
         # NOVELAI_UPSCALE_MODEL (default nai-diffusion-5-full).
         fake_client.upscale.assert_awaited_once_with(
@@ -196,6 +251,9 @@ class TestEnhanceTools:
                 tool=DirectorTool.EMOTION,
                 image="b64",
                 emotion=None,
+                routing=_routing(),
+                route_scoped_output=False,
+                features=_EXPERIMENTAL,
                 app=fake_app,
             )
 
@@ -211,6 +269,9 @@ class TestEnhanceTools:
             image=_b64(),
             emotion=Emotion.HAPPY,
             emotion_level=EmotionLevel.NORMAL,
+            routing=_routing(),
+            route_scoped_output=False,
+            features=_EXPERIMENTAL,
             app=fake_app,
         )
         fake_client.director.assert_awaited_once()
@@ -225,7 +286,11 @@ class TestEnhanceTools:
     ) -> None:
         fake_client.annotate.return_value = nai_image
         await enhance.annotate_image(
-            image=_b64(), model=ControlNetModel.PALETTE_SWAP, app=fake_app
+            image=_b64(),
+            model=ControlNetModel.PALETTE_SWAP,
+            routing=_routing(),
+            route_scoped_output=False,
+            app=fake_app,
         )
         fake_client.annotate.assert_awaited_once()
         call = fake_client.annotate.await_args
@@ -248,6 +313,9 @@ class TestStringCoercion:
             image=_b64(),
             emotion="happy",  # type: ignore[arg-type]
             emotion_level=2,  # type: ignore[arg-type]
+            routing=_routing(),
+            route_scoped_output=False,
+            features=_EXPERIMENTAL,
             app=fake_app,
         )
         call = fake_client.director.await_args
@@ -261,6 +329,8 @@ class TestStringCoercion:
         await enhance.annotate_image(
             image=_b64(),
             model="mlsd",  # type: ignore[arg-type]
+            routing=_routing(),
+            route_scoped_output=False,
             app=fake_app,
         )
         assert (
@@ -557,3 +627,194 @@ class TestToolOutputContract:
             result = await mcp_client.call_tool(name, calls[name])
             assert any(isinstance(b, ImageContent) for b in result.content), name
             assert any(isinstance(b, TextContent) for b in result.content), name
+
+
+class TestRouteScopedOutput:
+    """Route-scoped output is invisible until model routing is active."""
+
+    async def test_route_scoped_output_writes_under_the_route(
+        self,
+        fake_app: AppContext,
+        fake_client: AsyncMock,
+        nai_image: NovelAIImage,
+    ) -> None:
+        fake_client.generate.return_value = (nai_image,)
+        result = await generate.generate_image(
+            prompt="a cat",
+            routing=_routing(enabled=True, route="alpha"),
+            route_scoped_output=True,
+            app=fake_app,
+        )
+        assert "[route=alpha]" in _assert_path_str(result)
+        output_dir = Path(fake_app.settings.output_dir)
+        written = list((output_dir / "alpha").glob("*.png"))
+        assert len(written) == 1
+        assert written[0].read_bytes() == nai_image.data
+        # Nothing leaks into the flat output directory.
+        assert await _saved_pngs(output_dir) == []
+
+    async def test_routing_disabled_keeps_the_flat_output_dir(
+        self,
+        fake_app: AppContext,
+        fake_client: AsyncMock,
+        nai_image: NovelAIImage,
+    ) -> None:
+        fake_client.generate.return_value = (nai_image,)
+        result = await generate.generate_image(
+            prompt="a cat",
+            routing=_routing(),
+            route_scoped_output=True,
+            app=fake_app,
+        )
+        output_dir = Path(fake_app.settings.output_dir)
+        assert len(await _saved_pngs(output_dir)) == 1
+        assert "[route=" not in _assert_path_str(result)
+        assert not (output_dir / "unknown").exists()
+
+    async def test_route_scoping_off_keeps_the_flat_output_dir(
+        self,
+        fake_app: AppContext,
+        fake_client: AsyncMock,
+        nai_image: NovelAIImage,
+    ) -> None:
+        fake_client.generate.return_value = (nai_image,)
+        result = await generate.generate_image(
+            prompt="a cat",
+            routing=_routing(enabled=True, route="alpha"),
+            route_scoped_output=False,
+            app=fake_app,
+        )
+        output_dir = Path(fake_app.settings.output_dir)
+        assert len(await _saved_pngs(output_dir)) == 1
+        assert not (output_dir / "alpha").exists()
+        # The route is still reported: only the path is unscoped.
+        assert "[route=alpha]" in _assert_path_str(result)
+
+    async def test_route_name_is_sanitised_at_the_write_site(
+        self,
+        fake_app: AppContext,
+        fake_client: AsyncMock,
+        nai_image: NovelAIImage,
+    ) -> None:
+        fake_client.generate.return_value = (nai_image,)
+        await generate.generate_image(
+            prompt="a cat",
+            routing=_routing(enabled=True, route="../../escape"),
+            route_scoped_output=True,
+            app=fake_app,
+        )
+        output_dir = Path(fake_app.settings.output_dir)
+        assert len(await _saved_pngs(output_dir / "unknown")) == 1
+        assert not (output_dir.parent / "escape").exists()
+
+    async def test_upscale_is_route_scoped_too(
+        self,
+        fake_app: AppContext,
+        fake_client: AsyncMock,
+        nai_image: NovelAIImage,
+    ) -> None:
+        fake_client.upscale.return_value = nai_image
+        result = await enhance.upscale_image(
+            image=_b64(),
+            factor=4,
+            routing=_routing(enabled=True, route="beta"),
+            route_scoped_output=True,
+            app=fake_app,
+        )
+        assert "[route=beta]" in _assert_path_str(result)
+        scoped = Path(fake_app.settings.output_dir) / "beta"
+        assert len(await _saved_pngs(scoped)) == 1
+
+
+class TestExperimentalParameterGate:
+    """`emotion` / `emotion_level` need the insiders opt-in (v1 body check).
+
+    A tool schema is published once, when the server starts, so the parameters
+    cannot disappear per request: they stay visible and the gate lives in the
+    tool body, failing with a `ToolError` -- the message a client actually sees
+    under `mask_error_details=True`.
+    """
+
+    async def test_emotion_is_rejected_without_the_opt_in(
+        self, fake_app: AppContext
+    ) -> None:
+        from fastmcp.exceptions import ToolError
+
+        with pytest.raises(ToolError, match="experimental"):
+            await enhance.director_tool(
+                tool=DirectorTool.EMOTION,
+                image=_b64(),
+                emotion=Emotion.HAPPY,
+                routing=_routing(),
+                route_scoped_output=False,
+                features=frozenset(),
+                app=fake_app,
+            )
+
+    async def test_emotion_level_alone_is_rejected_without_the_opt_in(
+        self, fake_app: AppContext
+    ) -> None:
+        from fastmcp.exceptions import ToolError
+
+        with pytest.raises(ToolError, match="experimental"):
+            await enhance.director_tool(
+                tool=DirectorTool.LINE_ART,
+                image=_b64(),
+                emotion_level=EmotionLevel.WEAK,
+                routing=_routing(),
+                route_scoped_output=False,
+                features=frozenset(),
+                app=fake_app,
+            )
+
+    async def test_emotion_is_served_when_the_opt_in_is_active(
+        self,
+        fake_app: AppContext,
+        fake_client: AsyncMock,
+        nai_image: NovelAIImage,
+    ) -> None:
+        fake_client.director.return_value = nai_image
+        await enhance.director_tool(
+            tool=DirectorTool.EMOTION,
+            image=_b64(),
+            emotion=Emotion.HAPPY,
+            emotion_level=EmotionLevel.WEAK,
+            routing=_routing(),
+            route_scoped_output=False,
+            features=_EXPERIMENTAL,
+            app=fake_app,
+        )
+        call = fake_client.director.await_args
+        assert call.kwargs["emotion"] is Emotion.HAPPY
+        assert call.kwargs["emotion_level"] is EmotionLevel.WEAK
+
+    async def test_emotion_is_rejected_over_the_real_pipeline(
+        self, mcp_client: Any
+    ) -> None:
+        from fastmcp.exceptions import ToolError
+
+        # The in-memory transport sends no insiders header, so experimental-tools
+        # is inactive: this proves the gate is wired through dependency injection
+        # and not only reachable from a direct in-process call.
+        with pytest.raises(ToolError, match="experimental"):
+            await mcp_client.call_tool(
+                "director_tool",
+                {"tool": "emotion", "image": _b64(), "emotion": "happy"},
+            )
+
+    async def test_default_parameters_are_never_gated(
+        self,
+        fake_app: AppContext,
+        fake_client: AsyncMock,
+        nai_image: NovelAIImage,
+    ) -> None:
+        fake_client.director.return_value = nai_image
+        await enhance.director_tool(
+            tool=DirectorTool.LINE_ART,
+            image=_b64(),
+            routing=_routing(),
+            route_scoped_output=False,
+            features=frozenset(),
+            app=fake_app,
+        )
+        fake_client.director.assert_awaited_once()

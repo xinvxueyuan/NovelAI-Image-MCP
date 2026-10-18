@@ -8,12 +8,17 @@ the generated PNGs themselves. The vocabularies are derived from
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastmcp.dependencies import Depends
 from fastmcp.exceptions import ResourceError
 
-from .deps import AppContext, get_app_context
+from .deps import (
+    AppContext,
+    get_app_context,
+    get_route_scoped_output,
+    get_routing_context,
+)
 from .nai import (
     Model,
     NoiseSchedule,
@@ -24,8 +29,11 @@ from .nai import (
     supports_upscale,
     supports_vibe,
 )
-from .output import resolve_output_path
+from .output import resolve_output_path, route_output_dir
 from .server import mcp
+
+if TYPE_CHECKING:
+    from .routing import RoutingContext
 
 _TAGS = {"novelai", "catalog"}
 
@@ -99,14 +107,29 @@ def generation_defaults(app: AppContext = Depends(get_app_context)) -> dict[str,
     description="Read a previously generated PNG back from the output directory.",
     tags={"novelai", "outputs"},
 )
-def read_output_image(name: str, app: AppContext = Depends(get_app_context)) -> bytes:
+def read_output_image(
+    name: str,
+    app: AppContext = Depends(get_app_context),
+    routing: RoutingContext = Depends(get_routing_context),
+    *,
+    route_scoped_output: bool = Depends(get_route_scoped_output),
+) -> bytes:
     """Return one generated PNG by filename.
 
     The name must be a plain ``*.png`` filename that resolves inside the
-    configured output directory; anything else is rejected.
+    directory the request's images were written to: the configured output
+    directory, or its per-route subdirectory when model routing is active and
+    route-scoped output is on. Anything else -- a path separator, a traversal,
+    another file type, or a name that only exists outside the scoped
+    directory -- is rejected.
     """
     try:
-        path = resolve_output_path(name, output_dir=app.settings.output_dir)
+        path = resolve_output_path(
+            name,
+            output_dir=route_output_dir(
+                app.settings.output_dir, routing, route_scoped=route_scoped_output
+            ),
+        )
     except (OSError, ValueError) as exc:
         raise ResourceError(str(exc)) from exc
     return path.read_bytes()

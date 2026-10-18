@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Annotated, Any, Literal
 
 from fastmcp.dependencies import Depends
 from fastmcp.utilities.types import Image
 from pydantic import Field
 
-from ..deps import AppContext, get_app_context
+from ..deps import (
+    AppContext,
+    get_app_context,
+    get_route_scoped_output,
+    get_routing_context,
+)
 from ..nai import (
     Action,
     CharacterPrompt,
@@ -18,7 +24,8 @@ from ..nai import (
     Sampler,
     is_v5_model,
 )
-from ..output import save_image
+from ..output import route_output_dir, save_image
+from ..routing import RoutingContext
 from ..server import mcp
 from ._errors import translate_errors
 from ._meta import IMAGE_WRITE_ANNOTATIONS
@@ -42,18 +49,21 @@ def _save_and_return(
     images: tuple[Any, ...],
     *,
     name: str,
-    output_dir: str,
+    output_dir: str | Path,
+    routing: RoutingContext,
 ) -> list[Any]:
     """Persist every image, return the first as an Image block plus all paths.
 
     FastMCP converts the `Image` helper (and `str`) into the corresponding
     MCP content blocks when they are returned from a tool in a list, so no
-    manual `to_image_content()` step is needed.
+    manual `to_image_content()` step is needed. When routing is active the
+    returned text attributes the saved paths to the request's route.
     """
     paths = [save_image(img.data, name=name, output_dir=output_dir) for img in images]
+    location = f" [route={routing.route}]" if routing.enabled else ""
     return [
         Image(data=images[0].data, format="png"),
-        f"Saved {len(images)} image(s): {[str(p) for p in paths]}",
+        f"Saved {len(images)} image(s){location}: {[str(p) for p in paths]}",
     ]
 
 
@@ -85,6 +95,8 @@ async def generate_image(
     noise_schedule: NoiseSchedule = NoiseSchedule.KARRAS,
     character_prompts: list[dict[str, Any]] | None = None,
     references: list[str] | None = None,
+    routing: RoutingContext = Depends(get_routing_context),
+    route_scoped_output: bool = Depends(get_route_scoped_output),
     app: AppContext = Depends(get_app_context),
 ) -> list[Any]:
     """Generate one or more images from a text prompt (text-to-image).
@@ -132,7 +144,14 @@ async def generate_image(
         references=tuple(references or ()),
     )
     images = await client.generate(request)
-    return _save_and_return(images, name="generate", output_dir=settings.output_dir)
+    return _save_and_return(
+        images,
+        name="generate",
+        output_dir=route_output_dir(
+            settings.output_dir, routing, route_scoped=route_scoped_output
+        ),
+        routing=routing,
+    )
 
 
 @mcp.tool(
@@ -160,6 +179,8 @@ async def image_to_image(
     noise_schedule: NoiseSchedule = NoiseSchedule.KARRAS,
     cfg_rescale: float = 0.0,
     extra_noise_seed: int | None = None,
+    routing: RoutingContext = Depends(get_routing_context),
+    route_scoped_output: bool = Depends(get_route_scoped_output),
     app: AppContext = Depends(get_app_context),
 ) -> list[Any]:
     """Generate a new image conditioned on an input image (image-to-image).
@@ -192,7 +213,14 @@ async def image_to_image(
         extra_noise_seed=extra_noise_seed,
     )
     images = await client.generate(request)
-    return _save_and_return(images, name="img2img", output_dir=settings.output_dir)
+    return _save_and_return(
+        images,
+        name="img2img",
+        output_dir=route_output_dir(
+            settings.output_dir, routing, route_scoped=route_scoped_output
+        ),
+        routing=routing,
+    )
 
 
 @mcp.tool(
@@ -221,6 +249,8 @@ async def inpaint(
     noise_schedule: NoiseSchedule = NoiseSchedule.KARRAS,
     cfg_rescale: float = 0.0,
     extra_noise_seed: int | None = None,
+    routing: RoutingContext = Depends(get_routing_context),
+    route_scoped_output: bool = Depends(get_route_scoped_output),
     app: AppContext = Depends(get_app_context),
 ) -> list[Any]:
     """Inpaint (locally redraw) a region of an image.
@@ -255,7 +285,14 @@ async def inpaint(
         extra_noise_seed=extra_noise_seed,
     )
     images = await client.generate(request)
-    return _save_and_return(images, name="inpaint", output_dir=settings.output_dir)
+    return _save_and_return(
+        images,
+        name="inpaint",
+        output_dir=route_output_dir(
+            settings.output_dir, routing, route_scoped=route_scoped_output
+        ),
+        routing=routing,
+    )
 
 
 __all__ = ["generate_image", "image_to_image", "inpaint"]

@@ -10,6 +10,12 @@ from typing import Any
 import pytest
 
 from novelai_image_mcp.nai import Model
+from novelai_image_mcp.routing import RoutingContext
+
+
+def _routed(route: str) -> RoutingContext:
+    """An active routing context for `route` (which may be hostile)."""
+    return RoutingContext(enabled=True, route=route, transport="http")
 
 
 class TestCatalogResources:
@@ -102,3 +108,106 @@ class TestResolveOutputPath:
 
         with pytest.raises(FileNotFoundError):
             resolve_output_path("absent.png", output_dir=settings.output_dir)
+
+
+class TestRouteScopedOutputResource:
+    """The outputs resource resolves inside the request's route scope."""
+
+    NAME = "generate-20260101T000000Z-abcdef.png"
+
+    @staticmethod
+    def _write(directory: Path, data: bytes) -> None:
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / TestRouteScopedOutputResource.NAME).write_bytes(data)
+
+    def test_reads_from_the_route_subdirectory(
+        self, fake_app: Any, png_bytes: bytes
+    ) -> None:
+        from novelai_image_mcp.resources import read_output_image
+
+        self._write(Path(fake_app.settings.output_dir) / "alpha", png_bytes)
+        data = read_output_image(
+            self.NAME,
+            app=fake_app,
+            routing=_routed("alpha"),
+            route_scoped_output=True,
+        )
+        assert data == png_bytes
+
+    def test_route_scope_hides_images_outside_it(
+        self, fake_app: Any, png_bytes: bytes
+    ) -> None:
+        from fastmcp.exceptions import ResourceError
+
+        from novelai_image_mcp.resources import read_output_image
+
+        # The image exists, but in the flat directory: a scoped request must not
+        # see it, which is what makes the scope a real boundary.
+        self._write(Path(fake_app.settings.output_dir), png_bytes)
+        with pytest.raises(ResourceError):
+            read_output_image(
+                self.NAME,
+                app=fake_app,
+                routing=_routed("alpha"),
+                route_scoped_output=True,
+            )
+
+    def test_routing_disabled_reads_the_flat_directory(
+        self, fake_app: Any, png_bytes: bytes
+    ) -> None:
+        from novelai_image_mcp.resources import read_output_image
+
+        self._write(Path(fake_app.settings.output_dir), png_bytes)
+        data = read_output_image(
+            self.NAME,
+            app=fake_app,
+            routing=RoutingContext.disabled(),
+            route_scoped_output=True,
+        )
+        assert data == png_bytes
+
+    def test_route_scoping_off_reads_the_flat_directory(
+        self, fake_app: Any, png_bytes: bytes
+    ) -> None:
+        from novelai_image_mcp.resources import read_output_image
+
+        self._write(Path(fake_app.settings.output_dir), png_bytes)
+        data = read_output_image(
+            self.NAME,
+            app=fake_app,
+            routing=_routed("alpha"),
+            route_scoped_output=False,
+        )
+        assert data == png_bytes
+
+    @pytest.mark.parametrize(
+        "name", ["../escape.png", "nested/shot.png", "/etc/passwd.png", "shot.jpg"]
+    )
+    def test_escape_attempts_are_still_rejected(self, fake_app: Any, name: str) -> None:
+        from fastmcp.exceptions import ResourceError
+
+        from novelai_image_mcp.resources import read_output_image
+
+        with pytest.raises(ResourceError, match="invalid image name"):
+            read_output_image(
+                name,
+                app=fake_app,
+                routing=_routed("alpha"),
+                route_scoped_output=True,
+            )
+
+    def test_unusable_route_stays_inside_the_output_directory(
+        self, fake_app: Any, png_bytes: bytes
+    ) -> None:
+        from novelai_image_mcp.resources import read_output_image
+
+        # A hostile route sanitises to "unknown", so it cannot climb out of the
+        # configured output directory even though routing is active.
+        self._write(Path(fake_app.settings.output_dir) / "unknown", png_bytes)
+        data = read_output_image(
+            self.NAME,
+            app=fake_app,
+            routing=_routed("../../escape"),
+            route_scoped_output=True,
+        )
+        assert data == png_bytes

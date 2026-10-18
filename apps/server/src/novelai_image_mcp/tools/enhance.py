@@ -3,13 +3,22 @@
 from __future__ import annotations
 
 import base64
+from pathlib import Path
 from typing import Annotated, Any, Literal
 
 from fastmcp.dependencies import Depends
+from fastmcp.exceptions import ToolError
 from fastmcp.utilities.types import Image
 from pydantic import Field
 
-from ..deps import AppContext, get_app_context
+from ..deps import (
+    AppContext,
+    get_app_context,
+    get_effective_features,
+    get_route_scoped_output,
+    get_routing_context,
+)
+from ..features import EXPERIMENTAL_TOOLS
 from ..nai import (
     ControlNetModel,
     DirectorTool,
@@ -18,7 +27,8 @@ from ..nai import (
     Model,
     NovelAIImage,
 )
-from ..output import save_image
+from ..output import route_output_dir, save_image
+from ..routing import RoutingContext
 from ..server import mcp
 from ._errors import translate_errors
 from ._meta import IMAGE_WRITE_ANNOTATIONS
@@ -31,18 +41,21 @@ def _save_and_return(
     image: NovelAIImage,
     *,
     name: str,
-    output_dir: str,
+    output_dir: str | Path,
+    routing: RoutingContext,
 ) -> list[Any]:
     """Persist a single image and return an ImageContent block + saved path.
 
     FastMCP auto-converts its `Image` helper into an `ImageContent` block
     when returned from a tool, so returning `Image(...)` needs no manual
-    conversion step.
+    conversion step. When routing is active the returned text attributes the
+    saved path to the request's route.
     """
     path = save_image(image.data, name=name, output_dir=output_dir)
+    location = f" [route={routing.route}]" if routing.enabled else ""
     return [
         Image(data=image.data, format="png"),
-        f"Saved image: {path}",
+        f"Saved image{location}: {path}",
     ]
 
 
@@ -55,6 +68,8 @@ def _save_and_return(
 async def upscale_image(
     image: str,
     factor: Literal[4] = 4,
+    routing: RoutingContext = Depends(get_routing_context),
+    route_scoped_output: bool = Depends(get_route_scoped_output),
     app: AppContext = Depends(get_app_context),
 ) -> list[Any]:
     """Upscale an image 4x using NovelAI's standalone upscaler.
@@ -71,7 +86,14 @@ async def upscale_image(
     result = await client.upscale(
         base64.b64decode(image), factor=factor, model=Model(settings.upscale_model)
     )
-    return _save_and_return(result, name="upscale", output_dir=settings.output_dir)
+    return _save_and_return(
+        result,
+        name="upscale",
+        output_dir=route_output_dir(
+            settings.output_dir, routing, route_scoped=route_scoped_output
+        ),
+        routing=routing,
+    )
 
 
 @mcp.tool(
@@ -87,6 +109,9 @@ async def director_tool(
     defry: Annotated[int, Field(ge=0, le=_MAX_DEFRY)] = 0,
     emotion: Emotion | None = None,
     emotion_level: EmotionLevel = EmotionLevel.NORMAL,
+    routing: RoutingContext = Depends(get_routing_context),
+    route_scoped_output: bool = Depends(get_route_scoped_output),
+    features: frozenset[str] = Depends(get_effective_features),
     app: AppContext = Depends(get_app_context),
 ) -> list[Any]:
     """Apply a NovelAI Director tool to an image.
@@ -98,11 +123,28 @@ async def director_tool(
     ``emotion_level`` (0-5, where 0 is normal intensity and 5 is weakest).
     ``prompt`` guides ``colorize`` and ``emotion``; ``defry``
     (0-10) sharpens line art.
+
+    ``emotion`` and ``emotion_level`` are **experimental**: they are served only to
+    requests that opt in through the insiders header (``X-MCP-Insiders:
+    experimental-tools=true``). Without that opt-in, passing either one fails
+    with a ``ToolError``; a non-default ``emotion_level`` alone counts as passing it.
+    Both parameters stay visible in this tool's schema either way, because a
+    tool schema is published when the server starts and cannot vary per
+    request.
     """
     settings = app.settings
     client = app.client
     director = DirectorTool(tool)
     emotion_enum = Emotion(emotion) if emotion is not None else None
+    level = EmotionLevel(emotion_level)
+    if (emotion_enum is not None or level != EmotionLevel.NORMAL) and (
+        EXPERIMENTAL_TOOLS not in features
+    ):
+        raise ToolError(
+            "emotion and emotion_level are experimental and are not enabled for "
+            "this request; opt in with the X-MCP-Insiders header "
+            "(experimental-tools=true)"
+        )
     if director is DirectorTool.EMOTION and emotion_enum is None:
         raise ValueError(
             "emotion tool requires an emotion name; expected one of: "
@@ -114,10 +156,15 @@ async def director_tool(
         prompt=prompt,
         defry=defry,
         emotion=emotion_enum,
-        emotion_level=EmotionLevel(emotion_level),
+        emotion_level=level,
     )
     return _save_and_return(
-        result, name=f"director-{director.value}", output_dir=settings.output_dir
+        result,
+        name=f"director-{director.value}",
+        output_dir=route_output_dir(
+            settings.output_dir, routing, route_scoped=route_scoped_output
+        ),
+        routing=routing,
     )
 
 
@@ -130,6 +177,8 @@ async def director_tool(
 async def annotate_image(
     image: str,
     model: ControlNetModel,
+    routing: RoutingContext = Depends(get_routing_context),
+    route_scoped_output: bool = Depends(get_route_scoped_output),
     app: AppContext = Depends(get_app_context),
 ) -> list[Any]:
     """Annotate an image with a ControlNet preprocessor.
@@ -148,7 +197,10 @@ async def annotate_image(
     return _save_and_return(
         result,
         name=f"annotate-{controlnet.value}",
-        output_dir=settings.output_dir,
+        output_dir=route_output_dir(
+            settings.output_dir, routing, route_scoped=route_scoped_output
+        ),
+        routing=routing,
     )
 
 
