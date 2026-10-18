@@ -1,5 +1,13 @@
 # Release notes (JSON)
 
+## Languages
+
+Project overview in your language (this page remains in English).
+
+| English | 简体中文 | 日本語 |
+|---|---|---|
+| [English](../README.md) | [简体中文](../.github/docs/README-zh.md) | [日本語](../.github/docs/README-ja.md) |
+
 One file per release: `<version>.json` (no `v` prefix), committed on `main`
 **before** the release tag is pushed. The `🚀 Release` workflow validates and
 renders it with

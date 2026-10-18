@@ -15,7 +15,7 @@ version = 3
 # Software code — MIT
 # ---------------------------------------------------------------------------
 [[annotations]]
-path = ["**/*.py"]
+path = ["**/*.py", "**/*.mjs"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 NovelAI Image MCP contributors"
 SPDX-License-Identifier = "MIT"

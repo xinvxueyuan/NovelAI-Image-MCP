@@ -1,5 +1,13 @@
 # NovelAI Image MCP
 
+## Languages
+
+Project overview in your language (this page remains in English).
+
+| English | 简体中文 | 日本語 |
+|---|---|---|
+| [English](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/README.md) | [简体中文](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/.github/docs/README-zh.md) | [日本語](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/.github/docs/README-ja.md) |
+
 [![skills.sh](https://skills.sh/b/xinvxueyuan/NovelAI-Image-MCP)](https://skills.sh/xinvxueyuan/NovelAI-Image-MCP)
 
 An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that
@@ -22,7 +30,7 @@ for full guides and API reference.
 ## Features
 
 - **11 MCP tools** covering the full NovelAI image API surface.
-- **2 prompts + 3 resources**: prompt templates for drafting and tool
+- **2 prompts + 3 resources + 1 resource template**: prompt templates for drafting and tool
   sequencing, plus `novelai://models`, `novelai://samplers`,
   `novelai://defaults` and `novelai://outputs/{name}`.
 - **Transports**: stdio (local agents) + HTTP (remote / multi-client), the
@@ -63,7 +71,7 @@ npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Per-file SPDX annotations live in
+MIT — see [LICENSE](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/LICENSE). Per-file SPDX annotations live in
 [REUSE.toml](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/REUSE.toml).
 
 <!-- mcp-name: io.github.xinvxueyuan/novelai-image-mcp -->

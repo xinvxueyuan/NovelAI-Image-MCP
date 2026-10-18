@@ -36,7 +36,7 @@
 
 - [ ] `uv run poe check` passes locally (format, lint, typecheck, tests)
 - [ ] New / changed behavior is covered by tests (`tests/`)
-- [ ] Public API additions are reflected in `README.md` / `README-zh.md`
+- [ ] Public API additions are reflected in `README.md`, `.github/docs/README-zh.md`, and `.github/docs/README-ja.md`
 - [ ] User-visible changes are documented in the changelog / release notes
 - [ ] No secrets, tokens, or `.env` files committed
 - [ ] License headers / SPDX annotations are present on new files

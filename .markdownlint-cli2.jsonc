@@ -22,14 +22,16 @@
     }
   },
   "globs": [
-    // Root-level markdown (README, README-zh, CONTRIBUTING, CHANGELOG, …)
+    // Root-level Markdown (README, CONTRIBUTING, CHANGELOG, …)
     "*.md",
     // GitHub templates & actions
     ".github/**/*.md",
     // Documentation site source (apps/docs/source/**/*.md)
     "apps/docs/source/**/*.md",
     // Per-package READMEs
-    "apps/*/README.md"
+    "apps/*/README.md",
+    // Release-note schema and usage guide
+    "release-notes/README.md"
   ],
   "ignores": [
     // Defensive fallback: skip common dependency / cache directories even

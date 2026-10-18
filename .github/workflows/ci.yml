@@ -21,6 +21,8 @@ on:
       - ".dockerignore"
       - ".github/workflows/ci.yml"
       - ".github/actions/detect-changes/**"
+      - ".github/scripts/**"
+      - "package.json"
   push:
     branches: [main, dev]
     paths:
@@ -41,6 +43,8 @@ on:
       - ".dockerignore"
       - ".github/workflows/ci.yml"
       - ".github/actions/detect-changes/**"
+      - ".github/scripts/**"
+      - "package.json"
 
 permissions:
   contents: read
@@ -107,6 +111,10 @@ jobs:
         # The workspace sync resolves both apps/server (installable package)
         # and apps/docs (virtual).
         run: uv sync --no-dev --all-extras --group lint --group test --frozen
+      - name: README checks
+        run: pnpm readme:check
+      - name: README tests
+        run: pnpm readme:test
       - name: Markdownlint
         if: needs.changes.outputs.markdown == 'true'
         run: pnpm exec markdownlint-cli2
