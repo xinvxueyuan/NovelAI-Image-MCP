@@ -16,22 +16,35 @@ None.
 
 ### Returns
 
-`dict` mirroring NovelAI's `/user/subscription` response:
+`dict` mirroring NovelAI's `/user/subscription` response. The keys and
+types below were observed on a live account:
 
 | Key | Type | Notes |
 |---|---|---|
 | `tier` | `int` | 0 = free, 1 = starter, 2 = ..., 3 = Opus. |
 | `active` | `bool` | Whether the subscription is currently active. |
-| `trainingStepsLeft` | `dict` | `{fixed: int, perStepUsage: bool}` — remaining Anlas-equivalent steps. |
-| `fixedTrainingStepsLeft` | `int` | Anlas-equivalent steps that don't count per-use. |
-| `perStepUsage` | `bool` | Whether steps are deducted per generation. |
-| `subscriptionId` | `str` | Internal subscription id. |
+| `accountType` | `int` | Account kind reported by NovelAI. |
+| `expiresAt` | `int` | Subscription expiry, as returned by the API. |
+| `isGracePeriod` | `bool` | Whether the subscription is in a grace period. |
+| `isNewCustomer` | `bool` | Whether the account is a first-time subscriber. |
+| `isPaypal` | `bool` | Whether the account pays through PayPal. |
+| `paymentProcessor` | `str` | Payment processor id. |
+| `paymentProcessorData` | `null` | Was `null` on the account probed; its real type is not established, so do not depend on it. |
+| `perks` | `object` | Tier feature flags. |
+| `perks.maxPriorityActions` | `int` | Max-priority actions included with the tier. |
+| `perks.startPriority` | `int` | Queue priority the tier starts at. |
+| `perks.contextTokens` | `int` | Context-token allowance. |
+| `perks.unlimitedMaxPriority` | `bool` | Whether max priority is unlimited. |
+| `perks.moduleTrainingSteps` | `int` | Module training steps included. |
+| `trainingStepsLeft` | `object` | Remaining Anlas-equivalent steps. |
+| `trainingStepsLeft.fixedTrainingStepsLeft` | `int` | Fixed (non-purchased) steps remaining. |
+| `trainingStepsLeft.purchasedTrainingSteps` | `int` | Purchased steps remaining. |
 
 ### Example
 
 ```python
 sub = await ctx.session.call_tool("get_subscription", {})
-print(sub["tier"], sub["trainingStepsLeft"]["fixed"])
+print(sub["tier"], sub["trainingStepsLeft"]["fixedTrainingStepsLeft"])
 ```
 
 ### CLI
@@ -110,29 +123,49 @@ cost = await ctx.session.call_tool("estimate_anlas_cost", {
     "n_samples": 4,
     "model": "nai-diffusion-4-5-full",
 })
-# cost: {"anlas": 20, "opus_free_sample": False}
+# cost: {"anlas": 80, "opus_free_sample": False}
 ```
 
 ### Cost table (typical)
 
-For reference — single sample, Opus tier, `nai-diffusion-4-5-full`, 28 steps:
+For reference — single sample, `nai-diffusion-4-5-full`, 28 steps. Measured
+with this tool.
 
-| Resolution | Anlas (txt2img) | Anlas (img2img, strength=0.5) |
+**txt2img** (`action="generate"`)
+
+| Resolution | `opus=False` | `opus=True` |
 |---|---|---|
-| 512 × 768 | 2 | 1 |
-| 832 × 1216 | 5 | 3 |
-| 1024 × 1024 | 5 | 3 |
-| 1536 × 1024 | 7 | 4 |
+| 512 × 768 | 8 | 0 |
+| 832 × 1216 | 20 | 0 |
+| 1024 × 1024 | 20 | 0 |
+| 1536 × 1024 | 30 | 30 |
+
+**img2img** (`action="img2img"`, `strength=0.5`)
+
+| Resolution | `opus=False` | `opus=True` |
+|---|---|---|
+| 512 × 768 | 4 | 0 |
+| 832 × 1216 | 10 | 0 |
+| 1024 × 1024 | 10 | 0 |
+| 1536 × 1024 | 15 | 15 |
 
 :::{note}
 Opus-tier subscribers get **free samples** for small generations (≤1024²,
-≤28 steps). Set `opus=True` to estimate with free samples applied.
+≤28 steps): inside that window `opus=True` returns `anlas: 0` and
+`opus_free_sample: true`. Outside it, `opus` does not change the estimate.
 :::
+
+`infill` (inpaint) is priced like `generate`: 832 × 1216 at 28 steps with
+`strength=0.5` is 20 Anlas.
+
+Costs scale linearly with `n_samples` — the example above (4 samples at
+832 × 1216) is `4 × 20 = 80`.
 
 :::{warning}
 On **V5 models**, Opus free generations are capped by NovelAI's refillable
-usage limit and the API **silently bills Anlas** once exhausted — check
-`get_subscription`'s `usage` field before costly V5 runs.
+usage limit and the API **silently bills Anlas** once exhausted. Check
+`get_subscription`'s `trainingStepsLeft` before costly V5 runs — the
+subscription response carries no separate `usage` field.
 :::
 
 ## See also

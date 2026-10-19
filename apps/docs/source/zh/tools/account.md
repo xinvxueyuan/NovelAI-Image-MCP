@@ -15,22 +15,35 @@
 
 ### 返回
 
-`dict`，与 NovelAI `/user/subscription` 的响应一致：
+`dict`，与 NovelAI `/user/subscription` 的响应一致。下表的键与类型均在真实
+账户上观测得到：
 
 | 键 | 类型 | 说明 |
 |---|---|---|
 | `tier` | `int` | 0 = free，1 = starter，2 = ...，3 = Opus。 |
 | `active` | `bool` | 订阅当前是否有效。 |
-| `trainingStepsLeft` | `dict` | `{fixed: int, perStepUsage: bool}` —— 剩余的 Anlas 等值步数。 |
-| `fixedTrainingStepsLeft` | `int` | 不按次计费的 Anlas 等值步数。 |
-| `perStepUsage` | `bool` | 步数是否按每次生成扣减。 |
-| `subscriptionId` | `str` | 内部订阅 id。 |
+| `accountType` | `int` | NovelAI 报告的账户类型。 |
+| `expiresAt` | `int` | 订阅到期时间，按 API 返回的原样。 |
+| `isGracePeriod` | `bool` | 订阅是否处于宽限期。 |
+| `isNewCustomer` | `bool` | 账户是否为首次订阅者。 |
+| `isPaypal` | `bool` | 账户是否通过 PayPal 付款。 |
+| `paymentProcessor` | `str` | 支付处理方 id。 |
+| `paymentProcessorData` | `null` | 在所探测的账户上为 `null`；其真实类型尚未确定，因此不要依赖它。 |
+| `perks` | `object` | 档位功能标志。 |
+| `perks.maxPriorityActions` | `int` | 该档位包含的最高优先级操作数。 |
+| `perks.startPriority` | `int` | 该档位起始的队列优先级。 |
+| `perks.contextTokens` | `int` | 上下文 token 配额。 |
+| `perks.unlimitedMaxPriority` | `bool` | 最高优先级是否不限量。 |
+| `perks.moduleTrainingSteps` | `int` | 包含的模块训练步数。 |
+| `trainingStepsLeft` | `object` | 剩余的 Anlas 等值步数。 |
+| `trainingStepsLeft.fixedTrainingStepsLeft` | `int` | 剩余的固定（非购买）步数。 |
+| `trainingStepsLeft.purchasedTrainingSteps` | `int` | 剩余的已购买步数。 |
 
 ### 示例
 
 ```python
 sub = await ctx.session.call_tool("get_subscription", {})
-print(sub["tier"], sub["trainingStepsLeft"]["fixed"])
+print(sub["tier"], sub["trainingStepsLeft"]["fixedTrainingStepsLeft"])
 ```
 
 ### CLI
@@ -109,29 +122,49 @@ cost = await ctx.session.call_tool("estimate_anlas_cost", {
     "n_samples": 4,
     "model": "nai-diffusion-4-5-full",
 })
-# cost: {"anlas": 20, "opus_free_sample": False}
+# cost: {"anlas": 80, "opus_free_sample": False}
 ```
 
 ### 成本表（典型值）
 
-供参考 —— 单张样本、Opus 档位、`nai-diffusion-4-5-full`、28 步：
+供参考 —— 单张样本、`nai-diffusion-4-5-full`、28 步。使用本工具
+实测。
 
-| 分辨率 | Anlas（txt2img） | Anlas（img2img，strength=0.5） |
+**txt2img**（`action="generate"`）
+
+| 分辨率 | `opus=False` | `opus=True` |
 |---|---|---|
-| 512 × 768 | 2 | 1 |
-| 832 × 1216 | 5 | 3 |
-| 1024 × 1024 | 5 | 3 |
-| 1536 × 1024 | 7 | 4 |
+| 512 × 768 | 8 | 0 |
+| 832 × 1216 | 20 | 0 |
+| 1024 × 1024 | 20 | 0 |
+| 1536 × 1024 | 30 | 30 |
+
+**img2img**（`action="img2img"`、`strength=0.5`）
+
+| 分辨率 | `opus=False` | `opus=True` |
+|---|---|---|
+| 512 × 768 | 4 | 0 |
+| 832 × 1216 | 10 | 0 |
+| 1024 × 1024 | 10 | 0 |
+| 1536 × 1024 | 15 | 15 |
 
 :::{note}
-Opus 档订阅者对小型生成（≤1024²、≤28 步）享有**免费样本**。设置
-`opus=True` 即可按已套用免费样本的方式估算。
+Opus 档订阅者对小型生成（≤1024²、≤28 步）享有**免费样本**：在该窗口内
+`opus=True` 返回 `anlas: 0` 与 `opus_free_sample: true`。超出该窗口时，
+`opus` 不改变估算结果。
 :::
+
+`infill`（局部重绘）的计价与 `generate` 相同：832 × 1216、28 步、
+`strength=0.5` 时为 20 Anlas。
+
+成本随 `n_samples` 线性增长 —— 上面的示例（832 × 1216 的 4 张样本）为
+`4 × 20 = 80`。
 
 :::{warning}
 在 **V5 模型**上，Opus 免费生成受 NovelAI 可补充的使用额度上限约束，额度用尽
-后 API 会**静默计费 Anlas** —— 在昂贵的 V5 批量运行之前，先检查
-`get_subscription` 的 `usage` 字段。
+后 API 会**静默计费 Anlas**。在昂贵的 V5 批量运行之前，先检查
+`get_subscription` 的 `trainingStepsLeft` —— 订阅响应中没有单独的
+`usage` 字段。
 :::
 
 ## 另请参见

@@ -39,6 +39,13 @@ outputs/generate-YYYYMMDD-HHMMSS-NNN.png
 
 打开文件 —— 你应该能看到生成的猫。
 
+:::{tip}
+**想让 AI 智能体来驱动 CLI？** 用
+`npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP` 安装
+[agent 技能](skills.md) —— 你的编码智能体（Claude Code、Codex、Copilot 等）
+之后就会知道 CLI 命令与 MCP 工具参数，无需你粘贴文档。
+:::
+
 ## 3. 通过 HTTP 生成
 
 要通过 HTTP 将服务器暴露给远程客户端：
@@ -126,8 +133,8 @@ secrets UI（Claude Desktop、Cline 等）。如果只是做一次性测试，�
 进来，带有 11 个工具。让 Claude *"生成一幅狐狸的水彩画"*，看着它调用
 `generate_image`。
 
-其他智能体 host（Cline、Cursor、Continue、Windsurf、Codex CLI）的配置方式
-类似，具体示例请参考英文文档的 Agent hosts 章节。
+其他智能体 host（Cline、Cursor、Continue、Windsurf、Codex CLI）见
+[Agent 宿主](transports/agent-hosts.md)。
 
 ## 5. 验证你的账户余额
 
@@ -141,8 +148,24 @@ uv run python -m novelai_image_mcp info
 {
   "tier": 3,
   "active": true,
-  "trainingStepsLeft": { "fixed": 10000, "perStepUsage": false },
-  "subscriptionId": "..."
+  "accountType": 1,
+  "expiresAt": 1790000000,
+  "isGracePeriod": false,
+  "isNewCustomer": false,
+  "isPaypal": false,
+  "paymentProcessor": "stripe",
+  "paymentProcessorData": null,
+  "perks": {
+    "maxPriorityActions": 100,
+    "startPriority": 5,
+    "contextTokens": 8192,
+    "unlimitedMaxPriority": true,
+    "moduleTrainingSteps": 0
+  },
+  "trainingStepsLeft": {
+    "fixedTrainingStepsLeft": 10000,
+    "purchasedTrainingSteps": 0
+  }
 }
 ```
 
@@ -152,8 +175,11 @@ uv run python -m novelai_image_mcp info
 
 ## 常见的后续步骤
 
+- 阅读 [工具参考](tools/index.md) 了解每个参数
+- 试试 [教程](tutorials/index.md) —— img2img、inpaint、放大、ControlNet
+- 安装 [agent 技能](skills.md) —— 教会你的 AI 智能体 CLI + MCP 工具
 - 通过环境变量调整 [生成默认值](configuration.md)
-- 工具参考、教程、传输方式等章节暂仅提供英文版本，可通过页面左下角的语言切换器切换到 English 查看。
+- 生产环境可 [Docker 化](transports/http.md)
 
 ## 故障排查
 

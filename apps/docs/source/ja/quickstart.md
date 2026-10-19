@@ -42,6 +42,13 @@ outputs/generate-YYYYMMDD-HHMMSS-NNN.png
 
 ファイルを開くと、生成された猫の画像が表示されます。
 
+:::{tip}
+**CLI を AI エージェントに操作させたいですか?** [エージェントスキル](skills.md) を
+`npx skills add --yes --global xinvxueyuan/NovelAI-Image-MCP` でインストールすると、
+コーディングエージェント (Claude Code、Codex、Copilot など) が、ドキュメントを
+貼り付けることなく CLI コマンドと MCP ツールのパラメーターを理解します。
+:::
+
 ## 3. HTTP 経由で生成する
 
 サーバーを HTTP 経由でリモートクライアントに公開するには、以下を実行します。
@@ -132,8 +139,7 @@ MCP サーバーが登録されます。Claude に *「水彩画でキツネを�
 頼んでみて、`generate_image` が呼び出される様子を観察してください。
 
 その他のエージェントホスト (Cline、Cursor、Continue、Windsurf、Codex CLI)
-については、[エージェントホスト](https://xinvxueyuan.github.io/NovelAI-Image-MCP/transports/agent-hosts.html)
-(英語版) を参照してください。
+については、[エージェントホスト](transports/agent-hosts.md) を参照してください。
 
 ## 5. アカウント残高を確認する
 
@@ -147,8 +153,24 @@ uv run python -m novelai_image_mcp info
 {
   "tier": 3,
   "active": true,
-  "trainingStepsLeft": { "fixed": 10000, "perStepUsage": false },
-  "subscriptionId": "..."
+  "accountType": 1,
+  "expiresAt": 1790000000,
+  "isGracePeriod": false,
+  "isNewCustomer": false,
+  "isPaypal": false,
+  "paymentProcessor": "stripe",
+  "paymentProcessorData": null,
+  "perks": {
+    "maxPriorityActions": 100,
+    "startPriority": 5,
+    "contextTokens": 8192,
+    "unlimitedMaxPriority": true,
+    "moduleTrainingSteps": 0
+  },
+  "trainingStepsLeft": {
+    "fixedTrainingStepsLeft": 10000,
+    "purchasedTrainingSteps": 0
+  }
 }
 ```
 
@@ -158,10 +180,11 @@ uv run python -m novelai_image_mcp info
 
 ## 次のよくあるステップ
 
-- 各パラメータの詳細は [ツールリファレンス](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tools/index.html) (英語版) を参照
-- [チュートリアル](https://xinvxueyuan.github.io/NovelAI-Image-MCP/tutorials/index.html) (英語版) を試す — img2img、inpaint、アップスケール、ControlNet
+- すべてのパラメーターは [ツールリファレンス](tools/index.md) を参照
+- [チュートリアル](tutorials/index.md) を試す — img2img、inpaint、アップスケール、ControlNet
+- [エージェントスキル](skills.md) をインストールする — AI エージェントに CLI と MCP ツールを教える
 - 環境変数で [生成デフォルト](configuration.md) を調整する
-- 本番運用向けに [Docker 化](https://xinvxueyuan.github.io/NovelAI-Image-MCP/transports/http.html) する (英語版)
+- 本番運用向けに [Docker 化](transports/http.md) する
 
 ## トラブルシューティング
 

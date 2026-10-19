@@ -151,8 +151,24 @@ uv run python -m novelai_image_mcp info
 {
   "tier": 3,
   "active": true,
-  "trainingStepsLeft": { "fixed": 10000, "perStepUsage": false },
-  "subscriptionId": "..."
+  "accountType": 1,
+  "expiresAt": 1790000000,
+  "isGracePeriod": false,
+  "isNewCustomer": false,
+  "isPaypal": false,
+  "paymentProcessor": "stripe",
+  "paymentProcessorData": null,
+  "perks": {
+    "maxPriorityActions": 100,
+    "startPriority": 5,
+    "contextTokens": 8192,
+    "unlimitedMaxPriority": true,
+    "moduleTrainingSteps": 0
+  },
+  "trainingStepsLeft": {
+    "fixedTrainingStepsLeft": 10000,
+    "purchasedTrainingSteps": 0
+  }
 }
 ```
 
