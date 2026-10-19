@@ -18,6 +18,7 @@ middleware
 routing
 insiders
 features
+audit
 prompts
 resources
 schemas
@@ -35,6 +36,7 @@ client
 | [`routing`](routing.md) | Header-driven routing: route resolution and sanitisation |
 | [`insiders`](insiders.md) | The `X-MCP-Insiders` opt-in header parser |
 | [`features`](features.md) | The insiders feature registry and its resolution rules |
+| [`audit`](audit.md) | Append-only JSONL audit trail: record shape, redaction and caps |
 | [`prompts`](prompts.md) | The two prompt templates |
 | [`resources`](resources.md) | The `novelai://...` resources |
 | [`schemas`](schemas.md) | Structured-output models |

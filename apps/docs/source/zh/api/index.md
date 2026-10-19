@@ -18,6 +18,7 @@ middleware
 routing
 insiders
 features
+audit
 prompts
 resources
 schemas
@@ -35,6 +36,7 @@ client
 | [`routing`](routing.md) | 头驱动的路由：route 解析与净化 |
 | [`insiders`](insiders.md) | `X-MCP-Insiders` opt-in 头解析器 |
 | [`features`](features.md) | insiders 特性注册表及其解析规则 |
+| [`audit`](audit.md) | Append-only JSONL 审计轨迹：记录结构、脱敏与上限 |
 | [`prompts`](prompts.md) | 两个 prompt 模板 |
 | [`resources`](resources.md) | `novelai://...` 资源 |
 | [`schemas`](schemas.md) | 结构化输出模型 |

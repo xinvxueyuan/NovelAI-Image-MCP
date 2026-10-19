@@ -18,6 +18,7 @@ middleware
 routing
 insiders
 features
+audit
 prompts
 resources
 schemas
@@ -35,6 +36,7 @@ client
 | [`routing`](routing.md) | ヘッダー駆動のルーティング: ルート解決とサニタイズ |
 | [`insiders`](insiders.md) | `X-MCP-Insiders` オプトインヘッダーのパーサー |
 | [`features`](features.md) | insiders の機能レジストリとその解決規則 |
+| [`audit`](audit.md) | 追記専用の JSONL 監査トレイル: レコードの形、秘匿化、上限 |
 | [`prompts`](prompts.md) | 2 つのプロンプトテンプレート |
 | [`resources`](resources.md) | `novelai://...` リソース |
 | [`schemas`](schemas.md) | 構造化出力モデル |
