@@ -62,6 +62,18 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
 ]
+# ``viewcode`` backlinks (the [docs] links on every ``_modules/*.html`` page)
+# are built as ``<page>#<module>.<name>``, where <module> is the module the
+# object is documented under. Sphinx's default (``True``) instead rewrites
+# that to the object's *defining* module, but records the first-seen module
+# for the whole module entry. A name reached through a re-export therefore
+# gets a backlink anchor no page defines — e.g. ``response.ErrorInfo``
+# although the anchor is ``errors.ErrorInfo`` — and builtin definers such as
+# ``_blake2`` end up listed in ``_modules/index.html`` without a page ever
+# being generated for them. Following the directive's own module keeps every
+# backlink pointing at an anchor that exists.
+viewcode_follow_imported_members = False
+
 # Furo is the HTML theme — set via html_theme below, NOT in extensions (Furo
 # raises a ConfigError if listed in extensions because it does not work with
 # non-HTML builders).
@@ -585,8 +597,10 @@ def _inject_breadcrumbs(text: str, rel: Path) -> str:
 
     Furo ships no breadcrumbs; deep pages under ``tools/``, ``tutorials/``,
     ``transports/``, ``development/`` and ``api/`` otherwise rely on the
-    sidebar alone for orientation. English build only — the translations
-    have a flat four-page tree and need no trail.
+    sidebar alone for orientation. The section labels in
+    ``_BREADCRUMB_SECTIONS`` are English, so the caller emits this trail for
+    the English build only (``lang == "en"``); the translated trees keep
+    their own localised navigation rather than a mixed-language trail.
     """
     parts = rel.parts
     if len(parts) < 2:
@@ -594,7 +608,11 @@ def _inject_breadcrumbs(text: str, rel: Path) -> str:
     section_name = _BREADCRUMB_SECTIONS.get(parts[0])
     if section_name is None:
         return text
-    up = "../" * len(parts)  # e.g. "../../" from tools/generate.html
+    # ``parts`` already includes the file name, so a page one directory deep
+    # needs a single hop up. Scaling by ``len(parts)`` overshoots by one level
+    # and points every section page at a non-existent parent (e.g.
+    # ``../../index.html`` from ``tools/generate.html``).
+    up = "../" * (len(parts) - 1)
     title = _page_title(text)
     crumbs = (
         '<nav class="crumbs" aria-label="Breadcrumb">'
