@@ -1,0 +1,40 @@
+{
+  "version": "0.6.3",
+  "date": "2026-10-19",
+  "summary": "A fix release for the account tools and the documentation that describes them. `estimate_anlas_cost` advertised img2img and infill and then failed on both; it now returns an estimate. The documentation site had 87 dead links and a cost table that matched no configuration.",
+  "highlights": [
+    {
+      "title": "An estimate that estimates",
+      "body": "`estimate_anlas_cost` accepts `generate`, `img2img` and `infill`, and its docstring promises that `strength` scales an img2img estimate — but every image-conditioned call raised `image-conditioned actions require an image`. It builds a request to reach the price formula, and that request wanted an image the formula never uses. `GenerationRequest` gained an `estimate_only` flag that relaxes the payload requirements for estimation while keeping every check that can move the price; the real generation path still enforces all of them, and the tests that prove it are the ones that were already there."
+    },
+    {
+      "title": "A documentation site with no dead links",
+      "body": "The site had 87. Eighty came from the breadcrumb trail injected above each article, which walked one directory too far up: every page under `tools/`, `tutorials/`, `transports/`, `development/` and `api/` pointed at a `../../index.html` that does not exist. The other seven came from Sphinx's `viewcode`, whose back-links named the module a definition was re-exported through rather than the one it is documented under."
+    },
+    {
+      "title": "Numbers that came from the tool",
+      "body": "The account page documented `perStepUsage` and `subscriptionId` on the subscription response; neither exists, and its example payload would have raised a `KeyError`. The Anlas cost table listed 2, 5, 5 and 7 for four resolutions at 28 steps, which matches no configuration — the tool returns 8, 20, 20 and 30 without Opus, and 0, 0, 0 and 30 with it. Both are rewritten from a live response and from measured output, in all three languages."
+    }
+  ],
+  "sections": [
+    {
+      "title": "🐛 Fixed",
+      "items": [
+        "`estimate_anlas_cost` works for `img2img` and `infill` instead of raising `image-conditioned actions require an image`.",
+        "`GenerationRequest` gained `estimate_only`, which relaxes the image, mask and inpaint-model requirements for estimation only. Price inputs stay validated in both modes, and the real generation path is unchanged.",
+        "`get_subscription` and `estimate_anlas_cost` no longer document `perStepUsage`, `subscriptionId` or a `usage` field; the subscription response exposes none of them.",
+        "The Anlas cost table is rebuilt from measured output, as two sub-tables (txt2img, and img2img at strength 0.5) with both Opus columns.",
+        "The quickstart example payload uses keys the API actually returns, checked key by key.",
+        "The English site's 87 dead links are gone: the breadcrumb trail walked one directory too far up, and `viewcode` back-links named the wrong module.",
+        "The Chinese and Japanese `installation.md` are aligned with the English source on headings, admonitions, bullets, link targets and code blocks."
+      ]
+    },
+    {
+      "title": "📚 Documentation",
+      "items": [
+        "New `api/audit.md` in all three languages: when a record is written, its fields, the redaction rules, the `O_APPEND` concurrency property, and why an unwritable trail never fails a tool call."
+      ]
+    }
+  ],
+  "upgrade_notes": "No breaking changes. `estimate_anlas_cost` previously raised for `img2img` and `infill` and now returns an estimate, which is what its documentation always promised; callers that worked around the failure can drop the workaround. Everything else in this release is documentation. The intentional behaviour change from 0.6.0 still applies: `director_tool`'s `emotion` and `emotion_level` require the `X-MCP-Insiders` opt-in."
+}

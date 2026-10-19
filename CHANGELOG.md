@@ -54,6 +54,55 @@ per-release section headings. This file is the human-curated companion.
 
 ### Fixed
 
+- _Nothing yet._
+
+### Security
+
+- _Nothing yet._
+
+## [0.6.3] — 2026-10-19
+
+### Added
+
+- **`api/audit.md`**: the audit trail had no reference page while every other
+  module under `api/` had one. The page documents when a record is written,
+  its fields, the redaction that makes the trail safe to keep (prompts become a
+  length and a truncated SHA-256, image arguments become `[redacted image]`,
+  credential headers never reach the file), the single `os.write` on an
+  `O_APPEND` descriptor that makes concurrent writers safe, and the rule that an
+  unwritable trail is logged and swallowed rather than failing a tool call.
+
+### Changed
+
+- **The English documentation site has no dead links**: it had 87. Eighty came
+  from the breadcrumb trail the site injects above each article, which walked
+  one directory too far up and sent every page under `tools/`, `tutorials/`,
+  `transports/`, `development/` and `api/` to a `../../index.html` that does not
+  exist. The other seven came from Sphinx's `viewcode`, whose back-links named
+  the module a definition was re-exported through rather than the one it is
+  documented under; `viewcode_follow_imported_members = False` fixes that and
+  stops the source tree growing pages for stdlib modules.
+
+### Fixed
+
+- **The account page documented a subscription response the API does not
+  return**: it listed `perStepUsage` and `subscriptionId`, neither of which
+  exists, read `trainingStepsLeft` as `{fixed, perStepUsage}`, and its example
+  would have raised a `KeyError`; the quickstart example payload carried the same
+  invented keys. Both are rewritten from a live response, in all three
+  languages, and the example payloads are now parsed and checked key by key.
+- **The Anlas cost table was wrong**: it listed 2, 5, 5 and 7 Anlas for four
+  resolutions at 28 steps, which matches no configuration. The tool returns 8,
+  20, 20 and 30 without Opus and 0, 0, 0 and 30 with it, because Opus makes small
+  generations free. The table is now two sub-tables -- txt2img and img2img at
+  strength 0.5 -- with both Opus columns, all measured rather than recalled.
+- **The translated `installation.md` had drifted from the English source**: the
+  Chinese and Japanese pages pointed their Docker link at the wrong target,
+  dropped two of three next-step bullets, linked to the English site where a
+  translated page existed, and translated the shell comments inside their code
+  blocks. Code blocks stay byte-identical to the source; all three pages now
+  agree on headings, admonitions, bullet order, link targets and code blocks.
+
 - **`estimate_anlas_cost` now works for `img2img` and `infill`**: the
   tool advertised both actions but always failed with
   `image-conditioned actions require an image`, because it built a
