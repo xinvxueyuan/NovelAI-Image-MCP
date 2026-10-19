@@ -405,6 +405,41 @@ class TestAccountTools:
         assert result.anlas == 0
         assert result.opus_free_sample is True
 
+    @pytest.mark.parametrize("action", [Action.IMG2IMG, Action.INPAINT])
+    async def test_estimate_anlas_cost_supports_image_conditioned_actions(
+        self, action: Action
+    ) -> None:
+        """The tool advertises img2img/infill; estimation must not need an image.
+
+        It is a pure price calculation, so there is no image (or mask) to pass.
+        """
+        result = await account.estimate_anlas_cost(
+            width=832, height=1216, steps=28, action=action, strength=0.5
+        )
+        assert isinstance(result, AnlasEstimate)
+        assert result.anlas > 0
+
+    async def test_estimate_anlas_cost_img2img_scales_with_strength(self) -> None:
+        full = await account.estimate_anlas_cost(
+            width=832, height=1216, steps=28, action=Action.IMG2IMG, strength=0.99
+        )
+        partial = await account.estimate_anlas_cost(
+            width=832, height=1216, steps=28, action=Action.IMG2IMG, strength=0.1
+        )
+        assert full.anlas > partial.anlas
+
+    async def test_estimate_anlas_cost_still_rejects_an_impossible_shape(
+        self,
+    ) -> None:
+        # Estimation relaxes the payload requirements only; the price inputs
+        # stay validated.
+        from fastmcp.exceptions import ToolError
+
+        with pytest.raises(ToolError):
+            await account.estimate_anlas_cost(
+                width=832, height=1216, steps=99, action=Action.IMG2IMG
+            )
+
 
 class TestRegistration:
     async def test_every_tool_is_registered(self) -> None:

@@ -257,6 +257,12 @@ class GenerationRequest:
     legacy_v3_extend: bool = False
     inpaint_img2img_strength: int | None = None
     straight_alpha: bool = False
+    # Cost-estimation mode. A price estimate is computed from resolution, steps,
+    # SMEA and strength alone, so it needs neither the image bytes nor the mask,
+    # and it does not prove the combination is runnable. Only
+    # `estimate_anlas_cost` sets this; every real generation leaves it
+    # `False` and therefore keeps the full validation.
+    estimate_only: bool = False
 
     def __post_init__(self) -> None:
         if not self.prompt.strip():
@@ -278,7 +284,17 @@ class GenerationRequest:
             raise ValueError("total resolution exceeds NovelAI's limit")
         if self.n_samples > self.max_samples:
             raise ValueError("n_samples exceeds the resolution-specific limit")
-        if self.action in {Action.IMG2IMG, Action.INPAINT} and not self.image:
+        # `estimate_only` relaxes exactly two checks: the image requirement
+        # here and the mask/model requirements for inpainting below. Everything
+        # that affects the *price* (dimensions, steps, sample count, strength
+        # range, resolution limits) is still validated, so an estimate can only
+        # ever describe a request whose payload has not been supplied yet --
+        # never one whose shape is impossible.
+        if (
+            not self.estimate_only
+            and self.action in {Action.IMG2IMG, Action.INPAINT}
+            and not self.image
+        ):
             raise ValueError("image-conditioned actions require an image")
         if self.action in {Action.IMG2IMG, Action.INPAINT}:
             if self.strength is None:
@@ -294,7 +310,7 @@ class GenerationRequest:
             and self.inpaint_img2img_strength is None
         ):
             object.__setattr__(self, "inpaint_img2img_strength", 1)
-        if self.action is Action.INPAINT:
+        if self.action is Action.INPAINT and not self.estimate_only:
             if not self.mask:
                 raise ValueError("inpainting requires a mask")
             if not is_inpaint_model(self.model):

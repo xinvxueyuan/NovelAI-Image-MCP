@@ -76,6 +76,50 @@ class TestGenerationRequest:
                 model=Model.V4_5,
             )
 
+    def test_estimate_only_defaults_to_false(self) -> None:
+        # The flag that relaxes the payload checks must be opt-in: the real
+        # generation path is the default and keeps the full validation.
+        assert GenerationRequest(prompt="test").estimate_only is False
+
+    def test_estimate_only_skips_the_image_requirement(self) -> None:
+        request = GenerationRequest(
+            prompt="test", action=Action.IMG2IMG, estimate_only=True
+        )
+        assert request.image is None
+
+    def test_estimate_only_skips_the_inpaint_requirements(self) -> None:
+        # No mask, and a model that cannot inpaint: both are payload/eligibility
+        # requirements, not price inputs.
+        request = GenerationRequest(
+            prompt="test",
+            action=Action.INPAINT,
+            model=Model.V4_5,
+            estimate_only=True,
+        )
+        assert request.mask is None
+
+    def test_estimate_only_still_validates_the_price_inputs(self) -> None:
+        with pytest.raises(ValueError, match="steps must be between"):
+            GenerationRequest(
+                prompt="test", action=Action.IMG2IMG, steps=51, estimate_only=True
+            )
+        with pytest.raises(ValueError, match="strength must be between"):
+            GenerationRequest(
+                prompt="test",
+                action=Action.IMG2IMG,
+                strength=1.5,
+                estimate_only=True,
+            )
+
+    def test_estimate_only_still_enforces_the_resolution_limit(self) -> None:
+        with pytest.raises(ValueError, match="total resolution exceeds"):
+            GenerationRequest(
+                prompt="test",
+                width=49_152,
+                height=49_152,
+                estimate_only=True,
+            )
+
     def test_img2img_auto_fills_strength_and_noise(self) -> None:
         request = GenerationRequest(
             prompt="test",
@@ -206,6 +250,39 @@ class TestEstimateAnlasCost:
             strength=0.1,
         )
         assert full.estimate_anlas_cost() >= partial.estimate_anlas_cost()
+
+    def test_img2img_estimate_needs_no_image(self) -> None:
+        request = GenerationRequest(
+            prompt="test",
+            action=Action.IMG2IMG,
+            strength=0.5,
+            estimate_only=True,
+        )
+        assert request.estimate_anlas_cost() > 0
+
+    def test_infill_estimate_needs_no_image_or_mask(self) -> None:
+        request = GenerationRequest(
+            prompt="test",
+            action=Action.INPAINT,
+            model=Model.V4_5,
+            estimate_only=True,
+        )
+        assert request.estimate_anlas_cost() > 0
+
+    def test_estimate_only_strength_still_scales_the_img2img_cost(self) -> None:
+        strong = GenerationRequest(
+            prompt="test",
+            action=Action.IMG2IMG,
+            strength=0.99,
+            estimate_only=True,
+        )
+        weak = GenerationRequest(
+            prompt="test",
+            action=Action.IMG2IMG,
+            strength=0.1,
+            estimate_only=True,
+        )
+        assert strong.estimate_anlas_cost() > weak.estimate_anlas_cost()
 
 
 class TestCharacterPrompt:

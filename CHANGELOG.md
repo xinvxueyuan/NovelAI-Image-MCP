@@ -54,7 +54,24 @@ per-release section headings. This file is the human-curated companion.
 
 ### Fixed
 
-- _Nothing yet._
+- **`estimate_anlas_cost` now works for `img2img` and `infill`**: the
+  tool advertised both actions but always failed with
+  `image-conditioned actions require an image`, because it built a
+  `GenerationRequest` without the image the cost formula never uses. A cost
+  estimate is a pure price calculation, so `GenerationRequest` gained an
+  `estimate_only` flag that relaxes the image / mask / inpaint-model
+  requirements _for estimation only_; the real generation path is unchanged and
+  still enforces every one of them. Price inputs (dimensions, steps, sample
+  count, strength range, resolution limits) remain validated in both modes.
+- **Corrected two docstrings that documented fields a live account does not
+  return**: `get_subscription` listed `perStepUsage` and
+  `subscriptionId`, and `estimate_anlas_cost` pointed at a
+  `usage` field on the subscription response. None of the three exists;
+  the docstrings now describe the keys a real `/user/subscription` response
+  carries (`tier`, `active`, `expiresAt`, `accountType`, `perks`,
+  `trainingStepsLeft` with `fixedTrainingStepsLeft` /
+  `purchasedTrainingSteps`, ...), and state that the remaining Opus
+  "battery" is not exposed at all.
 
 ### Security
 

@@ -33,11 +33,15 @@ async def get_subscription(
 ) -> dict[str, Any]:
     """Return the account subscription details and Anlas balance.
 
-    The shape mirrors NovelAI's ``/user/subscription`` response: it
-    includes ``tier`` (0 = free, 1 = starter, 2 = ...), ``active``, the
-    ``trainingStepsLeft`` breakdown, ``fixedTrainingStepsLeft``,
-    ``perStepUsage`` flag, and ``subscriptionId``. Use this to inspect
-    remaining Anlas or the active plan before a generation.
+    The shape mirrors NovelAI's ``/user/subscription`` response. The keys
+    observed on a live account are ``tier`` (0 = free, 1 = starter, ...),
+    ``active``, ``expiresAt``, ``accountType``, ``isGracePeriod``,
+    ``isNewCustomer``, ``isPaypal``, ``paymentProcessor``,
+    ``paymentProcessorData``, ``perks`` (``maxPriorityActions``,
+    ``startPriority``, ``contextTokens``, ``unlimitedMaxPriority``,
+    ``moduleTrainingSteps``) and ``trainingStepsLeft``
+    (``fixedTrainingStepsLeft``, ``purchasedTrainingSteps``). Use this to
+    inspect the active plan before a generation.
     """
     return await client.get_subscription()
 
@@ -88,10 +92,16 @@ async def estimate_anlas_cost(
     multiplier. ``opus`` grants a free sample when the request is within
     Opus limits. Returns ``{"anlas": <cost>, "opus_free_sample": <bool>}``.
 
+    This is a pure price calculation. It needs no image or mask, and it does
+    not verify that the combination is runnable -- an ``infill`` estimate
+    with a non-inpainting model still returns a price. The generation tools
+    enforce those requirements.
+
     Note: on V5 models, Opus free generations are capped by NovelAI's
     refillable "battery" usage limit (normal resolution, <=28 steps); once
-    exhausted the API silently bills Anlas instead of erroring, so check
-    ``get_subscription``'s ``usage`` field before costly V5 runs.
+    exhausted the API silently bills Anlas instead of erroring. The
+    subscription response does not expose how much of that battery is left, so
+    this estimate always reports the paid cost.
     """
     request = GenerationRequest(
         prompt="cost-estimate",
@@ -105,6 +115,10 @@ async def estimate_anlas_cost(
         smea_dynamic=smea_dynamic,
         auto_smea=auto_smea,
         strength=strength if action is not Action.GENERATE else None,
+        # Estimation has no image or mask to hand over, and the price does not
+        # depend on them; `estimate_only` relaxes exactly those two
+        # requirements (see `GenerationRequest.__post_init__`).
+        estimate_only=True,
     )
     cost = request.estimate_anlas_cost(opus=opus)
     free_sample = (
