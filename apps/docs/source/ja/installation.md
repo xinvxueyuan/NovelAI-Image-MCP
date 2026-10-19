@@ -77,10 +77,10 @@ cp .env.example .env
 `.env` を編集し、2 つの認証方式のうち **いずれか一方** を設定します。
 
 ```bash
-# 方式 A (推奨): https://novelai.net > Account で取得した永続 API トークン
+# Method A (preferred): persistent API token from https://novelai.net > Account
 NOVELAI_TOKEN=pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-# 方式 B: ユーザー名 + パスワード (アクセスキーは argon2id で導出)
+# Method B: username + password (access key derived with argon2id)
 # NOVELAI_USERNAME=your@email
 # NOVELAI_PASSWORD=your-password
 ```
@@ -90,10 +90,10 @@ NOVELAI_TOKEN=pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ## 5. インストールを検証する
 
 ```bash
-# サーバーが起動し CLI が公開されていることを確認:
+# Server boots and exposes the CLI:
 uv run python -m novelai_image_mcp --help
 
-# アカウント情報が往復し、トークンが有効であることを検証:
+# Account info round-trips (validates your token):
 uv run python -m novelai_image_mcp info
 ```
 
@@ -109,10 +109,10 @@ husky git フック、markdownlint) にも pnpm を使用しています。コ�
 する予定がある場合はインストールしてください。
 
 ```bash
-# corepack 経由で pnpm をインストール (Node ≥ 24):
+# Install pnpm via corepack (Node ≥ 24):
 corepack enable pnpm
 
-# Node の依存関係をインストールし、husky フックを接続:
+# Install Node deps and wire the husky hooks:
 pnpm install --frozen-lockfile
 ```
 
@@ -131,11 +131,11 @@ docker compose up --build
 
 イメージは [`apps/server/Dockerfile`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/server/Dockerfile)
 からビルドされ、デフォルトでポート `8000` 上に streamable-http トランスポート
-を公開します。高度な設定については [トランスポート → streamable-http](https://xinvxueyuan.github.io/NovelAI-Image-MCP/transports/http.html)
+を公開します。高度な設定については [トランスポート → streamable-http](transports/http.md)
 を参照してください。
 
 ## 次のステップ
 
 - [クイックスタート](quickstart.md) — 最初の画像を生成する
-- [設定](configuration.md) — 環境変数による生成デフォルトの調整
-- [Docker での運用](https://xinvxueyuan.github.io/NovelAI-Image-MCP/transports/index.html) — stdio と streamable-http の比較 (英語版)
+- [ツールリファレンス](tools/index.md) — すべての MCP ツール
+- [トランスポート](transports/index.md) — stdio と streamable-http の比較

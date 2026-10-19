@@ -74,10 +74,10 @@ cp .env.example .env
 编辑 `.env`，设置以下两种认证方式 **之一**：
 
 ```bash
-# 方式 A（推荐）：来自 https://novelai.net > Account 的持久 API token
+# Method A (preferred): persistent API token from https://novelai.net > Account
 NOVELAI_TOKEN=pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-# 方式 B：用户名 + 密码（用 argon2id 派生 access key）
+# Method B: username + password (access key derived with argon2id)
 # NOVELAI_USERNAME=your@email
 # NOVELAI_PASSWORD=your-password
 ```
@@ -87,10 +87,10 @@ NOVELAI_TOKEN=pst-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ## 5. 验证安装
 
 ```bash
-# 服务器启动并暴露 CLI：
+# Server boots and exposes the CLI:
 uv run python -m novelai_image_mcp --help
 
-# 账户信息往返（验证你的 token）：
+# Account info round-trips (validates your token):
 uv run python -m novelai_image_mcp info
 ```
 
@@ -105,10 +105,10 @@ uv run python -m novelai_image_mcp info
 钩子、markdownlint）。如果你打算参与贡献，请安装它：
 
 ```bash
-# 通过 corepack 安装 pnpm（Node ≥ 24）：
+# Install pnpm via corepack (Node ≥ 24):
 corepack enable pnpm
 
-# 安装 Node 依赖并连接 husky 钩子：
+# Install Node deps and wire the husky hooks:
 pnpm install --frozen-lockfile
 ```
 
@@ -125,9 +125,11 @@ docker compose up --build
 ```
 
 镜像基于 [`apps/server/Dockerfile`](https://github.com/xinvxueyuan/NovelAI-Image-MCP/blob/main/apps/server/Dockerfile)
-构建，默认在 `8000` 端口暴露 streamable-http 传输方式。高级配置（如自定义
-主机与端口）请通过环境变量调整，详见 [配置](configuration.md)。
+构建，默认在 `8000` 端口暴露 streamable-http 传输方式。高级配置见
+[传输方式 → streamable-http](transports/http.md)。
 
 ## 后续步骤
 
 - [快速开始](quickstart.md) —— 生成你的第一张图像
+- [工具参考](tools/index.md) —— 每一个 MCP 工具
+- [传输方式](transports/index.md) —— stdio 与 streamable-http
