@@ -1,0 +1,39 @@
+{
+  "version": "0.7.0",
+  "date": "2026-10-23",
+  "summary": "Every dependency moves to its latest available release — 64 Python packages plus the Node toolchain, including a major bump of the documentation stack and of two transports that sit underneath the MCP server. No shipped API or CLI changes.",
+  "highlights": [
+    {
+      "title": "The one upgrade that could have broken it",
+      "body": "`curl-cffi` went from 0.15.0 to 0.16.3. That package is not a convenience wrapper here: the NovelAI edge sits behind a Cloudflare WAF that rejects clients by TLS fingerprint, which is why every request goes through `create_http_client()` impersonating Chrome. A regression there would not fail a test — it would silently reset connections in production. Verified against the live API: `peet.ws` still echoes a Chrome TLS 1.3 fingerprint (`t13d1516h2_8daaf6152771_806a8c22fdea`), and a real `get_subscription` call returned the same eleven keys as before."
+    },
+    {
+      "title": "A docs stack that was quietly stuck",
+      "body": "The docs project pinned `sphinx>=8.1.3,<9.0`, so `uv lock --upgrade` could never take Sphinx 9 — the ceiling, not the resolver, was holding it back. The ceiling is now `<10.0` and the stack is on 9.2.0. Sphinx 9 qualifies the type names it emits for pydantic field constraints, which silently un-matched a `nitpick_ignore` rule written for bare `Ge`/`Le`/`Gt`/`Lt` and produced thirteen warnings; the replacement rule is scoped to `annotated_types.` so a genuinely missing reference is still reported."
+    },
+    {
+      "title": "Majors underneath the server",
+      "body": "`websockets` 16.1.1 → 17.3 and `cyclopts` 4.23.0 → 5.3.0 arrive transitively through `fastmcp` and `mcp`. Both cross a major version, so the server was exercised end to end rather than only against the suite: 511 tests pass at 85.7% coverage, the three-language documentation builds with `-E -W` and no warnings, and no locale has a dead link."
+    }
+  ],
+  "sections": [
+    {
+      "title": "⬆️ Upgraded",
+      "items": [
+        "Runtime: `fastmcp` 4.1.0 → 4.1.3, `pydantic` 2.14.0a1 → 2.14.1 (the lock was on an alpha), `pydantic-core` 2.47.0 → 2.50.1, `pydantic-settings` 2.14.2 → 2.16.1, `curl-cffi` 0.15.0 → 0.16.3, `msgpack` 1.2.1 → 1.2.3, `typer` 0.27.0 → 0.27.3.",
+        "Transitive, through `fastmcp`/`mcp`: `uvicorn` 0.51.0 → 0.54.0, `starlette` 1.3.1 → 1.9.0, `websockets` 16.1.1 → 17.3 (major), `cyclopts` 4.23.0 → 5.3.0 (major).",
+        "Development: `ruff` 0.16.0 → 0.17.1, `pyright` 1.1.411 → 1.1.414, `poethepoet` 0.48.0 → 0.49.0, `prek` 0.5.5 → 0.5.7.",
+        "Documentation: `sphinx` 8.2.3 → 9.2.0 (major, ceiling relaxed from `<9.0` to `<10.0`), `sphinxcontrib-mermaid` 2.1.0 → 2.1.1.",
+        "Node: `turbo` and `eslint-plugin-turbo` 2.11.8 → 2.11.10, `markdownlint-cli2` 0.23.3 → 0.24.0.",
+        "Already newest and left alone: `mcp` 2.3.0, `httpx` 0.28.1, `httpx-curl-cffi` 0.1.5, `argon2-cffi` 25.1.0, `pytest` 9.1.1 and its plugins, `respx` 0.23.1, `reuse` 6.2.0."
+      ]
+    },
+    {
+      "title": "🐛 Fixed",
+      "items": [
+        "`nai/imaging.py` unpacked the JPEG SOF segment into an untyped tuple; `pyright` 1.1.414 started rejecting it against the declared `tuple[int, int]` return type. It now unpacks into two named variables, which the type checker can follow."
+      ]
+    }
+  ],
+  "upgrade_notes": "No breaking changes to the shipped API, CLI, MCP tools or documentation URLs. If you vendor this project's lock files, note that `sphinx` now allows 9.x and that two transitive transports (`websockets`, `cyclopts`) crossed a major version. The intentional behaviour change from 0.6.0 still applies: `director_tool`'s `emotion` and `emotion_level` require the `X-MCP-Insiders` opt-in."
+}
