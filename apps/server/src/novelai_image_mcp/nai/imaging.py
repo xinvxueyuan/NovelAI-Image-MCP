@@ -51,7 +51,8 @@ def _jpeg_dimensions(data: bytes) -> tuple[int, int]:
             payload = stream.read(5)
             if len(payload) != 5:
                 break
-            return struct.unpack(">HH", payload[1:5])[::-1]
+            width, height = struct.unpack(">HH", payload[1:5])
+            return height, width
         stream.seek(segment_length - 2, io.SEEK_CUR)
     raise NovelAIImageError("JPEG dimensions were not found")
 

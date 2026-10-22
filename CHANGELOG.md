@@ -60,6 +60,57 @@ per-release section headings. This file is the human-curated companion.
 
 - _Nothing yet._
 
+## [0.7.0] — 2026-10-23
+
+### Changed
+
+- **Every dependency is upgraded to its latest available release**: 64 Python
+  packages changed version and `pnpm-lock.yaml` moved 345 lines. Nothing in the
+  shipped API or CLI changes, which is why this is a minor release rather than a
+  patch.
+  - Runtime: `fastmcp` 4.1.0 → 4.1.3, `pydantic` 2.14.0a1 → 2.14.1 (the lock
+    was pinned at an alpha) with `pydantic-core` 2.47.0 → 2.50.1,
+    `pydantic-settings` 2.14.2 → 2.16.1, `curl-cffi` 0.15.0 → 0.16.3,
+    `msgpack` 1.2.1 → 1.2.3, `typer` 0.27.0 → 0.27.3.
+  - Transitively, through `fastmcp` and `mcp`: `uvicorn` 0.51.0 → 0.54.0,
+    `starlette` 1.3.1 → 1.9.0, `websockets` 16.1.1 → 17.3 and `cyclopts`
+    4.23.0 → 5.3.0 — the last two cross a major version, which is why the
+    server was exercised against the live API rather than only against tests.
+  - Development: `ruff` 0.16.0 → 0.17.1, `pyright` 1.1.411 → 1.1.414,
+    `poethepoet` 0.48.0 → 0.49.0 and `prek` 0.5.5 → 0.5.7.
+  - Already newest, so left alone: `mcp` 2.3.0, `httpx` 0.28.1,
+    `httpx-curl-cffi` 0.1.5, `argon2-cffi` 25.1.0, `pytest` 9.1.1 and its
+    plugins, `respx` 0.23.1 and `reuse` 6.2.0.
+  - Node: `turbo` and `eslint-plugin-turbo` 2.11.8 → 2.11.10,
+    `markdownlint-cli2` 0.23.3 → 0.24.0.
+  - Two packages left the dependency graph: `pastel` (no longer pulled in) and
+    `uc-micro-py` (`sphinx` 9 folded it in).
+  - The `curl-cffi` jump crosses a minor version and is the one that could have
+    broken the project, because the NovelAI edge sits behind a Cloudflare WAF
+    that fingerprints TLS. Verified against the live API: the request still
+    carries a Chrome TLS 1.3 fingerprint (peet.ws echoed
+    `t13d1516h2_8daaf6152771_806a8c22fdea`), and `get_subscription` returned
+    the same eleven keys it did before the upgrade.
+- **The documentation stack crosses a major version.** The docs project pinned
+  `sphinx>=8.1.3,<9.0`, which silently capped it below the current release;
+  the ceiling is now `<10.0` and the stack is `sphinx` 8.2.3 → 9.2.0, with
+  `sphinxcontrib-mermaid` 2.1.0 → 2.1.1 following and `myst-parser` 5.1.0,
+  `furo` 2025.12.19, `sphinx-design` 0.7.0 and `sphinx-togglebutton` 0.4.5
+  already current. Sphinx 9 qualifies the type names
+  it emits for pydantic's field constraints, so the bare-name `nitpick_ignore`
+  rule for `Ge`/`Le`/`Gt`/`Lt` stopped matching and thirteen warnings appeared;
+  a `annotated_types.` prefixed rule replaces it, scoped so a genuinely
+  missing reference is still reported. All three languages build with
+  `-E -W` and no warnings, and none of them has a dead link.
+
+### Fixed
+
+- _Nothing yet._
+
+### Security
+
+- _Nothing yet._
+
 ## [0.6.3] — 2026-10-19
 
 ### Added

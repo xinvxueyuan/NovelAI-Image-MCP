@@ -310,6 +310,11 @@ nitpick_ignore_regex: list[tuple[str, str]] = [
     # FieldInfo(annotation=int, required=False, metadata=[Ge(ge=1), Le(le=8)]).
     # Suppress the whole family rather than chasing every individual token.
     ("py:class", r"(?:Ge|Le|Gt|Lt)"),
+    # Sphinx 9 qualifies the same constraint classes with their defining
+    # module, so the bare-name rule above no longer matches and the warnings
+    # come back as ``annotated_types.Ge``. Scope the rule to that prefix so a
+    # genuinely missing reference elsewhere is still reported.
+    ("py:class", r"annotated_types\.(?:Ge|Le|Gt|Lt)"),
     (
         "py:class",
         r"(?:ge|le|gt|lt|pattern|min_length|max_length|max_digits"
