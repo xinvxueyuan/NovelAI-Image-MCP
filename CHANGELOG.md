@@ -10,38 +10,6 @@ GitHub's auto-generated release notes (see
 fold the per-commit gitmoji + Conventional Commit messages into the
 per-release section headings. This file is the human-curated companion.
 
-## [0.4.0] — 2026-08-28
-
-### Added
-
-- **NovelAI Diffusion V5 support**: new models `nai-diffusion-5-full`,
-  `nai-diffusion-5-curated`, `nai-diffusion-5-full-inpainting`; V5 payload
-  fields (`ucPresetId`, `qualityPresetId`, `straight_alpha`); content-sniffed
-  response decoding (ZIP vs MessagePack); explicit guard rejecting vibe
-  transfer on V5 (feature not yet released upstream).
-- **Official error codes on every NovelAI error**: errors now carry the API
-  error code and NovelAI's official explanation, appended to the message and
-  exposed as `.code` / `.explanation` on the exception; the CLI prints them to
-  stderr instead of a raw traceback.
-
-### Changed
-
-- **Server framework → FastMCP 4**: the MCP server layer (`server.py`,
-  `tools/*`, `_ctx.py`, `_mcp.py`) now runs on [PrefectHQ/fastmcp]
-  `fastmcp==4.0.0b3` (which itself targets the MCP SDK v2 `mcp>=2.0.0`),
-  replacing the raw SDK `MCPServer` composition. The 11 tools, the typer
-  CLI, and the `MCP_TRANSPORT`-selected stdio / streamable-http transports
-  are unchanged. Image tools now return the fastmcp `Image` helper and let
-  fastmcp convert it to `ImageContent`, removing the manual
-  `to_image_content()` step (and the historical `PydanticSerializationError`
-  workaround). Because fastmcp 4 is a prerelease, it is pinned exactly
-  (`==4.0.0b3`) with `fastmcp-slim==4.0.0b3`, and `pydantic>=2.12` is now the
-  floor — relax the pin when fastmcp 4 ships stable.
-
-### Fixed
-
-- _Nothing yet._
-
 ## [Unreleased]
 
 ### Added
@@ -440,6 +408,38 @@ string.
 - **HTTP authentication guidance was wrong**: the server never accepted a
   NovelAI token as a bearer credential; the docs now describe the real model
   (server-side `NOVELAI_TOKEN`, optional client-side `MCP_AUTH_TOKEN`).
+
+## [0.4.0] — 2026-08-28
+
+### Added
+
+- **NovelAI Diffusion V5 support**: new models `nai-diffusion-5-full`,
+  `nai-diffusion-5-curated`, `nai-diffusion-5-full-inpainting`; V5 payload
+  fields (`ucPresetId`, `qualityPresetId`, `straight_alpha`); content-sniffed
+  response decoding (ZIP vs MessagePack); explicit guard rejecting vibe
+  transfer on V5 (feature not yet released upstream).
+- **Official error codes on every NovelAI error**: errors now carry the API
+  error code and NovelAI's official explanation, appended to the message and
+  exposed as `.code` / `.explanation` on the exception; the CLI prints them to
+  stderr instead of a raw traceback.
+
+### Changed
+
+- **Server framework → FastMCP 4**: the MCP server layer (`server.py`,
+  `tools/*`, `_ctx.py`, `_mcp.py`) now runs on [PrefectHQ/fastmcp]
+  `fastmcp==4.0.0b3` (which itself targets the MCP SDK v2 `mcp>=2.0.0`),
+  replacing the raw SDK `MCPServer` composition. The 11 tools, the typer
+  CLI, and the `MCP_TRANSPORT`-selected stdio / streamable-http transports
+  are unchanged. Image tools now return the fastmcp `Image` helper and let
+  fastmcp convert it to `ImageContent`, removing the manual
+  `to_image_content()` step (and the historical `PydanticSerializationError`
+  workaround). Because fastmcp 4 is a prerelease, it is pinned exactly
+  (`==4.0.0b3`) with `fastmcp-slim==4.0.0b3`, and `pydantic>=2.12` is now the
+  floor — relax the pin when fastmcp 4 ships stable.
+
+### Fixed
+
+- _Nothing yet._
 
 ## [0.3.0] — 2026-08-01
 
