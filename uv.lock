@@ -10,11 +10,11 @@ members = [
 
 [manifest.dependency-groups]
 dev = [
-    { name = "prek", specifier = ">=0.5.5" },
+    { name = "prek", specifier = ">=0.5.7" },
     { name = "reuse", extras = ["charset-normalizer"], specifier = ">=5.0.0" },
 ]
 lint = [
-    { name = "prek", specifier = ">=0.5.5" },
+    { name = "prek", specifier = ">=0.5.7" },
     { name = "reuse", extras = ["charset-normalizer"], specifier = ">=5.0.0" },
 ]
 
@@ -989,7 +989,7 @@ wheels = [
 
 [[package]]
 name = "novelai-image-mcp"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "apps/server" }
 dependencies = [
     { name = "argon2-cffi" },

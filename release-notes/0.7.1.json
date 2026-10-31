@@ -1,0 +1,20 @@
+{
+  "version": "0.7.1",
+  "date": "2026-10-31",
+  "summary": "A maintenance patch. The workflows that build, document and release this project move to the current GitHub Actions releases, and the repo-root `prek` floor follows the lock. No Python dependency, source file, MCP tool or CLI command changes.",
+  "sections": [
+    {
+      "title": "⬆️ Upgraded",
+      "items": [
+        "`astral-sh/setup-uv` 10.3.0 → 10.3.2 across `ci.yml`, `docs.yml` and `release.yml`; still pinned to a full commit SHA (`07a047e6…`).",
+        "`pypa/gh-action-pypi-publish` 1.14.2 → 1.14.3 in `release.yml`; still pinned to a full commit SHA (`7245906f…`).",
+        "`prek` requirement `>=0.5.5` → `>=0.5.7` in the repo-root `pyproject.toml`; the lock already resolved 0.5.7, so only its recorded specifier moves."
+      ]
+    },
+    {
+      "title": "📝 Notes",
+      "items": "Nothing under `apps/server/src` changes and no Python dependency in `uv.lock` moves, so this release is safe to take on its own; the published wheel differs from 0.7.0 only in its version string. If you vendor the lock files, the only delta is the recorded `prek` specifier and the project's own version."
+    }
+  ],
+  "upgrade_notes": "No breaking changes to the shipped API, CLI, MCP tools or documentation URLs. The 0.6.0 opt-in for `director_tool`'s `emotion` / `emotion_level` (requires the `X-MCP-Insiders` header) still applies."
+}

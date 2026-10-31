@@ -60,6 +60,26 @@ per-release section headings. This file is the human-curated companion.
 
 - _Nothing yet._
 
+## [0.7.1] — 2026-10-31
+
+### Changed
+
+- **The CI and release pipelines run on the current GitHub Actions releases**:
+  `astral-sh/setup-uv` 10.3.0 → 10.3.2 in `ci.yml`, `docs.yml` and
+  `release.yml`, and `pypa/gh-action-pypi-publish` 1.14.2 → 1.14.3 in
+  `release.yml`. Every action stays pinned to a full commit SHA.
+- **The repo-root `prek` floor moves from `>=0.5.5` to `>=0.5.7`** in
+  `pyproject.toml`, matching the `prek` 0.5.7 the lock already resolved — only
+  the recorded specifier in `uv.lock` moves with it.
+
+No third-party dependency changes version and nothing under `apps/server/src`
+is touched, so the published wheel differs from 0.7.0 only in its version
+string.
+
+### Fixed
+
+- _Nothing yet._
+
 ## [0.7.0] — 2026-10-23
 
 ### Changed
