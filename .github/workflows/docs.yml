@@ -38,11 +38,11 @@ jobs:
         language: ['en', 'zh', 'ja']
     steps:
       - name: 📥 Checkout
-        # pinned from actions/checkout@v6.1.0
+        # pinned from actions/checkout@v7.0.1
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: ⚡ Setup uv
-        # pinned from astral-sh/setup-uv@v8.3.2
+        # pinned from astral-sh/setup-uv@v10.3.2
         uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
         with:
           python-version: "3.13"
@@ -111,7 +111,7 @@ jobs:
           fi
 
       - name: 📦 Upload language artifact
-        # pinned from actions/upload-artifact@v4.6.2
+        # pinned from actions/upload-artifact@v7.0.2
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: docs-${{ matrix.language }}
@@ -124,14 +124,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Configure GitHub Pages
-        # pinned from actions/configure-pages@v5.0.0
+        # pinned from actions/configure-pages@v6.0.0
         id: pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d
         with:
           enablement: false  # we don't try to enable Pages on the repo from CI
 
       - name: 📥 Download all language artifacts
-        # pinned from actions/download-artifact@v4.3.0
+        # pinned from actions/download-artifact@v8.0.2
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           path: artifacts
@@ -164,7 +164,7 @@ jobs:
             | xargs -0 sed -i "s|href=\"/|href=\"${base}/|g; s|src=\"/|src=\"${base}/|g"
 
       - name: 📤 Upload Pages artifact
-        # pinned from actions/upload-pages-artifact@v3.0.1
+        # pinned from actions/upload-pages-artifact@v5.0.0
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9
         with:
           path: staging
@@ -182,5 +182,5 @@ jobs:
     steps:
       - name: 🚀 Deploy to GitHub Pages
         id: deployment
-        # pinned from actions/deploy-pages@v4.0.1
+        # pinned from actions/deploy-pages@v5.0.1
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346

@@ -66,7 +66,7 @@ jobs:
       docker: ${{ steps.detect.outputs.docker }}
     steps:
       - name: Checkout
-        # pinned from actions/checkout@v6.1.0
+        # pinned from actions/checkout@v7.0.1
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
@@ -85,20 +85,20 @@ jobs:
       UV_NO_SYNC: "1"
     steps:
       - name: Checkout
-        # pinned from actions/checkout@v6.1.0
+        # pinned from actions/checkout@v7.0.1
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Setup Node
-        # pinned from actions/setup-node@v6.5.0
+        # pinned from actions/setup-node@v7.1.0
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: 24
       - name: Setup pnpm
-        # pinned from pnpm/action-setup@v6.0.10
+        # pinned from pnpm/action-setup@v6.1.0
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413
       - name: Install Node dependencies (markdownlint only)
         run: pnpm install --frozen-lockfile
       - name: Setup uv
-        # pinned from astral-sh/setup-uv@v8.3.2
+        # pinned from astral-sh/setup-uv@v10.3.2
         uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
         with:
           python-version: "3.13"
@@ -157,11 +157,11 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - name: Checkout
-        # pinned from actions/checkout@v6.1.0
+        # pinned from actions/checkout@v7.0.1
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup uv
-        # pinned from astral-sh/setup-uv@v8.3.2
+        # pinned from astral-sh/setup-uv@v10.3.2
         uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
         with:
           python-version: "3.13"
@@ -186,7 +186,7 @@ jobs:
         run: uv run --directory apps/server -m pytest --junitxml=test-results/pytest.xml --timeout=120
 
       - name: Upload Coverage Report
-        # pinned from actions/upload-artifact@v7.0.1
+        # pinned from actions/upload-artifact@v7.0.2
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
@@ -197,7 +197,7 @@ jobs:
           retention-days: 14
 
       - name: Publish Test Results
-        # pinned from EnricoMi/publish-unit-test-result-action@v2.24.0
+        # pinned from EnricoMi/publish-unit-test-result-action@v2.25.0
         uses: EnricoMi/publish-unit-test-result-action@7622c5bf3d112a72ab4fa3951c2aa5723d8ab92d
         if: always() && matrix.os == 'ubuntu-latest'
         with:
@@ -211,15 +211,15 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        # pinned from actions/checkout@v6.1.0
+        # pinned from actions/checkout@v7.0.1
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Set up Docker Buildx
-        # pinned from docker/setup-buildx-action@v3.11.1
+        # pinned from docker/setup-buildx-action@v4.4.1
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
       - name: Build runtime image
         # Build context is the repo root so uv can resolve the workspace
         # graph; the Dockerfile lives at apps/server/Dockerfile.
-        # pinned from docker/build-push-action@v6.18.0
+        # pinned from docker/build-push-action@v7.4.0
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc
         with:
           context: .
@@ -255,22 +255,22 @@ jobs:
     env:
       UV_NO_SYNC: "1"
     steps:
-      # pinned from actions/checkout@v6.1.0
+      # pinned from actions/checkout@v7.0.1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup Node
-        # pinned from actions/setup-node@v6.5.0
+        # pinned from actions/setup-node@v7.1.0
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: 24
       - name: Setup pnpm
-        # pinned from pnpm/action-setup@v6.0.10
+        # pinned from pnpm/action-setup@v6.1.0
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
       - name: Setup uv
-        # pinned from astral-sh/setup-uv@v8.3.2
+        # pinned from astral-sh/setup-uv@v10.3.2
         uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
         with:
           python-version: "3.13"
