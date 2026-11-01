@@ -99,7 +99,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Setup uv
         # pinned from astral-sh/setup-uv@v10.3.2
-        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
         with:
           python-version: "3.13"
           enable-cache: true
@@ -162,7 +162,7 @@ jobs:
 
       - name: Setup uv
         # pinned from astral-sh/setup-uv@v10.3.2
-        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
         with:
           python-version: "3.13"
           enable-cache: true
@@ -271,7 +271,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Setup uv
         # pinned from astral-sh/setup-uv@v10.3.2
-        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
         with:
           python-version: "3.13"
           cache-dependency-glob: uv.lock
