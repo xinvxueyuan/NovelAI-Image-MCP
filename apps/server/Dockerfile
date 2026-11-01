@@ -8,7 +8,7 @@
 # The build context is the repository root (see docker-compose.yml or the
 # release workflow). We copy both the workspace root pyproject.toml and the
 # apps/server member's pyproject.toml so uv can resolve the workspace graph.
-FROM python:3.13-slim@sha256:7ba5f5888fbe0014ab9edb2278922995c2201fc3752c46b0be24763eb46fa9f3 AS requirements_stage
+FROM python:3.15-slim@sha256:94d3426f1def7db4a106a232ac121bfd975393e5dfd40a619b955fae45fe7913 AS requirements_stage
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       gcc python3-dev \
@@ -46,7 +46,7 @@ RUN python -m uv build --package novelai-image-mcp --wheel --no-sources --out-di
 
 
 # ── Runtime stage ────────────────────────────────────────────────────────────
-FROM python:3.13-slim@sha256:7ba5f5888fbe0014ab9edb2278922995c2201fc3752c46b0be24763eb46fa9f3
+FROM python:3.15-slim@sha256:94d3426f1def7db4a106a232ac121bfd975393e5dfd40a619b955fae45fe7913
 
 WORKDIR /app
 
