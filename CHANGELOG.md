@@ -26,6 +26,12 @@ per-release section headings. This file is the human-curated companion.
 
 ### Security
 
+- _Nothing yet._
+
+## [0.7.2] — 2026-11-23
+
+### Security
+
 - **Four open Dependabot alerts are closed by transitive-dependency bumps**;
   none required a change to a declared dependency range except the `eslint`
   peer, now pinned explicitly:
