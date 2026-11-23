@@ -18,6 +18,20 @@ per-release section headings. This file is the human-curated companion.
 
 ### Changed
 
+- _Nothing yet._
+
+### Fixed
+
+- _Nothing yet._
+
+### Security
+
+- _Nothing yet._
+
+## [0.8.0] — 2026-11-23
+
+### Changed
+
 - **The insiders surface is now enabled by default.** `X-MCP-Insiders` changes
   from an opt-in header to a control header: omitting it keeps every registered
   feature at its default (on), and `X-MCP-Insiders: false` switches the surface

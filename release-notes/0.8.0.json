@@ -1,0 +1,37 @@
+{
+  "version": "0.8.0",
+  "date": "2026-11-23",
+  "summary": "The insiders surface is now enabled by default. `X-MCP-Insiders` stops being an opt-in and becomes a control header: omitting it keeps every registered feature on, and `false` switches the surface off. Clients that never sent the header will start seeing per-route output directories and an audit trail, so this is a **minor version with a behaviour change** — read the migration note before upgrading.",
+  "highlights": [
+    {
+      "title": "Defaults flipped: routing and audit are on",
+      "body": "A header-less request now gets `model-routing` and `experimental-tools` at their defaults. That means one JSONL audit record per tool call, images under `<NOVELAI_OUTPUT_DIR>/<route>/`, and `director_tool`'s `emotion` / `emotion_level` accepted without any header. Send `X-MCP-Insiders: false` to restore the previous behaviour per request, or use `MCP_INSIDERS_DISABLED_FEATURES` to do it server-wide."
+    }
+  ],
+  "sections": [
+    {
+      "title": "🔁 Changed",
+      "items": [
+        "**`X-MCP-Insiders` is a control header, not an opt-in.** Missing or empty now means *enabled at defaults*; `false` / `0` / `off` / `no` switches the surface off. Every other token keeps its previous meaning (`model-routing=false`, bare keys, `k=v, k2=v2`).",
+        "**`model-routing` is active without a header**, so each tool call appends one record to `<NOVELAI_OUTPUT_DIR>/audit.jsonl` (`MCP_AUDIT_LOG_PATH` still redirects it). Prompts are stored as a length plus a truncated SHA-256; credential headers and image payloads are never written.",
+        "**Artifacts are route-scoped by default.** Images go to `<NOVELAI_OUTPUT_DIR>/<route>/` while `MCP_ROUTE_SCOPED_OUTPUT` is `true`. The route is the first non-empty agent header, then client header, then the MCP client's advertised name; over stdio it resolves to `stdio`.",
+        "**`experimental-tools` is active by default**, so `director_tool` accepts `emotion` and `emotion_level` with no header. The gate now describes the opt-out rather than the opt-in.",
+        "**An over-long insiders header is treated as absent.** A value beyond 4096 characters used to switch the surface off; it now applies nothing and records `header-too-long` in `malformed`, because a value that large cannot be trusted to carry an intent."
+      ]
+    },
+    {
+      "title": "🛠️ Migrating from 0.7.x",
+      "items": [
+        "To keep the old behaviour **per request**: send `X-MCP-Insiders: false`. To keep it **server-wide**: set `MCP_INSIDERS_DISABLED_FEATURES='[\"model-routing\"]'` (routing, scoped output and the audit trail) and/or `'[\"experimental-tools\"]'` (the `director_tool` gate).",
+        "To disable **only** the route-scoped layout while keeping routing and the audit trail: set `MCP_ROUTE_SCOPED_OUTPUT=false`.",
+        "If you parse `outputs/*.png` by absolute path, either pin the new layout or set `MCP_ROUTE_SCOPED_OUTPUT=false`. The `novelai://outputs/{name}` resource resolves inside the same scope, so it follows the setting with no extra change.",
+        "`MCP_AUTH_TOKEN` and `MCP_ROUTE_TOKENS` semantics are unchanged; route-bound tokens still fail closed on a mismatch."
+      ]
+    },
+    {
+      "title": "📝 Notes",
+      "items": "No tool, prompt or resource is added or removed, and `PRODUCTION_TOOL_COUNT` is unchanged. The `insiders` tag gate still ships with no production tool carrying the tag, so switching the surface off hides nothing. Tool schemas remain static — `emotion` / `emotion_level` stay visible to a schema introspection and the gate lives in the tool body."
+    }
+  ],
+  "upgrade_notes": "This release changes default behaviour. A client that never sent `X-MCP-Insiders` will begin writing `audit.jsonl` and placing images under a route subdirectory. Send `X-MCP-Insiders: false`, set `MCP_ROUTE_SCOPED_OUTPUT=false`, or list the features in `MCP_INSIDERS_DISABLED_FEATURES` to restore the 0.7.x behaviour. There is no change to the MCP tools, CLI commands, prompts, resources or documentation URLs."
+}

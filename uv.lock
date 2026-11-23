@@ -989,7 +989,7 @@ wheels = [
 
 [[package]]
 name = "novelai-image-mcp"
-version = "0.7.2"
+version = "0.8.0"
 source = { editable = "apps/server" }
 dependencies = [
     { name = "argon2-cffi" },
