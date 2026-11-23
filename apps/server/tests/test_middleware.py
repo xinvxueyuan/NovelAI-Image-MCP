@@ -138,20 +138,35 @@ def _only_record(audit_path: Path) -> dict[str, Any]:
 class TestExperimentalToolGate:
     """The gate hides the tagged tool *and* refuses it when called by name."""
 
-    async def test_an_opted_out_client_does_not_see_the_tagged_tool(self) -> None:
+    async def test_a_header_less_client_sees_and_calls_the_tagged_tool(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        # The surface is on by default: no header means every default applies.
+        _fake_headers(monkeypatch, tmp_path, {})
         async with Client(_gate_server()) as client:
-            assert await _tool_names(client) == {"ping", "boom"}
-
-    async def test_an_opted_out_client_cannot_call_it_by_name(self) -> None:
-        with pytest.raises(ToolError):
-            async with Client(_gate_server()) as client:
-                await client.call_tool("secret_tool", {})
+            assert await _tool_names(client) == {"ping", "boom", "secret_tool"}
+            assert (await client.call_tool("secret_tool", {})).data == "secret"
 
     async def test_the_untagged_tools_are_unaffected(self) -> None:
         async with Client(_gate_server()) as client:
             assert (await client.call_tool("ping", {})).data == "pong"
 
-    async def test_an_opted_in_client_sees_and_calls_it(
+    async def test_a_falsy_header_hides_the_tagged_tool(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        _fake_headers(monkeypatch, tmp_path, {"x-mcp-insiders": "false"})
+        async with Client(_gate_server()) as client:
+            assert await _tool_names(client) == {"ping", "boom"}
+
+    async def test_a_falsy_header_rejects_it_by_name(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        _fake_headers(monkeypatch, tmp_path, {"x-mcp-insiders": "false"})
+        with pytest.raises(ToolError):
+            async with Client(_gate_server()) as client:
+                await client.call_tool("secret_tool", {})
+
+    async def test_an_explicit_true_still_sees_and_calls_it(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
         _fake_headers(monkeypatch, tmp_path, {"x-mcp-insiders": "true"})
@@ -238,10 +253,22 @@ class TestAuditTrail:
         assert "authorization" not in record["headers"]
         assert "cookie" not in record["headers"]
 
-    async def test_without_headers_nothing_is_recorded(
+    async def test_without_headers_the_call_is_recorded(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
+        # model-routing is a registered default, so a header-less call is
+        # audited and attributed to the client-derived route.
         audit_path = _fake_headers(monkeypatch, tmp_path, {})
+        async with Client(_gate_server()) as client:
+            await client.call_tool("ping", {})
+        record = _only_record(audit_path)
+        assert record["tool"] == "ping"
+        assert record["outcome"] == "ok"
+
+    async def test_a_falsy_header_records_nothing(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        audit_path = _fake_headers(monkeypatch, tmp_path, {"x-mcp-insiders": "false"})
         async with Client(_gate_server()) as client:
             await client.call_tool("ping", {})
         assert not audit_path.exists()

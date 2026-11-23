@@ -6,13 +6,13 @@ trail while ``model-routing`` is active, and gates the experimental tool
 surface. It never rewrites a result and never swallows an exception.
 
 The gate is deliberately two-sided. ``on_list_tools`` hides insiders-tagged
-tools from a client that has not opted in, and ``on_call_tool`` rejects a call
-to one *by name*, so guessing the name is not a way around the listing filter.
+tools from a client that switched the surface off, and ``on_call_tool`` rejects
+a call to one *by name*, so guessing the name is not a way around the listing
+filter.
 
-No tool shipped today carries the tag. The mechanism is opt-in by design:
-tagging an existing tool would remove it from every client that does not send
-the insiders header, which would break the promise that a request without the
-header behaves exactly as it did before.
+No tool shipped today carries the tag. The tag is reserved for a future
+experimental surface: adding it to an existing tool would remove that tool from
+every client that sends ``X-MCP-Insiders: false``.
 """
 
 from __future__ import annotations
@@ -53,8 +53,8 @@ def _request_insiders() -> tuple[dict[str, str], InsidersConfig, frozenset[str]]
     """Return the request headers, the parsed insiders config and its features.
 
     ``get_http_headers()`` never raises and returns an empty mapping when there
-    is no HTTP request, so over stdio the config is disabled and every feature
-    keeps its default.
+    is no HTTP request, so over stdio the config keeps its default and every
+    feature stays at its registered default.
 
     Middleware is *not* a dependency-injection call site. ``get_effective_features``
     and ``get_routing_context`` declare their parameter default as
@@ -154,7 +154,7 @@ class ToolCallLoggingMiddleware(Middleware):
         context: MiddlewareContext[mt.ListToolsRequest],
         call_next: CallNext[mt.ListToolsRequest, Sequence[Tool]],
     ) -> Sequence[Tool]:
-        """Hide insiders-tagged tools unless the client opted in."""
+        """Hide insiders-tagged tools when the client switched the surface off."""
         tools = await call_next(context)
         _headers, _config, features = _request_insiders()
         if EXPERIMENTAL_TOOLS in features:
@@ -184,10 +184,11 @@ class ToolCallLoggingMiddleware(Middleware):
             ):
                 rejected = True
                 logger.warning("tool call rejected (experimental): %s", name)
-                # The message is the caller's only clue about how to opt in.
+                # The message is the caller's only clue about how to re-enable it.
                 raise ToolError(  # noqa: TRY003
-                    f"tool {name!r} is experimental and is not enabled for this "
-                    "client; send the insiders opt-in header to enable it."
+                    f"tool {name!r} is experimental and was switched off for this "
+                    "client; drop the insiders header, or send "
+                    "experimental-tools=true, to enable it."
                 )
             tool_result = await call_next(context)
             artifacts = artifact_paths(tool_result)

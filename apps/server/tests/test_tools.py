@@ -762,7 +762,7 @@ class TestRouteScopedOutput:
 
 
 class TestExperimentalParameterGate:
-    """`emotion` / `emotion_level` need the insiders opt-in (v1 body check).
+    """`emotion` / `emotion_level` are gated by the insiders surface (v1 body check).
 
     A tool schema is published once, when the server starts, so the parameters
     cannot disappear per request: they stay visible and the gate lives in the
@@ -823,19 +823,18 @@ class TestExperimentalParameterGate:
         assert call.kwargs["emotion"] is Emotion.HAPPY
         assert call.kwargs["emotion_level"] is EmotionLevel.WEAK
 
-    async def test_emotion_is_rejected_over_the_real_pipeline(
-        self, mcp_client: Any
+    async def test_emotion_is_accepted_over_the_real_pipeline(
+        self, mcp_client: Any, tmp_path: Any
     ) -> None:
-        from fastmcp.exceptions import ToolError
-
-        # The in-memory transport sends no insiders header, so experimental-tools
-        # is inactive: this proves the gate is wired through dependency injection
-        # and not only reachable from a direct in-process call.
-        with pytest.raises(ToolError, match="experimental"):
-            await mcp_client.call_tool(
-                "director_tool",
-                {"tool": "emotion", "image": _b64(), "emotion": "happy"},
-            )
+        # The in-memory transport sends no insiders header, so the surface keeps
+        # its default and experimental-tools is active: this proves the gate is
+        # wired through dependency injection and not only reachable from a
+        # direct in-process call.
+        result = await mcp_client.call_tool(
+            "director_tool",
+            {"tool": "emotion", "image": _b64(), "emotion": "happy"},
+        )
+        assert result is not None
 
     async def test_default_parameters_are_never_gated(
         self,

@@ -55,11 +55,11 @@ it.
 - **A sync `typer` CLI** with six subcommands for scripting outside an MCP host.
 - **Two transports**: stdio (local agents) + HTTP (remote / multi-client), the
   latter optionally protected by a bearer token (`MCP_AUTH_TOKEN`).
-- **Opt-in routing and audit (HTTP)**: a client that sends `X-MCP-Insiders`
-  gets per-route output directories, per-route loggers and an append-only JSONL
-  audit trail (prompts and credentials are never written verbatim). Without the
-  header nothing changes. See
-  [Insiders header, routing and audit][insiders-docs].
+- **Routing and audit, on by default**: every call gets a per-route output
+  directory, a per-route logger and an append-only JSONL audit trail (prompts
+  and credentials are never written verbatim). A client restores the flat,
+  unaudited behaviour with `X-MCP-Insiders: false`; an operator can do the same
+  server-wide. See [Insiders header, routing and audit][insiders-docs].
 - **Structured results**: enum-validated tool schemas, MCP tool annotations and
   `ToolError` for expected failures.
 - **Dual image return**: base64 `Image` content blocks (the agent *sees* the image)
@@ -371,11 +371,10 @@ Routing candidate defaults (JSON lists, first non-empty header wins):
 
 ### Insiders header and routing
 
-Over HTTP a client can opt in to experimental behaviour and declare which route,
-model, agent and session a request belongs to:
+Routing is **on by default**. A client declares which route, model, agent and
+session a request belongs to:
 
 ```text
-X-MCP-Insiders: true
 X-MCP-Agent-ID: team-a
 X-MCP-Model: nai-diffusion-5-full
 ```
@@ -384,13 +383,16 @@ The server then writes that request's images under
 `<NOVELAI_OUTPUT_DIR>/team-a/`, emits one line to the
 `novelai_image_mcp.audit.team-a` logger, and appends one record to the audit
 JSONL (the record keeps a prompt's length and a truncated SHA-256, never the
-prompt, and never a credential header or an image payload).
+prompt, and never a credential header or an image payload). A request that
+declares no route is attributed to the MCP client's advertised name.
 
-**Nothing changes without the header** -- no scoped directory, no audit file, no
-tool added or removed -- with one deliberate exception: `director_tool`'s
-`emotion` and `emotion_level` parameters now require the opt-in and fail with a
-`ToolError` otherwise (see the CHANGELOG). Routing headers are client-supplied
-and forgeable, so grant the opt-in only behind a trusted gateway.
+Send `X-MCP-Insiders: false` to switch the whole surface off -- flat output
+directory, no audit file, `director_tool`'s `emotion` / `emotion_level` refused
+with a `ToolError` -- or use `model-routing=false` to switch off only routing.
+Operators can force the same with
+`MCP_INSIDERS_DISABLED_FEATURES='["model-routing"]'`. Routing headers are
+client-supplied and forgeable, so run behind a trusted gateway before relying on
+anything they say.
 
 Full contract: [Insiders header, routing and audit][insiders-docs].
 

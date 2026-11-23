@@ -102,14 +102,14 @@ unauthenticated clients.
 
 ## Insiders, routing and audit
 
-The `X-MCP-Insiders` opt-in surface is inert unless a request sends the header.
-These variables configure the header names it reads and the side effects it
-switches on; the full contract is in
+The insiders surface is **enabled by default**; a client switches it off with
+`X-MCP-Insiders: false`. These variables configure the header names it reads and
+the side effects it controls; the full contract is in
 [Insiders header, routing and audit](development/insiders-and-routing.md).
 
 | Variable | Default | Notes |
 |---|---|---|
-| `MCP_INSIDERS_HEADER` | `X-MCP-Insiders` | Name of the per-request opt-in header. Lookup is case-insensitive. |
+| `MCP_INSIDERS_HEADER` | `X-MCP-Insiders` | Name of the per-request control header. Lookup is case-insensitive. |
 | `MCP_MODEL_HEADERS` | `["X-MCP-Model", "X-MCP-Model-Name"]` | JSON list. Ordered candidates for the declared model; the first non-empty header wins. |
 | `MCP_AGENT_HEADERS` | `["X-MCP-Agent-ID", "X-MCP-Agent", "X-MCP-Agent-Source"]` | JSON list. Ordered candidates for the agent, and the first route source. |
 | `MCP_CLIENT_HEADERS` | `["X-MCP-Client", "X-MCP-Client-Session-Id"]` | JSON list. Ordered candidates for the client; the first name containing `session` supplies the session. |

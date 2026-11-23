@@ -124,13 +124,12 @@ async def director_tool(
     ``prompt`` guides ``colorize`` and ``emotion``; ``defry``
     (0-10) sharpens line art.
 
-    ``emotion`` and ``emotion_level`` are **experimental**: they are served only to
-    requests that opt in through the insiders header (``X-MCP-Insiders:
-    experimental-tools=true``). Without that opt-in, passing either one fails
-    with a ``ToolError``; a non-default ``emotion_level`` alone counts as passing it.
-    Both parameters stay visible in this tool's schema either way, because a
-    tool schema is published when the server starts and cannot vary per
-    request.
+    ``emotion`` and ``emotion_level`` are **experimental** and are enabled by
+    default. A caller that switched the surface off (``X-MCP-Insiders: false``,
+    or ``experimental-tools=false``) gets a ``ToolError`` when passing either
+    one; a non-default ``emotion_level`` alone counts as passing it. Both
+    parameters stay visible in this tool's schema either way, because a tool
+    schema is published when the server starts and cannot vary per request.
     """
     settings = app.settings
     client = app.client
@@ -141,9 +140,9 @@ async def director_tool(
         EXPERIMENTAL_TOOLS not in features
     ):
         raise ToolError(
-            "emotion and emotion_level are experimental and are not enabled for "
-            "this request; opt in with the X-MCP-Insiders header "
-            "(experimental-tools=true)"
+            "emotion and emotion_level are experimental and were switched off for "
+            "this request; re-enable them by dropping the X-MCP-Insiders header "
+            "or sending experimental-tools=true"
         )
     if director is DirectorTool.EMOTION and emotion_enum is None:
         raise ValueError(

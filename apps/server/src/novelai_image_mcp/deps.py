@@ -6,11 +6,12 @@ schema. Tools, resources and prompts therefore declare exactly what they need
 instead of digging into the request context themselves. ``AppContext`` is the
 single value the server lifespan yields, and every provider reads from it.
 
-The insiders/routing providers read the *request headers* instead: an HTTP
-client opts into the experimental surface with the configured insiders header
-and describes its route with the configured routing headers. Over stdio there is
-no HTTP request at all, so the header lookup resolves to an empty mapping, the
-insiders surface stays disabled and behaviour is unchanged.
+The insiders/routing providers read the *request headers*: the surface is on
+by default and the header can switch features off per request, while the
+routing headers describe which route, model, agent and session the request
+belongs to. Over stdio there is no HTTP request, so the header lookup resolves
+to an empty mapping and the surface keeps its default (enabled); the routing
+context then reports the ``stdio`` route.
 """
 
 from __future__ import annotations
@@ -57,11 +58,11 @@ def get_client(app: AppContext = Depends(get_app_context)) -> NovelAIClient:
 def get_insiders_config(
     headers: dict[str, str] = CurrentHeaders(),
 ) -> InsidersConfig:
-    """Parse the insiders opt-in header for the current request.
+    """Parse the insiders control header for the current request.
 
     ``CurrentHeaders()`` resolves to an empty mapping when there is no HTTP
-    request, so over stdio the insiders surface stays disabled and behaviour is
-    unchanged.
+    request, so over stdio the surface keeps its default (enabled) and the
+    routing context resolves to the ``stdio`` route.
     """
     name = get_mcp_settings().insiders_header.strip().lower()
     return parse_insiders(headers.get(name))

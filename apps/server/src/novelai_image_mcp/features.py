@@ -1,11 +1,13 @@
-"""Registry of the features the insiders header can switch on.
+"""Registry of the features the insiders surface exposes.
 
-The header only *overrides*: a feature that is absent from
-:attr:`InsidersConfig.features` keeps the default declared here. Two gates can
-then force a feature off -- the header itself (``enabled=False``) and an
-operator-level kill switch passed as ``force_disabled``, which wins over
-everything else. Keys that are not registered in :data:`INSIDERS_FEATURES` can
-never become active, no matter what a client sends.
+Features are active by default: with no header at all, every entry declared
+here with ``default_enabled=True`` is on. The header only *overrides* -- a
+feature that is absent from :attr:`InsidersConfig.features` keeps the default
+declared here. Two gates can then force a feature off -- the header itself
+(a bare ``false`` token, or ``enabled=False``) and an operator-level kill
+switch passed as ``force_disabled``, which wins over everything else. Keys that
+are not registered in :data:`INSIDERS_FEATURES` can never become active, no
+matter what a client sends.
 """
 
 from __future__ import annotations
@@ -65,8 +67,9 @@ def resolve_features(
     """Return the names of the features active for this request.
 
     Precedence, strongest last: registered default, per-request override from
-    the header, then ``force_disabled``. A disabled header yields no features at
-    all, and names absent from :data:`INSIDERS_FEATURES` never take effect.
+    the header, then ``force_disabled``. A surface switched off by the header
+    yields no features at all, and names absent from :data:`INSIDERS_FEATURES`
+    never take effect.
     """
     if not config.enabled:
         return frozenset()

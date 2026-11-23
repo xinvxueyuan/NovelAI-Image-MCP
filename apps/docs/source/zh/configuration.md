@@ -99,14 +99,14 @@
 
 ## Insiders、分路与审计
 
-除非请求发送该头，否则 `X-MCP-Insiders` opt-in 接口面是不生效的。
+insiders 接口面**默认开启**；客户端发送 `X-MCP-Insiders: false` 即可关闭。
 这些变量配置它读取的头名以及它会打开
 的副作用；完整契约见
 [Insiders 头、分路与审计](development/insiders-and-routing.md)。
 
 | 变量 | 默认值 | 说明 |
 |---|---|---|
-| `MCP_INSIDERS_HEADER` | `X-MCP-Insiders` | 按请求 opt-in 头的名字。查找大小写不敏感。 |
+| `MCP_INSIDERS_HEADER` | `X-MCP-Insiders` | 按请求控制头的名字。查找大小写不敏感。 |
 | `MCP_MODEL_HEADERS` | `["X-MCP-Model", "X-MCP-Model-Name"]` | JSON 列表。声明 model 的有序候选；第一个非空头胜出。 |
 | `MCP_AGENT_HEADERS` | `["X-MCP-Agent-ID", "X-MCP-Agent", "X-MCP-Agent-Source"]` | JSON 列表。agent 的有序候选，也是第一个 route 来源。 |
 | `MCP_CLIENT_HEADERS` | `["X-MCP-Client", "X-MCP-Client-Session-Id"]` | JSON 列表。client 的有序候选；名字中含 `session` 的第一个提供 session。 |

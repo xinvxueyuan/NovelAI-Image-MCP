@@ -65,8 +65,13 @@ class TestOutputResource:
     ) -> None:
         from mcp_types import BlobResourceContents
 
+        # Routing is on by default, so a request's images live under its route
+        # subdirectory. The in-memory transport sends no routing headers, so the
+        # route falls back to the MCP client's self-reported name (``mcp``).
         name = "generate-20260101T000000Z-abcdef.png"
-        (Path(settings.output_dir) / name).write_bytes(png_bytes)
+        route_dir = Path(settings.output_dir) / "mcp"
+        route_dir.mkdir(parents=True, exist_ok=True)
+        (route_dir / name).write_bytes(png_bytes)
         contents = await mcp_client.read_resource(f"novelai://outputs/{name}")
         block = contents[0]
         assert isinstance(block, BlobResourceContents)

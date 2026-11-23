@@ -41,10 +41,19 @@ class TestRegistry:
 
 
 class TestResolveFeatures:
-    def test_a_disabled_header_yields_no_features(self) -> None:
+    def test_a_falsy_header_yields_no_features(self) -> None:
         assert resolve_features(InsidersConfig.disabled()) == frozenset()
         assert resolve_features(parse_insiders("false")) == frozenset()
-        assert resolve_features(parse_insiders(None)) == frozenset()
+
+    def test_a_missing_header_yields_every_default(self) -> None:
+        # The surface is on by default: an absent header activates every
+        # registered feature at its declared default.
+        assert resolve_features(parse_insiders(None)) == frozenset(
+            {MODEL_ROUTING, EXPERIMENTAL_TOOLS},
+        )
+        assert resolve_features(InsidersConfig.default()) == frozenset(
+            {MODEL_ROUTING, EXPERIMENTAL_TOOLS},
+        )
 
     def test_an_enabled_header_yields_every_default(self) -> None:
         assert resolve_features(InsidersConfig(enabled=True)) == frozenset(

@@ -1,17 +1,19 @@
-"""Parser for the experimental ``X-MCP-Insiders`` opt-in header.
+"""Parser for the ``X-MCP-Insiders`` control header.
 
-The header is a single, self-contained value supplied by the HTTP client: the
-server never reads insiders state from the environment or from disk. Its
-grammar is deliberately forgiving so a typo can never break a request -- every
-problem is *reported* on :class:`InsidersConfig` (``unknown_keys`` /
-``malformed``) and ignored for behaviour. Nothing in this module performs I/O,
-so the whole surface is unit-testable.
+The surface is **enabled by default**. The header is a single, self-contained
+value supplied by the HTTP client and only ever *changes* that default: it can
+switch individual features off, or switch the whole surface off. The server
+never reads insiders state from the environment or from disk. Its grammar is
+deliberately forgiving so a typo can never break a request -- every problem is
+*reported* on :class:`InsidersConfig` (``unknown_keys`` / ``malformed``) and
+ignored for behaviour. Nothing in this module performs I/O, so the whole
+surface is unit-testable.
 
 Grammar (comma separated, case-insensitive, ``-`` and ``_`` are equivalent):
 
 =======================  ====================================================
-``<missing>``            disabled
-``""``                   disabled
+``<missing>``            enabled, every feature at its default
+``""``                   enabled, every feature at its default
 ``false``                disabled (also ``0`` / ``off`` / ``no``)
 ``true``                 enabled, every feature at its default (``1``/``on``/``yes``)
 ``model-routing=false``  enabled, ``model-routing`` overridden to ``False``
@@ -23,9 +25,8 @@ Keys that are not registered in :data:`features.INSIDERS_FEATURES` are recorded
 in ``unknown_keys`` and otherwise ignored, so a client can never activate a
 feature the server does not know about. An unparsable value is recorded in
 ``malformed`` and applies no override -- it never raises and never switches the
-header off. The surface is on whenever the header is present and non-empty;
-only a bare ``false``-style token, an empty header or a header longer than
-``max_length`` switches it off.
+header off. The surface is on unless a bare ``false``-style token appears or an
+operator has disabled a feature through ``MCP_INSIDERS_DISABLED_FEATURES``.
 """
 
 from __future__ import annotations
@@ -38,7 +39,7 @@ from .features import INSIDERS_FEATURES
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-#: Canonical spelling of the opt-in header.
+#: Canonical spelling of the insiders control header.
 INSIDERS_HEADER = "X-MCP-Insiders"
 
 #: Bare values that switch the insiders surface on.
@@ -79,20 +80,25 @@ class InsidersConfig:
     """Parsed insiders state for one request.
 
     ``features`` holds only the overrides the header made for *registered*
-    features, so an absent key means "use the registered default".
+    features, so an absent key means "use the registered default". The
+    surface is enabled unless a bare falsy token switched it off.
     ``unknown_keys`` and ``malformed`` are diagnostic only: they never change
-    behaviour and exist so an operator can see a typo instead of silently
-    losing the opt-in.
+    behaviour and exist so an operator can see a typo.
     """
 
-    enabled: bool = False
+    enabled: bool = True
     features: Mapping[str, bool] = field(default_factory=dict)
     unknown_keys: frozenset[str] = frozenset()
     malformed: frozenset[str] = frozenset()
 
     @classmethod
     def disabled(cls) -> InsidersConfig:
-        """Return the state used when the header is absent or unusable."""
+        """Return the state used when the header switches the surface off."""
+        return cls(enabled=False)
+
+    @classmethod
+    def default(cls) -> InsidersConfig:
+        """Return the state used when the header is absent or empty."""
         return cls()
 
 
@@ -100,21 +106,20 @@ class _Accumulator:
     """Mutable state folded over the comma-separated entries of one header."""
 
     def __init__(self) -> None:
-        self.enabled = False
+        self.enabled = True
         self.features: dict[str, bool] = {}
         self.unknown: set[str] = set()
         self.malformed: set[str] = set()
 
     def feed(self, token: str) -> bool:
-        """Fold one entry in; return ``False`` to disable the whole header.
+        """Fold one entry in; return ``False`` to disable the whole surface.
 
-        Any non-empty entry switches the header on: presence is the opt-in
-        signal, while the entry's value only decides the override it applies.
-        A bare ``false``-style entry is the exception -- it switches the whole
-        header off. A malformed entry is recorded and applies no override, but
-        still counts as presence so a typo cannot silently drop the opt-in.
+        The surface starts enabled; an entry's value only decides the override
+        it applies. A bare ``false``-style entry is the exception -- it
+        switches the whole surface off. A malformed entry is recorded and
+        applies no override, but never switches the surface off, so a typo
+        cannot silently drop a caller's explicit ``=false`` intent either.
         """
-        self.enabled = True
         key, raw_value = _split(token)
         if raw_value is None:
             flag = _as_flag(token)
@@ -154,19 +159,20 @@ def parse_insiders(raw: str | None, *, max_length: int = 4096) -> InsidersConfig
     Args:
         raw: The raw header value, or ``None`` when the header is absent.
         max_length: Largest accepted header length. Anything longer is treated
-            as disabled and recorded in ``malformed``.
+            as if absent (the surface stays at its default) and recorded in
+            ``malformed``.
 
     Returns:
         The parsed configuration. Invalid entries are recorded in
         ``unknown_keys`` / ``malformed`` and otherwise ignored.
     """
     if raw is None:
-        return InsidersConfig.disabled()
+        return InsidersConfig.default()
     if len(raw) > max_length:
         return InsidersConfig(malformed=frozenset({"header-too-long"}))
     value = raw.strip()
     if not value:
-        return InsidersConfig.disabled()
+        return InsidersConfig.default()
 
     state = _Accumulator()
     for entry in value.split(","):

@@ -110,8 +110,8 @@ class MCPServerSettings(BaseSettings):
     auth_token: str | None = None
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] | None = None
 
-    # ── Insiders opt-in surface ──
-    # The opt-in header is configurable so a deployment can move it out of a
+    # ── Insiders surface (enabled by default) ──
+    # The control header is configurable so a deployment can move it out of a
     # namespace it does not own. Lookup is case-insensitive because HTTP header
     # names are.
     insiders_header: str = "X-MCP-Insiders"

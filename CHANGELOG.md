@@ -18,7 +18,33 @@ per-release section headings. This file is the human-curated companion.
 
 ### Changed
 
-- _Nothing yet._
+- **The insiders surface is now enabled by default.** `X-MCP-Insiders` changes
+  from an opt-in header to a control header: omitting it keeps every registered
+  feature at its default (on), and `X-MCP-Insiders: false` switches the surface
+  off. This flips the meaning of an absent header, so clients that never sent it
+  will observe the following changes:
+
+  - `model-routing` is active, so each tool call appends one record to
+    `<NOVELAI_OUTPUT_DIR>/audit.jsonl` unless `MCP_AUDIT_LOG_PATH` redirects it
+    (or routing is disabled).
+  - Generated images are written under `<NOVELAI_OUTPUT_DIR>/<route>/` while
+    `MCP_ROUTE_SCOPED_OUTPUT` is `true` (its default). The route is the first
+    non-empty agent header, then client header, then the MCP client's advertised
+    name; over stdio it is `stdio`.
+  - `experimental-tools` is active, so `director_tool` accepts `emotion` /
+    `emotion_level` without any header.
+
+  To keep the previous behaviour, send `X-MCP-Insiders: false`, set
+  `MCP_ROUTE_SCOPED_OUTPUT=false`, or list the feature in
+  `MCP_INSIDERS_DISABLED_FEATURES` (`'["model-routing"]'` disables routing and
+  the audit trail server-wide; `'["experimental-tools"]'` restores the
+  `director_tool` gate).
+- **An over-long insiders header is now treated as absent.** A value beyond 4096
+  characters no longer switches the surface off; it is ignored (the surface
+  keeps its default) and `header-too-long` is recorded in `malformed`.
+- **The `director_tool` gate message now points at the opt-out.** It reads
+  "…was switched off for this request; re-enable them by dropping the
+  X-MCP-Insiders header or sending experimental-tools=true".
 
 ### Fixed
 

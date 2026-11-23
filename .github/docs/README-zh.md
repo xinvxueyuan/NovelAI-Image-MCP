@@ -50,9 +50,10 @@ ControlNet 标注、标签建议、Vibe 编码与账户订阅查询，全部走�
 - **同步 `typer` CLI**：六个子命令，用于在 MCP 宿主之外编写脚本。
 - **双传输**：stdio（本地 Agent）+ HTTP（远程 / 多客户端），HTTP 支持可选
   Bearer Token（`MCP_AUTH_TOKEN`）。
-- **可选的路由与审计（HTTP）**：客户端发送 `X-MCP-Insiders` 后，可获得按路由划分的
-  输出目录、按路由命名的 logger，以及 append-only 的 JSONL 审计流水（prompt 与凭证
-  绝不落原文）。不发送该头时行为完全不变。详见[内测头、路由与审计][insiders-docs]。
+- **路由与审计默认开启**：每次调用都会获得按路由划分的输出目录、按路由命名的 logger，
+  以及 append-only 的 JSONL 审计流水（prompt 与凭证绝不落原文）。客户端发送
+  `X-MCP-Insiders: false` 即可回到扁平、无审计的行为；运维侧也可全局关闭。详见
+  [内测头、路由与审计][insiders-docs]。
 - **结构化结果**：枚举校验的工具 schema、MCP 工具注解、预期失败统一抛 `ToolError`。
 - **图像双返回**：base64 `Image` 内容块（Agent 能“看到”图）**同时** 保存 PNG 到磁盘
   （返回路径）。
@@ -355,11 +356,9 @@ list / dict 类型的配置按 **JSON** 读取：`MCP_MODEL_HEADERS='["X-MCP-Mod
 
 ### 内测头与路由
 
-通过 HTTP，客户端可以逐请求 opt-in 实验性行为，并声明该请求属于哪条路由、哪个模型、
-哪个 Agent 与哪个会话：
+路由**默认开启**。客户端声明该请求属于哪条路由、哪个模型、哪个 Agent 与哪个会话：
 
 ```text
-X-MCP-Insiders: true
 X-MCP-Agent-ID: team-a
 X-MCP-Model: nai-diffusion-5-full
 ```
@@ -367,12 +366,13 @@ X-MCP-Model: nai-diffusion-5-full
 服务端随后把该请求的图像写到 `<NOVELAI_OUTPUT_DIR>/team-a/`，向
 `novelai_image_mcp.audit.team-a` logger 输出一行，并向审计 JSONL 追加一条记录
 （记录只保留 prompt 的长度与截断的 SHA-256，绝不保留 prompt 原文，也绝不写入凭证头或
-图像载荷）。
+图像载荷）。未声明路由的请求会归属到 MCP 客户端自报的名称。
 
-**不发送该头时一切不变** —— 不产生路由子目录、不写审计文件、不增删任何工具 ——
-只有一个刻意例外：`director_tool` 的 `emotion` 与 `emotion_level` 参数现在需要 opt-in，
-否则抛 `ToolError`（见 CHANGELOG）。路由头由客户端提供、可以伪造，因此只在可信网关之后
-才授予该 opt-in。
+发送 `X-MCP-Insiders: false` 可关闭整个面 —— 扁平输出目录、不写审计文件、
+`director_tool` 的 `emotion` / `emotion_level` 抛 `ToolError`；只想关闭路由则用
+`model-routing=false`。运维侧可用
+`MCP_INSIDERS_DISABLED_FEATURES='["model-routing"]'` 强制相同效果。路由头由客户端提供、
+可以伪造，因此依赖其内容前请置于可信网关之后。
 
 完整契约：[内测头、路由与审计][insiders-docs]。
 

@@ -13,41 +13,49 @@ from novelai_image_mcp.insiders import (
 )
 
 
-class TestDisabledHeader:
+class TestDefaultSurface:
     def test_header_name_constant(self) -> None:
         assert INSIDERS_HEADER == "X-MCP-Insiders"
 
-    def test_missing_header_is_disabled(self) -> None:
+    def test_missing_header_keeps_the_default_surface(self) -> None:
         config = parse_insiders(None)
-        assert config.enabled is False
+        assert config.enabled is True
+        assert config.features == {}
+        assert config.unknown_keys == frozenset()
+        assert config.malformed == frozenset()
+
+    @pytest.mark.parametrize("raw", ["", "   ", ",,,", " , , "])
+    def test_an_empty_header_keeps_the_default_surface(self, raw: str) -> None:
+        config = parse_insiders(raw)
+        assert config.enabled is True
         assert config.features == {}
         assert config.unknown_keys == frozenset()
         assert config.malformed == frozenset()
 
     @pytest.mark.parametrize(
         "raw",
-        ["", "   ", "false", "FALSE", "False", "0", "off", "OFF", "no", "No"],
+        ["false", "FALSE", "False", "0", "off", "OFF", "no", "No"],
     )
-    def test_falsy_header_is_disabled(self, raw: str) -> None:
+    def test_falsy_header_switches_the_surface_off(self, raw: str) -> None:
         config = parse_insiders(raw)
         assert config.enabled is False
         assert config.features == {}
         assert config.unknown_keys == frozenset()
         assert config.malformed == frozenset()
 
-    def test_a_bare_falsy_entry_disables_the_whole_header(self) -> None:
+    def test_a_bare_falsy_entry_switches_the_surface_off(self) -> None:
         # Order-independent: any bare falsy token switches the surface off,
         # even when another entry tried to switch it on.
         assert parse_insiders("model-routing=true, false").enabled is False
         assert parse_insiders("false, model-routing=true").enabled is False
 
-    def test_separators_without_entries_do_not_enable(self) -> None:
-        assert parse_insiders(",,,").enabled is False
-        assert parse_insiders(" , , ").enabled is False
+    def test_default_classmethod_matches_a_missing_header(self) -> None:
+        assert InsidersConfig.default() == parse_insiders(None)
+        assert InsidersConfig.default() == parse_insiders("")
 
-    def test_disabled_classmethod_matches_a_missing_header(self) -> None:
-        assert InsidersConfig.disabled() == parse_insiders(None)
+    def test_disabled_classmethod_matches_a_falsy_header(self) -> None:
         assert InsidersConfig.disabled() == parse_insiders("off")
+        assert InsidersConfig.disabled().enabled is False
 
     def test_config_is_frozen(self) -> None:
         config = InsidersConfig.disabled()
@@ -168,23 +176,27 @@ class TestDiagnostics:
 
 
 class TestLengthLimit:
-    def test_over_long_header_is_disabled_and_recorded(self) -> None:
+    def test_over_long_header_falls_back_to_the_default_and_is_recorded(self) -> None:
+        # An over-long header cannot be trusted to carry an intent, so it is
+        # treated as absent: the surface keeps its default and the caller's
+        # ``=false`` tokens inside it apply nothing.
         raw = "model-routing=false," + "x" * 4096
         config = parse_insiders(raw)
-        assert config.enabled is False
+        assert config.enabled is True
         assert config.features == {}
         assert config.malformed == frozenset({"header-too-long"})
 
     def test_the_limit_is_inclusive(self) -> None:
         assert parse_insiders("true", max_length=4).enabled is True
-        assert parse_insiders("true", max_length=3).enabled is False
-        assert parse_insiders("true", max_length=3).malformed == frozenset(
+        assert parse_insiders("false", max_length=5).enabled is False
+        assert parse_insiders("false", max_length=4).enabled is True
+        assert parse_insiders("false", max_length=4).malformed == frozenset(
             {"header-too-long"},
         )
 
     def test_the_limit_counts_the_raw_header(self) -> None:
-        assert parse_insiders("  true  ", max_length=8).enabled is True
-        assert parse_insiders("  true  ", max_length=7).enabled is False
+        assert parse_insiders("  false  ", max_length=9).enabled is False
+        assert parse_insiders("  false  ", max_length=8).enabled is True
 
 
 class TestPureLogic:

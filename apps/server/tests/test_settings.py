@@ -194,24 +194,28 @@ class TestInsidersProviders:
     value FastMCP would inject.
     """
 
-    def test_no_headers_means_the_insiders_surface_is_disabled(self) -> None:
+    def test_no_headers_means_the_surface_keeps_its_default(self) -> None:
         config = get_insiders_config({})
-        assert config.enabled is False
-        assert get_effective_features(config) == frozenset()
+        assert config.enabled is True
+        assert get_effective_features(config) == frozenset(
+            {"model-routing", "experimental-tools"},
+        )
 
     def test_the_configured_header_is_read_case_insensitively(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.delenv("MCP_INSIDERS_HEADER", raising=False)
         # FastMCP lower-cases every incoming header name.
-        assert get_insiders_config({"x-mcp-insiders": "true"}).enabled is True
+        assert get_insiders_config({"x-mcp-insiders": "false"}).enabled is False
 
     def test_a_custom_header_name_is_honoured(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv("MCP_INSIDERS_HEADER", "X-Tenant-Insiders")
-        assert get_insiders_config({"x-mcp-insiders": "true"}).enabled is False
-        assert get_insiders_config({"x-tenant-insiders": "true"}).enabled is True
+        # The default-named header is no longer consulted, so its ``false``
+        # cannot switch the surface off; only the configured name can.
+        assert get_insiders_config({"x-mcp-insiders": "false"}).enabled is True
+        assert get_insiders_config({"x-tenant-insiders": "false"}).enabled is False
 
     def test_the_operator_kill_switch_wins_over_the_header(
         self, monkeypatch: pytest.MonkeyPatch
@@ -229,15 +233,26 @@ class TestInsidersProviders:
         monkeypatch.setenv("MCP_ROUTE_SCOPED_OUTPUT", "false")
         assert get_route_scoped_output() is False
 
-    def test_routing_is_disabled_without_headers(
+    def test_routing_is_on_by_default_without_headers(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        # No insiders header and no routing headers: routing runs and the
+        # request is attributed to the MCP client's self-reported name (or
+        # ``unknown`` when that is unavailable).
         monkeypatch.delenv("MCP_INSIDERS_DISABLED_FEATURES", raising=False)
+        context = get_routing_context({})
+        assert context.enabled is True
+        assert context.route in {"unknown", "stdio"}
+        assert context.model is None
+        assert context.agent is None
+
+    def test_the_kill_switch_turns_routing_off(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("MCP_INSIDERS_DISABLED_FEATURES", '["model-routing"]')
         context = get_routing_context({})
         assert context.enabled is False
         assert context.route == "unknown"
-        assert context.model is None
-        assert context.agent is None
 
     def test_routing_uses_the_configured_candidate_lists(
         self, monkeypatch: pytest.MonkeyPatch
@@ -276,7 +291,7 @@ class TestRoutingInsideARealRequest:
 
         @server.tool
         def probe() -> dict[str, str | bool | None]:
-            """Resolve routing with the opt-in on and no routing headers."""
+            """Resolve routing with the surface on and no routing headers."""
             params = get_context().session.client_params
             advertised = None if params is None else params.client_info.name
             context = get_routing_context({"x-mcp-insiders": "true"})

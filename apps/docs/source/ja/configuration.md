@@ -99,13 +99,13 @@ HTTP トランスポートは認証ミドルウェアをまったく導入しま
 
 ## Insiders ヘッダー、ルーティング、監査
 
-`X-MCP-Insiders` オプトインサーフェスは、リクエストがヘッダーを送らない限り何もしません。
+insiders サーフェスは **既定で有効** です。クライアントは `X-MCP-Insiders: false` で無効化できます。
 以下の変数は、それが読み取るヘッダー名と、それが有効化する副作用を設定します。完全な契約は
 [Insiders ヘッダー、ルーティング、監査](development/insiders-and-routing.md) にあります。
 
 | 変数 | デフォルト | 備考 |
 |---|---|---|
-| `MCP_INSIDERS_HEADER` | `X-MCP-Insiders` | リクエスト単位のオプトインヘッダー名。検索は大文字小文字を区別しません。 |
+| `MCP_INSIDERS_HEADER` | `X-MCP-Insiders` | リクエスト単位の制御ヘッダー名。検索は大文字小文字を区別しません。 |
 | `MCP_MODEL_HEADERS` | `["X-MCP-Model", "X-MCP-Model-Name"]` | JSON リスト。宣言されたモデルの順序付き候補。空でない最初のヘッダーが採用されます。 |
 | `MCP_AGENT_HEADERS` | `["X-MCP-Agent-ID", "X-MCP-Agent", "X-MCP-Agent-Source"]` | JSON リスト。エージェントの順序付き候補であり、最初のルート供給元でもあります。 |
 | `MCP_CLIENT_HEADERS` | `["X-MCP-Client", "X-MCP-Client-Session-Id"]` | JSON リスト。クライアントの順序付き候補。`session` を含む最初の名前がセッションを供給します。 |

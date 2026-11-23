@@ -202,10 +202,22 @@ class TestTagGateOverHttp:
     TestDirectorEmotionGateOverHttp.
     """
 
-    async def test_without_the_header_the_tagged_tool_is_hidden_and_rejected(
+    async def test_without_the_header_the_tagged_tool_is_listed_and_callable(
         self,
     ) -> None:
+        # The surface is on by default, so a header-less client sees the tag.
         async with _serve(_gated_app()) as url, _client(url, {}) as client:
+            names = [tool.name for tool in await client.list_tools()]
+            assert names == ["experimental_ping", "public_ping"]
+            result = await client.call_tool("experimental_ping", {})
+            assert result.is_error is False
+            assert _texts(result) == "experimental-pong"
+
+    async def test_a_falsy_header_hides_and_rejects_the_tagged_tool(
+        self,
+    ) -> None:
+        headers = {INSIDERS_HEADER: "false"}
+        async with _serve(_gated_app()) as url, _client(url, headers) as client:
             names = [tool.name for tool in await client.list_tools()]
             # Hidden from the listing ...
             assert names == ["public_ping"]
@@ -213,36 +225,52 @@ class TestTagGateOverHttp:
             with pytest.raises(ToolError, match="experimental"):
                 await client.call_tool("experimental_ping", {})
 
-    async def test_with_the_header_the_tagged_tool_is_listed_and_callable(
-        self,
-    ) -> None:
-        headers = {INSIDERS_HEADER: "true"}
+    async def test_the_header_can_switch_the_feature_off_alone(self) -> None:
+        headers = {INSIDERS_HEADER: "experimental-tools=false"}
         async with _serve(_gated_app()) as url, _client(url, headers) as client:
             names = [tool.name for tool in await client.list_tools()]
-            assert names == ["experimental_ping", "public_ping"]
-            result = await client.call_tool("experimental_ping", {})
-            assert result.is_error is False
-            assert _texts(result) == "experimental-pong"
+            assert names == ["public_ping"]
+            with pytest.raises(ToolError, match="experimental"):
+                await client.call_tool("experimental_ping", {})
 
 
 class TestProductionRoutingOverHttp:
-    """The shipped tools over real HTTP, with and without the opt-in header."""
+    """The shipped tools over real HTTP, with and without the control header."""
 
-    async def test_without_the_header_nothing_changes(
+    async def test_without_the_header_routing_is_on_by_default(
         self, production_app: Any, tmp_path: Path
     ) -> None:
-        """A header-less request behaves exactly as it did before routing."""
+        """A header-less request gets routing, scoping and the audit trail."""
         async with _serve(production_app) as url, _client(url, {}) as client:
             tools = await client.list_tools()
             result = await client.call_tool("generate_image", {"prompt": "a cat"})
         assert result.is_error is False
         assert len(tools) == PRODUCTION_TOOL_COUNT
-        # The artifact lands exactly where it did before routing existed ...
+        # The artifact is scoped to the request's route (the MCP client's
+        # self-reported name when no agent/client header declares one) ...
+        scoped = _subdirectory_names(tmp_path)
+        assert len(scoped) == 1
+        assert len(_png_names(tmp_path / scoped[0])) == 1
+        assert _png_names(tmp_path) == []
+        # ... and the call is audited under that route.
+        records = _audit_records(tmp_path)
+        assert len(records) == 1
+        assert records[0]["route"] == scoped[0]
+        assert records[0]["tool"] == "generate_image"
+        assert records[0]["outcome"] == "ok"
+
+    async def test_a_falsy_header_restores_the_previous_behaviour(
+        self, production_app: Any, tmp_path: Path
+    ) -> None:
+        """``X-MCP-Insiders: false`` is the opt-out: flat output, no audit."""
+        headers = {INSIDERS_HEADER: "false"}
+        async with _serve(production_app) as url, _client(url, headers) as client:
+            result = await client.call_tool("generate_image", {"prompt": "a cat"})
+        assert result.is_error is False
+        # Flat layout, no route annotation, no audit trail.
         assert _png_names(tmp_path)
         assert _subdirectory_names(tmp_path) == []
-        # ... the result carries no route annotation ...
         assert "[route=" not in _texts(result)
-        # ... and no audit trail is written.
         assert not (tmp_path / "audit.jsonl").exists()
 
     async def test_the_header_does_not_change_which_tools_are_published(
@@ -348,14 +376,14 @@ class TestDirectorEmotionGateOverHttp:
     async def test_the_emotion_gate_is_per_request(
         self, production_app: Any, png_b64: str, tmp_path: Path
     ) -> None:
-        """The same call is refused header-less and served with the header."""
+        """The same call is served header-less and refused under a falsy header."""
         args = {"tool": "emotion", "image": png_b64, "emotion": "happy"}
         async with _serve(production_app) as url:
             async with _client(url, {}) as client:
+                allowed = await client.call_tool("director_tool", args)
+            async with _client(url, {INSIDERS_HEADER: "false"}) as client:
                 with pytest.raises(ToolError, match="experimental"):
                     await client.call_tool("director_tool", args)
-            async with _client(url, {INSIDERS_HEADER: "true"}) as client:
-                allowed = await client.call_tool("director_tool", args)
         assert allowed.is_error is False
         assert "Saved image" in _texts(allowed)
         # Only the served call reached the audit trail: the refusal wrote nothing.
@@ -365,14 +393,14 @@ class TestDirectorEmotionGateOverHttp:
         assert records[0]["outcome"] == "ok"
 
     async def test_a_non_default_emotion_level_alone_is_gated(
-        self, production_app: Any, png_b64: str
+        self, production_app: Any, png_b64: str, tmp_path: Path
     ) -> None:
         """Passing only emotion_level counts as touching the gate."""
         args = {"tool": "lineart", "image": png_b64, "emotion_level": 5}
         async with _serve(production_app) as url:
             async with _client(url, {}) as client:
+                allowed = await client.call_tool("director_tool", args)
+            async with _client(url, {INSIDERS_HEADER: "false"}) as client:
                 with pytest.raises(ToolError, match="experimental"):
                     await client.call_tool("director_tool", args)
-            async with _client(url, {INSIDERS_HEADER: "true"}) as client:
-                allowed = await client.call_tool("director_tool", args)
         assert allowed.is_error is False

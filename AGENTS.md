@@ -195,16 +195,17 @@ pnpm docs:serve                                      # sphinx-autobuild 实时�
 
 ## 内测头与分路（X-MCP-Insiders）
 
-HTTP 客户端用 `X-MCP-Insiders` 逐请求 opt-in，并用声明头自报路由 / 模型 / agent / 会话。
-**不发送该头时行为与今天一致**（唯一例外见「有意变更」）。完整契约见
-[`insiders-and-routing.md`](apps/docs/source/development/insiders-and-routing.md)。
+**insiders 面默认开启**（0.8.0 起）。`X-MCP-Insiders` 是控制头而非 opt-in：不发送它时
+每个已注册特性取默认（开），发送 `false` 才关闭。声明头自报路由 / 模型 / agent / 会话。
+完整契约见 [`insiders-and-routing.md`](apps/docs/source/development/insiders-and-routing.md)。
 
-- 头语法：`true`/`1`/`on`/`yes` 开启并取默认；缺失 / 空 / `false`/`0`/`off`/`no` 关闭；
-  `model-routing=false` 单项覆盖；`model-routing` 裸键即开启；`k=v, k2=v2` 逐项覆盖。
-  键名大小写不敏感且 `-` 与 `_` 等价；未知键进 `unknown_keys`（只记录、永不生效）；
-  非法值进 `malformed`（该项忽略）；超过 4096 字符整头关闭。
-- 已注册特性（`features.py` 的 `INSIDERS_FEATURES`）：`model-routing`（默认开）、
-  `experimental-tools`（默认开）。**「默认开」指 opt-in 之后的状态；不带头则一个都不生效。**
+- 头语法：缺失 / 空 → **开启并取默认**；`true`/`1`/`on`/`yes` 开启并取默认；
+  `false`/`0`/`off`/`no` 关闭；`model-routing=false` 单项覆盖；`model-routing` 裸键即开启；
+  `k=v, k2=v2` 逐项覆盖。键名大小写不敏感且 `-` 与 `_` 等价；未知键进 `unknown_keys`
+  （只记录、永不生效）；非法值进 `malformed`（该项忽略）；超过 4096 字符视为缺失
+  （保持默认开）并在 `malformed` 记 `header-too-long`。
+- 已注册特性（`features.py` 的 `INSIDERS_FEATURES`）：`model-routing`、`experimental-tools`，
+  两者默认都开。**不带头 = 两个都生效**；`X-MCP-Insiders: false` 两个都关。
   优先级：注册默认 ⊕ 头内覆盖，再被 `MCP_INSIDERS_DISABLED_FEATURES` 强制关闭（最高）。
 - 声明头默认候选：agent=`X-MCP-Agent-ID`/`X-MCP-Agent`/`X-MCP-Agent-Source`；
   client=`X-MCP-Client`/`X-MCP-Client-Session-Id`；model=`X-MCP-Model`/`X-MCP-Model-Name`。
@@ -230,15 +231,20 @@ HTTP 客户端用 `X-MCP-Insiders` 逐请求 opt-in，并用声明头自报路�
 - **新增受门控的工具** = 注册时加 `tags={"insiders"}`；`on_list_tools` 过滤与 `on_call_tool` 按名拒绝都由该 tag 派生。
 - **给现有工具加实验性参数** = 工具体内取 `Depends(get_effective_features)`，缺 `EXPERIMENTAL_TOOLS` 时抛 `ToolError`（见 `director_tool`）。
 
-❌ **不要给任何现有工具加 `insiders` tag** —— 那会让不发头的客户端直接失去该工具，
-违反「不带头时行为与今天一致」。门控机制照做，但生产注册表上刻意没有命中项
+❌ **不要给任何现有工具加 `insiders` tag** —— 那会让发送 `X-MCP-Insiders: false`
+的客户端直接失去该工具。门控机制照做，但生产注册表上刻意没有命中项
 （回归测试 `TestProductionRegistry` 会守住这条）。
 
-### 有意变更（唯一一处）
+### 默认开启的连带后果（0.8.0 起）
 
-`director_tool` 的 `emotion` / `emotion_level` 现在受 `experimental-tools` 门控：不 opt-in 时传任一参数抛
-`ToolError`（非默认的 `emotion_level` 也算传参）。这是**有意变更**，已记录在 CHANGELOG 的 `Changed` 段。
-FastMCP 的工具 schema 在启动时静态生成、无法按请求变化，所以这两个参数仍出现在 schema 里，校验放在工具体内。
+不带头 = `model-routing` 生效，因此**每次工具调用都会写一条审计 JSONL**，且
+**产物写到 `<NOVELAI_OUTPUT_DIR>/<route>/`**：route 取首个非空 agent 头 → client 头 →
+MCP 客户端自报名 → 无 HTTP 请求时 `stdio`，否则 `unknown`。`X-MCP-Insiders: false`
+或不带头的 stdio 之外要恢复扁平布局，用 `MCP_ROUTE_SCOPED_OUTPUT=false`。
+
+`director_tool` 的 `emotion` / `emotion_level` 默认可用；关闭接口面后传任一参数抛
+`ToolError`（非默认的 `emotion_level` 也算传参）。FastMCP 的工具 schema 在启动时
+静态生成、无法按请求变化，所以这两个参数仍出现在 schema 里，校验放在工具体内。
 
 ### 环境变量（JSON 陷阱）
 

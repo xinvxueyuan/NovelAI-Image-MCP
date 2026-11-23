@@ -1,24 +1,28 @@
 # Insiders 头、分路与审计
 
-insiders 接口面让 HTTP 客户端可以 opt-in 实验性行为，并
+insiders 接口面**默认开启**。它提供实验性行为，并让客户端
 声明一个请求属于*哪条* route、model、agent 与 session。本页
 记录该头的契约、路由由此推导出什么、它产生的审计
-轨迹，以及该特性在已发布形态下的边界。
+轨迹，以及如何关闭该接口面。
 
-没有该头时这里的一切都不生效：不发送该头的请求
-行为与路由存在之前完全一致，只有一个刻意的例外，
-见[向后兼容](#向后兼容)。
+因此 `X-MCP-Insiders` 是**控制头，而非 opt-in**：不发送它会让
+每个已注册特性保持默认（开）。发送 `X-MCP-Insiders: false` 可恢复
+路由存在之前的旧行为。
 
 ## 信任模型
 
 路由头是**客户端提供、因而可伪造的**。它们不是
 认证机制，也不得被当作身份。
 
-请把 opt-in 视为你授予一个已在信任边界内的调用方的能力。
+请把路由视为你授予一个已在信任边界内的调用方的能力。
 在依赖该头所说的任何内容之前，请把服务器放在能认证调用方的
 网关后面（或让 `MCP_HOST` 保持 localhost）。头*确实*参与安全决策的
 唯一地方是[按路由绑定的 token](#按路由绑定的-token)，在那里
 不匹配会 fail closed。
+
+由于路由现在默认开启，除非客户端主动关闭，否则每次工具调用都会被审计、
+产物都会按路由分目录。运维若不需要其中任一项，可用
+`MCP_INSIDERS_DISABLED_FEATURES='["model-routing"]'` 在服务器层面关闭。
 
 route 值是攻击者可控的字符串，最终会进入文件系统路径与
 日志行。因此每条 route 在使用前都要经过白名单；见
@@ -37,8 +41,8 @@ route 值是攻击者可控的字符串，最终会进入文件系统路径与
 
 | 值 | 效果 |
 |---|---|
-| *（头缺失）* | 关闭 |
-| *（空或仅空白）* | 关闭 |
+| *（头缺失）* | 开启，每个已注册特性取默认值 |
+| *（空或仅空白）* | 开启，每个已注册特性取默认值 |
 | `false`、`0`、`off`、`no` | 关闭 |
 | `true`、`1`、`on`、`yes` | 开启，每个已注册特性取默认值 |
 | `model-routing=false` | 开启，`model-routing` 被强制关闭 |
@@ -53,8 +57,8 @@ route 值是攻击者可控的字符串，最终会进入文件系统路径与
   客户端永远无法激活服务器不知道的特性。
 - 无法解析的值（例如 `model-routing=maybe`）会被收集到
   `malformed`，该键被丢弃。
-- 超过 4096 字符的头会关闭整个头，并在 `malformed` 中记录
-  `header-too-long`。
+- 超过 4096 字符的头会被视为缺失（接口面保持默认开启），并在
+  `malformed` 中记录 `header-too-long`。
 
 ### 已注册特性
 
@@ -63,8 +67,8 @@ route 值是攻击者可控的字符串，最终会进入文件系统路径与
 | `model-routing` | 开 | 该请求的 route、model、agent、client 与 session 由路由头解析得出，并且每次工具调用追加一条审计记录 |
 | `experimental-tools` | 开 | 带 insiders tag 的工具会被列出且可调用，`director_tool` 接受其实验性 `emotion` / `emotion_level` 参数 |
 
-"默认开"描述的是**接口面被启用之后**特性的状态。发送
-`X-MCP-Insiders: true` 会把两者都打开；完全不发送头则什么都不打开。
+两个特性默认都是开的，除非有东西把它们关掉。完全不发送头会把两者都打开；
+`X-MCP-Insiders: false` 会把两者都关掉。
 
 优先级，由弱到强：
 
@@ -224,24 +228,36 @@ MCP_ROUTE_TOKENS='{"team-a":"token-for-team-a","team-b":"token-for-team-b"}'
 - 两个设置都未配置时，不会安装任何认证中间件，
   端点行为与之前完全一致。
 
-## 向后兼容
+## 关闭接口面
 
-不发送 insiders 头的请求看到的是今天的服务器，只有一个
-刻意的例外：
+发送 `X-MCP-Insiders: false` 的请求看到的是路由存在之前的服务器：
 
 - 工具、资源、prompt 与 schema 不变。
 - 没有任何工具被新增或移除。已发布的工具都不带 `insiders` tag，因此
-  列表过滤器永远不会对未 opt-in 的客户端隐藏任何东西。
+  列表过滤器没有东西可隐藏。
 - 生成的图像保持扁平的 `NOVELAI_OUTPUT_DIR` 布局。
 - 不会写入审计文件。
+- `director_tool` 会以 `ToolError` 拒绝 `emotion` / `emotion_level`。
 - `MCP_AUTH_TOKEN` 行为与之前完全一致。
 
+用更窄的值可以只关掉一个特性而保留另一个：
+`X-MCP-Insiders: model-routing=false` 保留实验性工具面，同时恢复扁平输出
+并停止审计。
+
 :::{warning}
-**`director_tool` 的 `emotion` 与 `emotion_level` 参数现在受门控。**
-在没有 `experimental-tools` opt-in 的情况下传任一个都会以
-`ToolError` 失败。这是刻意的行为变更，已记录在
-CHANGELOG 的 `Changed` 段。仅一个非默认的 `emotion_level` 也算
-传参，因此默认调用形态不受影响。
+**`director_tool` 的 `emotion` 与 `emotion_level` 受 `experimental-tools` 门控。**
+它们默认被接受；关闭了接口面（或处于运维强制关闭下）的调用方传任一参数
+都会以 `ToolError` 失败。仅一个非默认的 `emotion_level` 也算传参，因此
+默认调用形态不受影响。
+:::
+
+:::{note}
+**从 0.7.x 升级。** 路由、按路由分目录与审计过去需要 `X-MCP-Insiders`。
+它们现在默认开启，因此一个从未发送该头的既有客户端会开始看到
+`outputs/<route>/` 与 `audit.jsonl`。发送 `X-MCP-Insiders: false`、
+设置 `MCP_ROUTE_SCOPED_OUTPUT=false`，或设置
+`MCP_INSIDERS_DISABLED_FEATURES='["model-routing"]'` 都可恢复旧行为。
+此变更记录在 CHANGELOG 的 `Changed` 段。
 :::
 
 ## 扩展点
@@ -252,7 +268,7 @@ CHANGELOG 的 `Changed` 段。仅一个非默认的 `emotion_level` 也算
   与每个工具都会自动接住它，无需其他改动。
 - **门控一个新工具。** 用 `tags={"insiders"}` 注册它。列表过滤器
   与按名拒绝都从该 tag 派生。**不要**把该 tag 加到
-  现有工具上：那会让每个不发送该头的客户端都失去该工具。
+  现有工具上：那会让每个发送 `X-MCP-Insiders: false` 的客户端都失去该工具。
 - **给现有工具门控一个新参数。** 读取
   `features: frozenset[str] = Depends(get_effective_features)`，并在
   `EXPERIMENTAL_TOOLS` 缺失时从工具体内抛出 `ToolError`，就像
@@ -262,11 +278,11 @@ CHANGELOG 的 `Changed` 段。仅一个非默认的 `emotion_level` 也算
 
 - **工具 schema 是静态的。** FastMCP 在服务器启动时就发布工具的参数 schema，
   因此 schema 无法按请求变化。实验性
-  参数因此仍留在 schema 中，opt-in 改为在
+  参数因此仍留在 schema 中，门控改为在
   工具体内强制执行。做 schema 内省的客户端能看到该参数，
-  但没有该头就无法使用它。
+  但关闭接口面后无法使用它。
 - **路由是按请求的，不是按连接的。** 该头从携带工具调用的
-  HTTP 请求中读取。
+  HTTP 请求中读取；stdio 上没有该请求，route 因此解析为 `stdio`。
 - **该头不是认证。** 见[信任模型](#信任模型)。
 
 ## 参见

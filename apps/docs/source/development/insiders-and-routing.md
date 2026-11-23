@@ -1,24 +1,31 @@
 # Insiders header, routing and audit
 
-The insiders surface lets an HTTP client opt in to experimental behaviour and
-declare *which* route, model, agent and session a request belongs to. This page
-documents the header contract, what routing derives from it, the audit trail it
-produces, and the boundaries of the feature as shipped.
+The insiders surface is **enabled by default**. It provides experimental
+behaviour and lets a client declare *which* route, model, agent and session a
+request belongs to. This page documents the header contract, what routing
+derives from it, the audit trail it produces, and how to switch the surface off.
 
-Nothing here is active without the header: a request that does not send it
-behaves exactly as it did before routing existed, with one deliberate exception
-noted in [Backward compatibility](#backward-compatibility).
+The `X-MCP-Insiders` header is therefore a **control header, not an opt-in**:
+omitting it keeps every registered feature at its default (on). Sending
+`X-MCP-Insiders: false` restores the pre-routing behaviour described in
+[Switching the surface off](#switching-the-surface-off).
 
 ## Trust model
 
 Routing headers are **client-supplied and therefore forgeable**. They are not an
 authentication mechanism and must not be treated as an identity.
 
-Treat the opt-in as a capability you grant to a caller that is already inside a
+Treat routing as a capability you grant to a caller that is already inside a
 trust boundary. Run the server behind a gateway that authenticates callers (or
 keep `MCP_HOST` on localhost) before relying on anything the header says. The
 one place headers *do* participate in a security decision is
 [route-bound tokens](#route-bound-tokens), and there a mismatch fails closed.
+
+Because routing is now on by default, every tool call is audited and every
+artifact is route-scoped unless a client opts out. An operator who does not want
+either can disable it server-wide with
+`MCP_INSIDERS_DISABLED_FEATURES='["model-routing"]'` (see
+[Registered features](#registered-features)).
 
 Route values are attacker-controlled strings that end up in filesystem paths and
 log lines. Every route is therefore passed through a whitelist before use; see
@@ -37,8 +44,8 @@ a typo can never break a request.
 
 | Value | Effect |
 |---|---|
-| *(header absent)* | disabled |
-| *(empty or whitespace)* | disabled |
+| *(header absent)* | enabled, every registered feature at its default |
+| *(empty or whitespace)* | enabled, every registered feature at its default |
 | `false`, `0`, `off`, `no` | disabled |
 | `true`, `1`, `on`, `yes` | enabled, every registered feature at its default |
 | `model-routing=false` | enabled, `model-routing` forced off |
@@ -63,8 +70,8 @@ Additional rules:
 | `model-routing` | on | the request's route, model, agent, client and session are resolved from the routing headers, and one audit record is appended per tool call |
 | `experimental-tools` | on | insiders-tagged tools are listed and callable, and `director_tool` accepts its experimental `emotion` / `emotion_level` parameters |
 
-"Default on" describes a feature's state **once the surface is enabled**. Sending
-`X-MCP-Insiders: true` turns both on; sending no header at all turns nothing on.
+Both features are on unless something switches them off. Sending no header at
+all turns both on; `X-MCP-Insiders: false` turns both off.
 
 Precedence, weakest first:
 
@@ -73,7 +80,7 @@ Precedence, weakest first:
 3. `MCP_INSIDERS_DISABLED_FEATURES` -- an operator kill switch that wins over
    anything a client sends.
 
-A disabled header yields an empty feature set regardless of the other two.
+A falsy header yields an empty feature set regardless of the other two.
 
 ## Declaring a route
 
@@ -226,24 +233,39 @@ Details worth knowing:
 - With neither setting configured, no auth middleware is installed and the
   endpoint behaves exactly as before.
 
-## Backward compatibility
+## Switching the surface off
 
-A request that does not send the insiders header sees today's server, with one
-intentional exception:
+A request that sends `X-MCP-Insiders: false` sees the server as it was before
+routing existed:
 
 - Tools, resources, prompts and schemas are unchanged.
 - No tool is added or removed. No shipped tool carries the `insiders` tag, so
-  the listing filter never hides anything from a client that has not opted in.
+  the listing filter has nothing to hide.
 - Generated images keep the flat `NOVELAI_OUTPUT_DIR` layout.
 - No audit file is written.
+- `director_tool` refuses `emotion` / `emotion_level` with a `ToolError`.
 - `MCP_AUTH_TOKEN` behaves exactly as before.
 
+Use a narrower value to switch off one feature and keep the other:
+`X-MCP-Insiders: model-routing=false` keeps the experimental tool surface while
+restoring the flat output layout and stopping the audit trail.
+
 :::{warning}
-**`director_tool`'s `emotion` and `emotion_level` parameters are now gated.**
-Passing either one without the `experimental-tools` opt-in fails with a
-`ToolError`. This is a deliberate behaviour change and is recorded in the
-CHANGELOG under `Changed`. A non-default `emotion_level` alone counts as
-passing the parameter, so the default call shape is unaffected.
+**`director_tool`'s `emotion` and `emotion_level` are gated by
+`experimental-tools`.** They are accepted by default; a caller that switched the
+surface off (or that is under an operator kill switch) gets a `ToolError` when
+passing either one. A non-default `emotion_level` alone counts as passing the
+parameter, so the default call shape is unaffected.
+:::
+
+:::{note}
+**Upgrading from 0.7.x.** Routing, route-scoped output and the audit trail used
+to require `X-MCP-Insiders`. They are now on by default, so an existing client
+that never sent the header will start seeing `outputs/<route>/` and an
+`audit.jsonl`. Either send `X-MCP-Insiders: false`, set
+`MCP_ROUTE_SCOPED_OUTPUT=false`, or set
+`MCP_INSIDERS_DISABLED_FEATURES='["model-routing"]'` to restore the old
+behaviour. This is recorded in the CHANGELOG under `Changed`.
 :::
 
 ## Extension points
@@ -254,8 +276,8 @@ passing the parameter, so the default call shape is unaffected.
   and every tool pick it up with no further change.
 - **Gate a new tool.** Register it with `tags={"insiders"}`. The listing filter
   and the by-name rejection both follow from the tag. **Do not** add that tag to
-  an existing tool: it would remove the tool from every client that does not
-  send the header.
+  an existing tool: it would remove the tool from every client that sends
+  `X-MCP-Insiders: false`.
 - **Gate a new parameter on an existing tool.** Read
   `features: frozenset[str] = Depends(get_effective_features)` and raise a
   `ToolError` from the body when `EXPERIMENTAL_TOOLS` is absent, the way
@@ -265,11 +287,12 @@ passing the parameter, so the default call shape is unaffected.
 
 - **Tool schemas are static.** FastMCP publishes a tool's parameter schema when
   the server starts, so a schema cannot vary per request. Experimental
-  parameters therefore stay visible in the schema, and the opt-in is enforced in
+  parameters therefore stay visible in the schema, and the gate is enforced in
   the tool body instead. A client that introspects the schema sees the parameter
-  but cannot use it without the header.
+  but cannot use it after switching the surface off.
 - **Routing is per request, not per connection.** The header is read from the
-  HTTP request that carries the tool call.
+  HTTP request that carries the tool call; over stdio there is no such request,
+  so the route resolves to `stdio`.
 - **The header is not authentication.** See [Trust model](#trust-model).
 
 ## See also
