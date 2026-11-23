@@ -26,7 +26,26 @@ per-release section headings. This file is the human-curated companion.
 
 ### Security
 
-- _Nothing yet._
+- **Four open Dependabot alerts are closed by transitive-dependency bumps**;
+  none required a change to a declared dependency range except the `eslint`
+  peer, now pinned explicitly:
+  - `dnspython` 2.9.0 → 2.9.2 (CVE-2026-128089, GHSA-vvf4-9x63-8xvv, high) —
+    an unchecked WKS service number allowed a crafted zone file to exhaust
+    memory and CPU. Reached through `fastmcp` → `pydantic[email]` →
+    `email-validator`.
+  - `opentelemetry-api` 1.45.1 → 1.45.2 (CVE-2026-126360,
+    GHSA-mf5v-w3w3-f6cg, medium) — quadratic regex backtracking in
+    `TraceContextTextMapPropagator.extract()`. Reached through `mcp` and
+    `fastmcp-slim`.
+  - `soupsieve` 3.0.4 → 4.1.3 (CVE-2026-126190, GHSA-mmhr-3c5m-f64f, high) —
+    polynomial-time matching of descendant-combinator selectors. Reached
+    through the docs site's `furo` → `beautifulsoup4` chain; the docs build
+    was re-run against the new major to confirm compatibility.
+  - `minimatch` 10.2.6 → 11.x (CVE-2026-118764, GHSA-g3hv-75wg-m249,
+    medium) — reached only through `eslint`, which pnpm auto-installed at
+    10.13.0 to satisfy `eslint-plugin-turbo`'s peer range. `eslint` is now an
+    explicit devDependency at `^10.15.0`, the first release whose own
+    `minimatch` range is `^11.0.5`; no override was needed.
 
 ## [0.7.1] — 2026-10-31
 
